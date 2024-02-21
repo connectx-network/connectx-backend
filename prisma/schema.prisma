@@ -14,20 +14,32 @@ model User {
   id               String            @id @unique @default(uuid())
   email            String            @unique
   password         String?
-  fullname         String
+  fullName         String            @map("full_name")
   nickname         String?
   description      String?
   country          String?
   gender           Gender?
   address          String?
   avatarUrl        String?           @map("avatar_url")
+  isPrivate        Boolean           @default(false) @map("is_private")
+  activated        Boolean           @default(false)
   userImages       UserImage[]
   userInterests    UserInterest[]
   following        UserConnection[]  @relation("UserToFolower")
   followers        UserConnection[]  @relation("FolowerToUser")
   joinedEventUsers JoinedEventUser[]
+  userVerification UserVerification?
 
   @@map("user")
+}
+
+model UserVerification {
+  id          String   @id @unique @default(uuid())
+  userId      String   @unique @map("user_id")
+  verifyCode  String   @unique @map("verify_code")
+  expiredDate DateTime @map("expired_date")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model UserInterest {
@@ -95,8 +107,21 @@ model JoinedEventUser {
   @@map("joined_event_user")
 }
 
+model Notification {
+  id               String           @id @unique @default(uuid())
+  senderId         String           @map("sender_id")
+  objectId         String           @map("object_id")
+  notificationType NotificationType @map("notification_type")
+}
+
 enum Gender {
   MALE
   FEMALE
   OTHER
+}
+
+enum NotificationType {
+  EVENT_INVITATION
+  EVENT_LIKE
+  NEW_FOLLOWER
 }
