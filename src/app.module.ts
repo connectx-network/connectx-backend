@@ -7,6 +7,7 @@ import { FirebaseModule } from './_modules_/firebase/firebase.module';
 import { FileModule } from './_modules_/file/file.module';
 import { AuthModule } from './_modules_/auth/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { MailModule } from './_modules_/mail/mail.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
     AuthModule,
     MailerModule.forRoot({
       transport: {
+        service: 'Google',
         host: process.env.MAIL_HOST,
         port: 587,
         secure: false,
@@ -26,6 +28,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
         },
       },
     }),
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
