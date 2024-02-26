@@ -30,14 +30,14 @@ model User {
   followers        UserConnection[]  @relation("FolowerToUser")
   joinedEventUsers JoinedEventUser[]
   userVerification UserVerification?
-  userToken        UserToken?
+  userTokens       UserToken[]
 
   @@map("user")
 }
 
 model UserToken {
   id           String   @id @unique @default(uuid())
-  userId       String   @unique @map("user_id")
+  userId       String   @map("user_id")
   refreshToken String   @map("refresh_token")
   expiredDate  DateTime @map("expired_date")
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -88,7 +88,6 @@ model UserConnection {
 model EventCategory {
   id     String  @id @unique @default(uuid())
   name   String
-  logo   String
   events Event[]
 
   @@map("event_category")
@@ -97,14 +96,14 @@ model EventCategory {
 model Event {
   id               String            @id @unique @default(uuid())
   name             String
-  tiketPrice       Float             @map("tiket_price")
+  tiketPrice       Float?            @map("tiket_price")
   createdAt        DateTime          @default(now()) @map("created_at")
   eventDate        DateTime          @map("event_date")
-  location         String            @map("location")
-  description      String
-  sponsors         String
-  agenda           String
-  speakers         String
+  location         String?           @map("location")
+  description      String?
+  sponsors         String?
+  agenda           String?
+  speakers         String?
   eventCategoryId  String            @map("category_id")
   eventCategory    EventCategory     @relation(fields: [eventCategoryId], references: [id], onDelete: Cascade)
   joinedEventUsers JoinedEventUser[]

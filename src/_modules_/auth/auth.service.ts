@@ -293,16 +293,6 @@ export class AuthService {
       throw new NotFoundException('Not found user!');
     }
 
-    const isMatch = await compare(password, user.password);
-
-    if (!isMatch) {
-      throw new UnauthorizedException('Username or password is not correct!');
-    }
-
-    if (!user.activated) {
-      throw new NotAcceptableException('Please verify account before sign in!');
-    }
-
     const { accessToken, refreshToken } = await this.generateTokens(user);
 
     return {
