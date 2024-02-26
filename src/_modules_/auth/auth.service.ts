@@ -175,6 +175,35 @@ export class AuthService {
     return { success: true };
   }
 
+  async verifyResetPasswordOtp(verifyAccountDto: VerifyAccountDto): Promise<boolean>   {
+    const { email, verifyCode } = verifyAccountDto;
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email,
+        userVerification: {
+          type: 'PASSWORD_RESET',
+        },
+      },
+      include: {
+        userVerification: true,
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    const { userVerification } = user;
+
+    if (verifyCode !== userVerification.verifyCode) {
+      throw new NotAcceptableException('OTP is not correct!');
+    }
+
+    if (moment().isAfter(userVerification.expiredDate)) {
+      throw new NotAcceptableException('OTP is expired!');
+    }
+    return true;
+  }
+
   private async requestNewOtp(email: string, type: UserCodeType) {
     const user = await this.prisma.user.findUnique({
       where: { email },

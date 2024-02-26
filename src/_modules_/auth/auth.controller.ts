@@ -20,10 +20,16 @@ export class AuthController {
     return this.authService.signIn(signInDto);
   }
 
-  @Post('/verify')
+  @Post('/verify-otp/account')
   @ApiBody({ type: VerifyAccountDto })
   async verify(@Body() verifyAccountDto: VerifyAccountDto) {
     return this.authService.verify(verifyAccountDto);
+  }
+
+  @Post('/verify-otp/reset-password')
+  @ApiBody({ type: VerifyAccountDto })
+  async verifyResetPassword(@Body() verifyAccountDto: VerifyAccountDto) {
+    return this.authService.verifyResetPasswordOtp(verifyAccountDto);
   }
 
   @Post('/reset-password')
