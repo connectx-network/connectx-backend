@@ -5,7 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import {PrismaService} from '../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateUserDto,
   RequestNewOtpDto,
@@ -13,35 +13,34 @@ import {
   SignInDto,
   VerifyAccountDto,
 } from './auth.dto';
-import {compare, hash} from 'bcrypt';
+import { compare, hash } from 'bcrypt';
 import * as moment from 'moment-timezone';
-import {Prisma, User, UserCodeType} from '@prisma/client';
-import {MailService} from '../mail/mail.service';
-import {OtpEmailDto} from '../mail/mail.dto';
+import { Prisma, User, UserCodeType } from '@prisma/client';
+import { MailService } from '../mail/mail.service';
+import { OtpEmailDto } from '../mail/mail.dto';
 import * as process from 'process';
-import {JwtService} from '@nestjs/jwt';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
   private timezone = process.env.DEFAULT_TIMEZONE;
 
   constructor(
-      private readonly prisma: PrismaService,
-      private readonly mailService: MailService,
-      private jwtService: JwtService,
-  ) {
-  }
+    private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
+    private jwtService: JwtService,
+  ) {}
 
   async create(createUserDto: CreateUserDto) {
-    const {fullName, password, email, userRole} = createUserDto;
+    const { fullName, password, email, userRole } = createUserDto;
 
     const createdUser = await this.prisma.user.findUnique({
-      where: {email},
+      where: { email },
     });
 
     if (createdUser) {
       throw new ConflictException(
-          'Email is already used for an existing account!',
+        'Email is already used for an existing account!',
       );
     }
     const saltOrRounds = +process.env.USER_SALT;
@@ -82,19 +81,19 @@ export class AuthService {
       });
     } catch (err) {
       console.log(err);
-      await this.prisma.user.delete({where: {id: user.id}});
+      await this.prisma.user.delete({ where: { id: user.id } });
       throw err;
     }
 
-    return {success: true};
+    return { success: true };
   }
 
   private async sendVerifyAccountEmail({
-                                         fullName,
-                                         verifyCode,
-                                         expiredDate,
-                                         email,
-                                       }) {
+    fullName,
+    verifyCode,
+    expiredDate,
+    email,
+  }) {
     const payload: OtpEmailDto = {
       to: email,
       subject: 'Welcome To ConnectX',
@@ -113,7 +112,7 @@ export class AuthService {
     while (!isUnique) {
       verifyCode = this.generateRandomCode();
       const existingRecord = await this.prisma.userVerification.findUnique({
-        where: {verifyCode},
+        where: { verifyCode },
       });
       isUnique = !existingRecord;
     }
@@ -131,7 +130,7 @@ export class AuthService {
   }
 
   async verify(verifyAccountDto: VerifyAccountDto) {
-    const {email, verifyCode} = verifyAccountDto;
+    const { email, verifyCode } = verifyAccountDto;
     const user = await this.prisma.user.findUnique({
       where: {
         email,
@@ -147,7 +146,7 @@ export class AuthService {
       throw new NotFoundException('Not found user!');
     }
 
-    const {userVerification} = user;
+    const { userVerification } = user;
 
     if (verifyCode !== userVerification.verifyCode) {
       throw new NotAcceptableException('OTP is not correct!');
@@ -173,12 +172,12 @@ export class AuthService {
       }),
     ]);
 
-    return {success: true};
+    return { success: true };
   }
 
   private async requestNewOtp(email: string, type: UserCodeType) {
     const user = await this.prisma.user.findUnique({
-      where: {email},
+      where: { email },
     });
 
     if (!user) {
@@ -224,21 +223,21 @@ export class AuthService {
       email: user.email,
     });
 
-    return {success: true};
+    return { success: true };
   }
 
   async renewVerificationCode(requestNewOtpDto: RequestNewOtpDto) {
-    const {email} = requestNewOtpDto;
+    const { email } = requestNewOtpDto;
     return this.requestNewOtp(email, UserCodeType.VERIFICATION);
   }
 
   async requestResetPassword(requestNewOtpDto: RequestNewOtpDto) {
-    const {email} = requestNewOtpDto;
+    const { email } = requestNewOtpDto;
     return this.requestNewOtp(email, UserCodeType.PASSWORD_RESET);
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
-    const {email, password, otp} = resetPasswordDto;
+    const { email, password, otp } = resetPasswordDto;
     const user = await this.prisma.user.findUnique({
       where: {
         email,
@@ -254,7 +253,7 @@ export class AuthService {
       throw new NotFoundException('Not found user!');
     }
 
-    const {userVerification} = user;
+    const { userVerification } = user;
 
     if (otp !== userVerification.verifyCode) {
       throw new NotAcceptableException('OTP is not correct!');
@@ -283,14 +282,12 @@ export class AuthService {
       }),
     ]);
 
-    return {success: true};
+    return { success: true };
   }
 
   async signIn(signInDto: SignInDto) {
-    const {email, password} = signInDto;
-    const user = await this.prisma.user.findUnique({
-      where: {email},
-    });
+    const { email, password } = signInDto;
+    const user = await this.validateUser(email, password);
 
     if (!user) {
       throw new NotFoundException('Not found user!');
@@ -306,7 +303,7 @@ export class AuthService {
       throw new NotAcceptableException('Please verify account before sign in!');
     }
 
-    const {accessToken, refreshToken} = await this.generateTokens(user);
+    const { accessToken, refreshToken } = await this.generateTokens(user);
 
     return {
       user,
@@ -316,21 +313,21 @@ export class AuthService {
   }
 
   private async generateTokens(user: User) {
-    const {id, email, userRole} = user;
+    const { id, email, userRole } = user;
     const accessToken = this.jwtService.sign(
-        {id, email, userRole},
-        {
-          expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRATION_TIME,
-          secret: process.env.ACCESS_TOKEN_SECRET,
-        },
+      { id, email, userRole },
+      {
+        expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRATION_TIME,
+        secret: process.env.ACCESS_TOKEN_SECRET,
+      },
     );
 
     const refreshToken = this.jwtService.sign(
-        {sub: id},
-        {
-          expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRATION_TIME,
-          secret: process.env.REFRESH_TOKEN_SECRET,
-        },
+      { sub: id },
+      {
+        expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRATION_TIME,
+        secret: process.env.REFRESH_TOKEN_SECRET,
+      },
     );
 
     const expiredDate = moment().tz(this.timezone).add(1, 'years').toDate();
@@ -347,5 +344,28 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  async validateUser(email: string, password: string): Promise<User> {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    const isMatch = await compare(password, user.password);
+
+    if (!isMatch) {
+      throw new UnauthorizedException('Username or password is not correct!');
+    }
+
+    if (!user.activated) {
+      throw new NotAcceptableException('Please verify account before sign in!');
+    }
+
+    delete user.password;
+    return user;
   }
 }
