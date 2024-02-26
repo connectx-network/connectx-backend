@@ -39,6 +39,11 @@ export class AuthService {
     });
 
     if (createdUser) {
+      if (!createdUser.activated) {
+        throw new NotAcceptableException (
+            'User has not activated yet!',
+        );
+      }
       throw new ConflictException(
         'Email is already used for an existing account!',
       );

@@ -1,8 +1,23 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsNotEmpty } from 'class-validator';
+import { IsDateString, IsEnum, IsNotEmpty } from 'class-validator';
 import { OptionalProperty } from '../../decorators/validator.decorator';
-import {BasePagingDto, BasePagingResponse} from "../../types/base.type";
-import {Event} from "@prisma/client";
+import { BasePagingDto, BasePagingResponse } from '../../types/base.type';
+import { Event, EventAssetType } from '@prisma/client';
+
+export class CreateEventHostDto {
+  @OptionalProperty()
+  title: string;
+  @OptionalProperty()
+  url: string;
+}
+
+export class CreateEventAssetDto {
+  @ApiProperty({ required: true })
+  url: string;
+  @ApiProperty({ required: true, enum: EventAssetType })
+  @IsEnum(EventAssetType)
+  type: EventAssetType;
+}
 
 export class CreateEventDto {
   @ApiProperty({
@@ -41,6 +56,12 @@ export class CreateEventDto {
 
   @OptionalProperty()
   speakers: string;
+
+  @OptionalProperty({ isArray: true, type: CreateEventHostDto })
+  createEventHostDto: CreateEventHostDto[];
+
+  @OptionalProperty({ isArray: true, type: CreateEventAssetDto })
+  createEventAssetDto: CreateEventAssetDto[];
 }
 
 export class FindEventDto extends BasePagingDto {}

@@ -107,8 +107,26 @@ model Event {
   eventCategoryId  String            @map("category_id")
   eventCategory    EventCategory     @relation(fields: [eventCategoryId], references: [id], onDelete: Cascade)
   joinedEventUsers JoinedEventUser[]
+  eventHosts       EventHost[]
+  eventAssets      EventAsset[]
 
   @@map("event")
+}
+
+model EventHost {
+  id      String  @id @unique @default(uuid())
+  title   String?
+  url     String?
+  eventId String  @map("event_id")
+  event   Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model EventAsset {
+  id      String         @id @unique @default(uuid())
+  url     String
+  type    EventAssetType
+  eventId String         @map("event_id")
+  event   Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model JoinedEventUser {
@@ -150,4 +168,9 @@ enum NotificationType {
 enum UserRole {
   USER
   ADMIN
+}
+
+enum EventAssetType {
+  BACKGROUND
+  IMAGE
 }

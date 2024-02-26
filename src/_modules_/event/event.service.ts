@@ -19,6 +19,8 @@ export class EventService {
       tiketPrice,
       agenda,
       name,
+      createEventAssetDto,
+      createEventHostDto,
     } = createEventDto;
 
     const createEventPayload: Prisma.EventUncheckedCreateInput = {
@@ -44,6 +46,28 @@ export class EventService {
     }
     if (agenda) {
       createEventPayload.agenda = agenda;
+    }
+
+    if (createEventAssetDto) {
+      createEventPayload.eventAssets = {
+        createMany: {
+          data: createEventAssetDto.map((item) => ({
+            url: item.url,
+            type: item.type,
+          })),
+        },
+      };
+    }
+
+    if (createEventHostDto) {
+      createEventPayload.eventHosts = {
+        createMany: {
+          data: createEventHostDto.map((item) => ({
+            url: item.url,
+            title: item.title,
+          })),
+        },
+      };
     }
 
     return this.prisma.event.create({
@@ -76,6 +100,8 @@ export class EventService {
       where: { id },
       include: {
         eventCategory: true,
+        eventAssets: true,
+        eventHosts: true,
       },
     });
   }

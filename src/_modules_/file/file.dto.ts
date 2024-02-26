@@ -6,6 +6,7 @@ export enum FileType {
   EVENT_IMAGE = 'EVENT_IMAGE',
   CATEGORY_IMAGE = 'CATEGORY_IMAGE',
   APP_LOGO = 'APP_LOGO',
+  EVENT_BACKGROUND = 'EVENT_BACKGROUND'
 }
 
 export class BaseFileUploadDto {
