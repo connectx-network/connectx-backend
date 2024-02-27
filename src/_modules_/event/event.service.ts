@@ -85,6 +85,7 @@ export class EventService {
         orderBy: {
           createdAt: 'desc',
         },
+        take: size,
       }),
       this.prisma.event.count(),
     ]);
