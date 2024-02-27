@@ -4,6 +4,7 @@ import { CreateEventDto, FindEventDto } from './event.dto';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../decorators/role.decorator';
 import { Role } from '../../types/auth.type';
+import { User } from "../../decorators/user.decorator";
 
 @Controller('event')
 @ApiTags('event')
@@ -25,5 +26,11 @@ export class EventController {
   @Get()
   async find(@Query() findEventDto: FindEventDto) {
     return this.eventService.find(findEventDto);
+  }
+
+  @Post('/join/:id')
+  @Roles(Role.ALL)
+  async join(@Param('id') eventId: string, @User('id') userId: string) {
+    return this.eventService.joinEvent(userId, eventId);
   }
 }

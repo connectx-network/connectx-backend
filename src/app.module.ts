@@ -10,6 +10,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { MailModule } from './_modules_/mail/mail.module';
 import { EventCategoryModule } from './_modules_/event-category/event-category.module';
 import { EventModule } from './_modules_/event/event.module';
+import { UserModule } from './_modules_/user/user.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { EventModule } from './_modules_/event/event.module';
     MailModule,
     EventCategoryModule,
     EventModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],

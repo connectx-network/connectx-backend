@@ -1,12 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateEventDto, FindEventDto, FindEventResponse } from './event.dto';
-import { Event, Prisma } from '@prisma/client';
-import { getDefaultPaginationReponse } from '../../utils/pagination.util';
+import { Injectable, NotAcceptableException, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { CreateEventDto, FindEventDto, FindEventResponse } from "./event.dto";
+import { Event, Prisma } from "@prisma/client";
+import { getDefaultPaginationReponse } from "../../utils/pagination.util";
 
 @Injectable()
 export class EventService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {
+  }
 
   async create(createEventDto: CreateEventDto) {
     const {
@@ -20,13 +21,13 @@ export class EventService {
       agenda,
       name,
       createEventAssetDto,
-      createEventHostDto,
+      createEventHostDto
     } = createEventDto;
 
     const createEventPayload: Prisma.EventUncheckedCreateInput = {
       eventCategoryId,
       eventDate,
-      name,
+      name
     };
 
     if (description) {
@@ -53,9 +54,9 @@ export class EventService {
         createMany: {
           data: createEventAssetDto.map((item) => ({
             url: item.url,
-            type: item.type,
-          })),
-        },
+            type: item.type
+          }))
+        }
       };
     }
 
@@ -64,14 +65,14 @@ export class EventService {
         createMany: {
           data: createEventHostDto.map((item) => ({
             url: item.url,
-            title: item.title,
-          })),
-        },
+            title: item.title
+          }))
+        }
       };
     }
 
     return this.prisma.event.create({
-      data: createEventPayload,
+      data: createEventPayload
     });
   }
 
@@ -83,16 +84,16 @@ export class EventService {
       this.prisma.event.findMany({
         skip,
         orderBy: {
-          createdAt: 'desc',
+          createdAt: "desc"
         },
-        take: size,
+        take: size
       }),
-      this.prisma.event.count(),
+      this.prisma.event.count()
     ]);
 
     return {
       ...getDefaultPaginationReponse(findEventDto, count),
-      data: events,
+      data: events
     };
   }
 
@@ -102,8 +103,39 @@ export class EventService {
       include: {
         eventCategory: true,
         eventAssets: true,
-        eventHosts: true,
-      },
+        eventHosts: true
+      }
     });
+  }
+
+  async joinEvent(userId: string, eventId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId
+      }
+    });
+
+    if (!user) {
+      throw new NotFoundException("Not found user!");
+    }
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id: eventId
+      }
+    });
+
+    if (!event) {
+      throw new NotFoundException("Not found event!");
+    }
+
+    await this.prisma.joinedEventUser.create({
+      data: {
+        userId,
+        eventId
+      }
+    });
+
+    return { success: true };
   }
 }

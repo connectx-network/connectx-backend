@@ -119,6 +119,8 @@ model EventHost {
   url     String?
   eventId String  @map("event_id")
   event   Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_host")
 }
 
 model EventAsset {
@@ -127,6 +129,8 @@ model EventAsset {
   type    EventAssetType
   eventId String         @map("event_id")
   event   Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_asset")
 }
 
 model JoinedEventUser {
