@@ -76,7 +76,7 @@ export class UserService {
         }
       })
     ]);
-    return {success: true}
+    return {url}
   }
 
   async findOne(userId: string) {
