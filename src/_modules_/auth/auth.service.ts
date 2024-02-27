@@ -20,6 +20,7 @@ import { MailService } from '../mail/mail.service';
 import { OtpEmailDto } from '../mail/mail.dto';
 import * as process from 'process';
 import { JwtService } from '@nestjs/jwt';
+import { UserService } from "../user/user.service";
 
 @Injectable()
 export class AuthService {
