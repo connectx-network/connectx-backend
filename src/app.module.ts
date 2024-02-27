@@ -11,6 +11,7 @@ import { MailModule } from './_modules_/mail/mail.module';
 import { EventCategoryModule } from './_modules_/event-category/event-category.module';
 import { EventModule } from './_modules_/event/event.module';
 import { UserModule } from './_modules_/user/user.module';
+import { UserConnectionModule } from './_modules_/user-connection/user-connection.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { UserModule } from './_modules_/user/user.module';
     EventCategoryModule,
     EventModule,
     UserModule,
+    UserConnectionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

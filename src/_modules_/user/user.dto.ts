@@ -2,7 +2,6 @@ import { Gender } from "@prisma/client";
 import { OptionalProperty } from "../../decorators/validator.decorator";
 import { IsEnum } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
-import { BaseFileUploadDto } from "../file/file.dto";
 
 export class UpdateUserDto {
   @OptionalProperty()
