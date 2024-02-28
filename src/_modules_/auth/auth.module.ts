@@ -6,9 +6,10 @@ import {JwtModule} from "@nestjs/jwt";
 import {JwtStrategy} from "../../strategies/jwt.strategy";
 import {LocalStrategy} from "../../strategies/local.strategy";
 import { UserModule } from "../user/user.module";
+import {FirebaseModule} from "../firebase/firebase.module";
 
 @Module({
-  imports: [MailModule, JwtModule, UserModule],
+  imports: [MailModule, JwtModule, UserModule, FirebaseModule],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy],
 })

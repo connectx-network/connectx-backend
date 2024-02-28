@@ -20,7 +20,7 @@ import { MailService } from '../mail/mail.service';
 import { OtpEmailDto } from '../mail/mail.dto';
 import * as process from 'process';
 import { JwtService } from '@nestjs/jwt';
-import { UserService } from "../user/user.service";
+import { FirebaseService } from '../firebase/firebase.service';
 
 @Injectable()
 export class AuthService {
@@ -30,6 +30,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
     private jwtService: JwtService,
+    private readonly firebaseService: FirebaseService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -41,9 +42,7 @@ export class AuthService {
 
     if (createdUser) {
       if (!createdUser.activated) {
-        throw new NotAcceptableException (
-            'User has not activated yet!',
-        );
+        throw new NotAcceptableException('User has not activated yet!');
       }
       throw new ConflictException(
         'Email is already used for an existing account!',
@@ -181,7 +180,9 @@ export class AuthService {
     return { success: true };
   }
 
-  async verifyResetPasswordOtp(verifyAccountDto: VerifyAccountDto): Promise<boolean>   {
+  async verifyResetPasswordOtp(
+    verifyAccountDto: VerifyAccountDto,
+  ): Promise<boolean> {
     const { email, verifyCode } = verifyAccountDto;
     const user = await this.prisma.user.findUnique({
       where: {
@@ -392,5 +393,26 @@ export class AuthService {
 
     delete user.password;
     return user;
+  }
+
+  async signInGoogle(accessToken: string) {
+    const firebaseAuth = this.firebaseService.getFirebaseApp().auth();
+    const decodedToken = await firebaseAuth.verifyIdToken(accessToken);
+
+    if (!decodedToken) {
+      throw new NotAcceptableException('Failed!');
+    }
+
+    const { email, uid } = decodedToken;
+
+    const userProfile = await firebaseAuth.getUser(uid);
+
+    const { displayName, photoURL, phoneNumber } = userProfile;
+
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+
+    }
   }
 }

@@ -22,6 +22,8 @@ export class UpdateUserDto {
   country: string;
   @OptionalProperty()
   address: string;
+  @OptionalProperty()
+  description: string;
   @OptionalProperty({ enum: Gender })
   @IsEnum(Gender)
   gender: Gender;

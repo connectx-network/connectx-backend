@@ -19,6 +19,7 @@ export class UserService {
       address,
       phoneNumber,
       nickname,
+      description,
       gender,
       interests,
     } = updateUserDto;
@@ -38,6 +39,9 @@ export class UserService {
     }
     if (country) {
       updateUserPayload.country = country;
+    }
+    if (description) {
+      updateUserPayload.description = description;
     }
     if (address) {
       updateUserPayload.address = address;
@@ -120,20 +124,32 @@ export class UserService {
   }
 
   async findOne(userId: string) {
+    const [following, followers] = await Promise.all([
+      this.prisma.userConnection.count({
+        where: {
+          userId,
+        },
+      }),
+      this.prisma.userConnection.count({
+        where: {
+          followUserId: userId,
+        },
+      }),
+    ]);
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
         userInterests: {
           select: {
             id: true,
-            name: true
-          }
+            name: true,
+          },
         },
       },
     });
     if (!user) {
       throw new NotFoundException('Not found user!');
     }
-    return user;
+    return { ...user, following, followers };
   }
 }
