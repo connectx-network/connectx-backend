@@ -395,9 +395,9 @@ export class AuthService {
     return user;
   }
 
-  async signInGoogle(accessToken: string) {
+  async signInGoogle(token: string) {
     const firebaseAuth = this.firebaseService.getFirebaseApp().auth();
-    const decodedToken = await firebaseAuth.verifyIdToken(accessToken);
+    const decodedToken = await firebaseAuth.verifyIdToken(token);
 
     if (!decodedToken) {
       throw new NotAcceptableException('Failed!');
@@ -409,10 +409,26 @@ export class AuthService {
 
     const { displayName, photoURL, phoneNumber } = userProfile;
 
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    let user = await this.prisma.user.findUnique({ where: { email } });
+
 
     if (!user) {
-
+      user = await this.prisma.user.create({
+        data: {
+          email,
+          fullName: displayName,
+          avatarUrl: photoURL,
+          phoneNumber
+        }
+      })
     }
+
+    const { accessToken, refreshToken } = await this.generateTokens(user);
+
+    return {
+      user,
+      accessToken,
+      refreshToken,
+    };
   }
 }

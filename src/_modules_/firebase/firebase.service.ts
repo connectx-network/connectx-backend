@@ -10,10 +10,21 @@ export class FirebaseService implements OnModuleInit {
       projectId: process.env.FIREBASE_PROJECT_ID,
       privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+
     };
     this.app = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
       storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+      // auth: {
+      //   // Facebook provider configuration
+      //   providers: {
+      //     facebook: {
+      //       clientId: 'YOUR_FACEBOOK_APP_ID',
+      //       clientSecret: 'YOUR_FACEBOOK_APP_SECRET',
+      //     },
+      //
+      //   },
+      // },
     });
   }
 

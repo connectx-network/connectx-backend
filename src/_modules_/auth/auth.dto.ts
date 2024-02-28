@@ -58,3 +58,9 @@ export class SignInDto {
   @IsNotEmpty()
   password: string;
 }
+
+export class SignInGoogleDto {
+  @ApiProperty({ required: true, description: 'This is required field' })
+  @IsNotEmpty()
+  token: string;
+}
