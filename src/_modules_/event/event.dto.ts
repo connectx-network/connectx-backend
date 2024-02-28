@@ -64,6 +64,9 @@ export class CreateEventDto {
   createEventAssetDto: CreateEventAssetDto[];
 }
 
-export class FindEventDto extends BasePagingDto {}
+export class FindEventDto extends BasePagingDto {
+  @OptionalProperty()
+  userId: string;
+}
 
 export class FindEventResponse extends BasePagingResponse<Event> {}
