@@ -418,7 +418,8 @@ export class AuthService {
           email,
           fullName: displayName,
           avatarUrl: photoURL,
-          phoneNumber
+          phoneNumber,
+          activated: true,
         }
       })
     }
