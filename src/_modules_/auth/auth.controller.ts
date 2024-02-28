@@ -79,9 +79,4 @@ export class AuthController {
     return this.userService.findOne(userId);
   }
 
-  @Delete('/facebook/:id')
-  deleteFacebook(@Param('id') id: string) {
-    return true
-  }
-
 }
