@@ -1,22 +1,35 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
-import { MailService } from "../mail/mail.service";
-import { JwtService } from "@nestjs/jwt";
-import { UpdateUserDto } from "./user.dto";
-import { Prisma } from "@prisma/client";
-import { FileService } from "../file/file.service";
-import { BaseFileUploadDto, FileType } from "../file/file.dto";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { UpdateUserDto, UpdateUserInterestDto } from './user.dto';
+import { Prisma } from '@prisma/client';
+import { FileService } from '../file/file.service';
+import { FileType } from '../file/file.dto';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly fileService: FileService
-  ) {
-  }
+    private readonly fileService: FileService,
+  ) {}
 
   async update(userId: string, updateUserDto: UpdateUserDto) {
-    const { fullName, country, address, phoneNumber, nickname, gender } = updateUserDto;
+    const {
+      fullName,
+      country,
+      address,
+      phoneNumber,
+      nickname,
+      gender,
+      interests,
+    } = updateUserDto;
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
 
     const updateUserPayload: Prisma.UserUpdateInput = {};
 
@@ -39,17 +52,44 @@ export class UserService {
       updateUserPayload.gender = gender;
     }
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId }
-    });
+    if (interests && interests.length > 0) {
+      const [currentInterests, newInterests] = interests.reduce(
+        (
+          [withId, withoutId]: [
+            UpdateUserInterestDto[],
+            UpdateUserInterestDto[],
+          ],
+          obj: UpdateUserInterestDto,
+        ) => {
+          if (obj.id !== undefined) {
+            withId.push(obj);
+          } else {
+            withoutId.push(obj);
+          }
+          return [withId, withoutId];
+        },
+        [[], []],
+      );
 
-    if (!user) {
-      throw new NotFoundException("Not found user!");
+      updateUserPayload.userInterests = {
+        createMany: {
+          data: newInterests,
+        },
+      };
+
+      await this.prisma.userInterest.deleteMany({
+        where: {
+          userId: userId,
+          id: {
+            notIn: currentInterests.map((i) => i.id),
+          },
+        },
+      });
     }
 
     await this.prisma.user.update({
       where: { id: userId },
-      data: updateUserPayload
+      data: updateUserPayload,
     });
 
     return { success: true };
@@ -58,7 +98,7 @@ export class UserService {
   async updateAvatar(userId: string, file: Express.Multer.File) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException("Not found user!");
+      throw new NotFoundException('Not found user!');
     }
 
     const fileDto = { fileType: FileType.USER_AVATAR };
@@ -67,23 +107,33 @@ export class UserService {
     await Promise.all([
       this.prisma.user.update({
         where: { id: userId },
-        data: { avatarUrl: url }
+        data: { avatarUrl: url },
       }),
       this.prisma.userImage.create({
         data: {
           url,
-          userId
-        }
-      })
+          userId,
+        },
+      }),
     ]);
-    return {url}
+    return { url };
   }
 
   async findOne(userId: string) {
-    const user = await this.prisma.user.findUnique({where: {id: userId}})
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        userInterests: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+      },
+    });
     if (!user) {
-      throw new NotFoundException('Not found user!')
+      throw new NotFoundException('Not found user!');
     }
-    return user
+    return user;
   }
 }

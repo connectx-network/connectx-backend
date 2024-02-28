@@ -1,7 +1,15 @@
-import { Gender } from "@prisma/client";
-import { OptionalProperty } from "../../decorators/validator.decorator";
-import { IsEnum } from "class-validator";
-import { ApiProperty } from "@nestjs/swagger";
+import { Gender } from '@prisma/client';
+import { OptionalProperty } from '../../decorators/validator.decorator';
+import { IsEnum, IsNotEmpty } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+
+export class UpdateUserInterestDto {
+  @OptionalProperty()
+  id: string;
+  @ApiProperty({ required: true })
+  @IsNotEmpty()
+  name: string;
+}
 
 export class UpdateUserDto {
   @OptionalProperty()
@@ -17,6 +25,8 @@ export class UpdateUserDto {
   @OptionalProperty({ enum: Gender })
   @IsEnum(Gender)
   gender: Gender;
+  @OptionalProperty({isArray: true,type: UpdateUserInterestDto})
+  interests: UpdateUserInterestDto[]
 }
 
 export class UpdateAvatarDto {

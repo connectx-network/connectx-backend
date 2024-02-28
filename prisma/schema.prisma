@@ -64,6 +64,7 @@ model UserInterest {
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, name])
   @@map("user_interest")
 }
 
