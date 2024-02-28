@@ -81,14 +81,24 @@ export class UserService {
         },
       };
 
-      await this.prisma.userInterest.deleteMany({
-        where: {
-          userId: userId,
-          id: {
-            notIn: currentInterests.map((i) => i.id),
+      await Promise.all([
+        this.prisma.userInterest.deleteMany({
+          where: {
+            userId: userId,
+            id: {
+              notIn: currentInterests.map((i) => i.id),
+            },
           },
-        },
-      });
+        }),
+        Promise.all(
+          currentInterests.map((i) => {
+            return this.prisma.userInterest.update({
+              where: { id: i.id },
+              data: { name: i.name },
+            });
+          }),
+        ),
+      ]);
     }
 
     await this.prisma.user.update({
