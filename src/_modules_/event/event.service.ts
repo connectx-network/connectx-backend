@@ -12,6 +12,7 @@ import * as moment from 'moment-timezone';
 import { NotificationMessage } from '../../types/notification.type';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class EventService {
@@ -19,7 +20,7 @@ export class EventService {
 
   constructor(
     private readonly prisma: PrismaService,
-    @InjectQueue('notification') private readonly notificationTaskQueue: Queue,
+    private readonly notificationService: NotificationService
   ) {}
 
   async create(createEventDto: CreateEventDto) {
@@ -201,22 +202,13 @@ export class EventService {
     }
 
     const { title, body } = NotificationMessage.EVENT_INVITATION;
-
-    await this.prisma.notification.create({
-      data: {
-        title,
-        body,
-        senderId: userId,
-        receiverId,
-        notificationType: 'EVENT_INVITATION',
-        objectId: eventId,
-      },
-    });
-
-    await this.notificationTaskQueue.add('send-notification', {
+    await this.notificationService.create({
       title,
       body,
+      senderId: userId,
       receiverId,
+      notificationType: 'EVENT_INVITATION',
+      objectId: eventId,
     });
 
     return { success: true };

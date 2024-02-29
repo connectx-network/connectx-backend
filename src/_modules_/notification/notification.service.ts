@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  CreateNotificationDto,
   FindNotificationDto,
   SendNotificationDto,
 } from './notification.dto';
@@ -45,6 +46,19 @@ export class NotificationService {
     );
   }
 
+  async create(createNotificationDto: CreateNotificationDto) {
+    const { title, body, receiverId } = createNotificationDto;
+    await this.prisma.notification.create({
+      data: createNotificationDto,
+    });
+
+    await this.notificationTaskQueue.add('send-notification', {
+      title,
+      body,
+      receiverId,
+    });
+  }
+
   async find(userId: string, findNotificationDto: FindNotificationDto) {
     const { size, page } = findNotificationDto;
     const skip = (page - 1) * size;
@@ -60,6 +74,16 @@ export class NotificationService {
         skip,
         where: findNotificationCondtion,
         take: size,
+        include: {
+          sender: {
+            select: {
+              id: true,
+              fullName: true,
+              nickname: true,
+              avatarUrl: true
+            }
+          }
+        }
       }),
       this.prisma.notification.count({ where: findNotificationCondtion }),
     ]);

@@ -182,7 +182,8 @@ enum UserCodeType {
 
 enum NotificationType {
   EVENT_INVITATION
-  EVENT_LIKE
+  EVENT_LIKED
+  EVENT_JOINED
   NEW_FOLLOWER
 }
 
