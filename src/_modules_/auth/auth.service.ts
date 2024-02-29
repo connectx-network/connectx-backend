@@ -10,7 +10,7 @@ import {
   CreateUserDto,
   RequestNewOtpDto,
   ResetPasswordDto,
-  SignInDto,
+  SignInDto, SignInGoogleDto,
   VerifyAccountDto,
 } from './auth.dto';
 import { compare, hash } from 'bcrypt';
@@ -322,14 +322,14 @@ export class AuthService {
   }
 
   async signIn(signInDto: SignInDto) {
-    const { email, password } = signInDto;
+    const { email, password, deviceToken } = signInDto;
     const user = await this.validateUser(email, password);
 
     if (!user) {
       throw new NotFoundException('Not found user!');
     }
 
-    const { accessToken, refreshToken } = await this.generateTokens(user);
+    const { accessToken, refreshToken } = await this.generateTokens(user, deviceToken);
 
     return {
       user,
@@ -338,7 +338,7 @@ export class AuthService {
     };
   }
 
-  private async generateTokens(user: User) {
+  private async generateTokens(user: User, deviceToken: string) {
     const { id, email, userRole } = user;
     const accessToken = this.jwtService.sign(
       { id, email, userRole },
@@ -363,6 +363,7 @@ export class AuthService {
         userId: user.id,
         refreshToken,
         expiredDate,
+        deviceToken,
       },
     });
 
@@ -395,7 +396,8 @@ export class AuthService {
     return user;
   }
 
-  async signInGoogle(token: string) {
+  async signInGoogle(signInGoogleDto: SignInGoogleDto){
+    const {token, deviceToken} = signInGoogleDto
     const firebaseAuth = this.firebaseService.getFirebaseApp().auth();
     const decodedToken = await firebaseAuth.verifyIdToken(token);
 
@@ -424,7 +426,7 @@ export class AuthService {
       })
     }
 
-    const { accessToken, refreshToken } = await this.generateTokens(user);
+    const { accessToken, refreshToken } = await this.generateTokens(user, deviceToken);
 
     return {
       user,

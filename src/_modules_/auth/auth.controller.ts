@@ -38,8 +38,7 @@ export class AuthController {
   @Post('/sign-in/google')
   @ApiBody({ type: SignInGoogleDto })
   async signInGoogle(@Body() signInGoogleDto: SignInGoogleDto) {
-    const { token } = signInGoogleDto;
-    return this.authService.signInGoogle(token);
+    return this.authService.signInGoogle(signInGoogleDto);
   }
 
   @Post('/verify-otp/account')

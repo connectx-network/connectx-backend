@@ -12,6 +12,7 @@ import { EventCategoryModule } from './_modules_/event-category/event-category.m
 import { EventModule } from './_modules_/event/event.module';
 import { UserModule } from './_modules_/user/user.module';
 import { UserConnectionModule } from './_modules_/user-connection/user-connection.module';
+import { NotificationModule } from './_modules_/notification/notification.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { UserConnectionModule } from './_modules_/user-connection/user-connectio
     EventModule,
     UserModule,
     UserConnectionModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

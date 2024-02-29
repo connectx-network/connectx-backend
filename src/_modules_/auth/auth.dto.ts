@@ -57,10 +57,14 @@ export class SignInDto {
   @ApiProperty({ required: true, description: 'This is required field' })
   @IsNotEmpty()
   password: string;
+  @OptionalProperty()
+  deviceToken: string;
 }
 
 export class SignInGoogleDto {
   @ApiProperty({ required: true, description: 'This is required field' })
   @IsNotEmpty()
   token: string;
+  @OptionalProperty()
+  deviceToken: string;
 }
