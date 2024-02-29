@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "@prisma/client";
-import { FindUserConnectionDto, FindUserConnectionResponse } from "./user-connection.dto";
+import {ConnectionStatus, FindUserConnectionDto, FindUserConnectionResponse} from "./user-connection.dto";
 import { getDefaultPaginationReponse } from "../../utils/pagination.util";
 
 @Injectable()
@@ -88,5 +88,36 @@ export class UserConnectionService {
       ...getDefaultPaginationReponse(findUserConnectionDto, count),
       data: connections
     };
+  }
+
+  async getRelationship(userId: string, targetId: string) {
+    const userConnectionWithTarget = await this.prisma.userConnection.findFirst({
+      where: {
+        userId,
+        followUserId: targetId
+      }
+    })
+
+    const targetConnectionWithUser = await this.prisma.userConnection.findFirst({
+      where: {
+        userId: targetId ,
+        followUserId: userId
+      }
+    })
+    if (!targetConnectionWithUser && !userConnectionWithTarget) {
+      return ConnectionStatus.NO_CONNECTION
+    }
+
+    if (userConnectionWithTarget && targetConnectionWithUser) {
+      return ConnectionStatus.FRIEND
+    }
+
+    if (!userConnectionWithTarget && targetConnectionWithUser) {
+      return ConnectionStatus.FOLLOWER
+    }
+
+    if (userConnectionWithTarget && !targetConnectionWithUser) {
+      return ConnectionStatus.FOLLOWING
+    }
   }
 }

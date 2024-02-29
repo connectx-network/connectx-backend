@@ -9,6 +9,13 @@ export enum FollowType {
   FOLLOWER = "FOLLOWER"
 }
 
+export const ConnectionStatus = {
+  FRIEND: "FRIEND",
+  NO_CONNECTION: "NO_CONNECTION",
+  FOLLOWING: "FOLLOWING",
+  FOLLOWER: "FOLLOWER"
+} as const
+
 export class FindUserConnectionDto extends BasePagingDto {
   @ApiProperty({ required: true, description: "This is required field!" })
   @IsNotEmpty()
@@ -23,3 +30,4 @@ export class FindUserConnectionDto extends BasePagingDto {
 
 export class FindUserConnectionResponse extends BasePagingResponse<UserConnection> {
 }
+
