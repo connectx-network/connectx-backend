@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { EventService } from './event.service';
-import { CreateEventDto, FindEventDto } from './event.dto';
+import {CreateEventDto, CreateEventInvitationDto, FindEventDto} from './event.dto';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../decorators/role.decorator';
 import { Role } from '../../types/auth.type';
@@ -32,5 +32,11 @@ export class EventController {
   @Roles(Role.ALL)
   async join(@Param('id') eventId: string, @User('id') userId: string) {
     return this.eventService.joinEvent(userId, eventId);
+  }
+
+  @Post('/invite')
+  @Roles(Role.ALL)
+  async invite(@User('id') userId: string, @Body() createEventInvitationDto: CreateEventInvitationDto) {
+    return this.eventService.invite(userId, createEventInvitationDto);
   }
 }

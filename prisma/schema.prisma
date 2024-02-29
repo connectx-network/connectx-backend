@@ -159,6 +159,7 @@ model Notification {
   objectId         String             @map("object_id")
   title            String
   body             String
+  isRead           Boolean            @default(false) @map("is_read")
   status           NotificationStatus @default(ACTIVE)
   notificationType NotificationType   @map("notification_type")
 

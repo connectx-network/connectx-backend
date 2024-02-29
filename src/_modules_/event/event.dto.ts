@@ -70,3 +70,12 @@ export class FindEventDto extends BasePagingDto {
 }
 
 export class FindEventResponse extends BasePagingResponse<Event> {}
+
+export class CreateEventInvitationDto {
+  @ApiProperty({ required: true })
+  @IsNotEmpty()
+  eventId: string;
+  @ApiProperty({ required: true })
+  @IsNotEmpty()
+  receiverId: string;
+}

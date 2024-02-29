@@ -13,6 +13,7 @@ import { EventModule } from './_modules_/event/event.module';
 import { UserModule } from './_modules_/user/user.module';
 import { UserConnectionModule } from './_modules_/user-connection/user-connection.module';
 import { NotificationModule } from './_modules_/notification/notification.module';
+import {BullModule} from "@nestjs/bull";
 
 @Module({
   imports: [
@@ -39,6 +40,12 @@ import { NotificationModule } from './_modules_/notification/notification.module
     UserModule,
     UserConnectionModule,
     NotificationModule,
+    BullModule.forRoot({
+      redis: {
+        host: 'localhost',
+        port: 6379,
+      },
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],

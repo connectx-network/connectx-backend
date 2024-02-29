@@ -1,12 +1,26 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateEventDto, FindEventDto, FindEventResponse } from './event.dto';
+import {
+  CreateEventDto,
+  CreateEventInvitationDto,
+  FindEventDto,
+  FindEventResponse,
+} from './event.dto';
 import { Event, Prisma } from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
+import * as moment from 'moment-timezone';
+import { NotificationMessage } from '../../types/notification.type';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 
 @Injectable()
 export class EventService {
-  constructor(private readonly prisma: PrismaService) {}
+  private timezone = process.env.DEFAULT_TIMEZONE;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @InjectQueue('notification') private readonly notificationTaskQueue: Queue,
+  ) {}
 
   async create(createEventDto: CreateEventDto) {
     const {
@@ -101,7 +115,7 @@ export class EventService {
         },
         take: size,
       }),
-      this.prisma.event.count({where: findEventCondition}),
+      this.prisma.event.count({ where: findEventCondition }),
     ]);
 
     return {
@@ -147,6 +161,62 @@ export class EventService {
         userId,
         eventId,
       },
+    });
+
+    return { success: true };
+  }
+
+  async invite(
+    userId: string,
+    createEventInvitationDto: CreateEventInvitationDto,
+  ) {
+    const { eventId, receiverId } = createEventInvitationDto;
+    const sender = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!sender) {
+      throw new NotFoundException('Not found sender!');
+    }
+
+    const currentDate = moment().tz(this.timezone).toDate();
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id: eventId,
+        eventDate: {
+          gte: currentDate,
+        },
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event or event is ended!');
+    }
+
+    const receiver = await this.prisma.user.findUnique({
+      where: { id: receiverId },
+    });
+
+    if (!receiver) {
+      throw new NotFoundException('Not found receiver!');
+    }
+
+    const { title, body } = NotificationMessage.EVENT_INVITATION;
+
+    await this.prisma.notification.create({
+      data: {
+        title,
+        body,
+        senderId: userId,
+        receiverId,
+        notificationType: 'EVENT_INVITATION',
+        objectId: eventId,
+      },
+    });
+
+    await this.notificationTaskQueue.add('send-notification', {
+      title,
+      body,
+      receiverId,
     });
 
     return { success: true };
