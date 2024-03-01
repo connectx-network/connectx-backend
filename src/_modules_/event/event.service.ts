@@ -10,8 +10,6 @@ import { Event, Prisma } from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import * as moment from 'moment-timezone';
 import { NotificationMessage } from '../../types/notification.type';
-import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
 import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
@@ -20,7 +18,7 @@ export class EventService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {}
 
   async create(createEventDto: CreateEventDto) {
@@ -113,6 +111,7 @@ export class EventService {
         include: {
           eventAssets: true,
           eventHosts: true,
+          eventLocationDetail: true,
         },
         take: size,
       }),
@@ -132,6 +131,7 @@ export class EventService {
         eventCategory: true,
         eventAssets: true,
         eventHosts: true,
+        eventLocationDetail: true,
       },
     });
   }

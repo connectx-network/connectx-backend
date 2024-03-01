@@ -102,23 +102,34 @@ model EventCategory {
 }
 
 model Event {
-  id               String            @id @unique @default(uuid())
-  name             String
-  tiketPrice       Float?            @map("tiket_price")
-  createdAt        DateTime          @default(now()) @map("created_at")
-  eventDate        DateTime          @map("event_date")
-  location         String?           @map("location")
-  description      String?
-  sponsors         String?
-  agenda           String?
-  speakers         String?
-  eventCategoryId  String            @map("category_id")
-  eventCategory    EventCategory     @relation(fields: [eventCategoryId], references: [id], onDelete: Cascade)
-  joinedEventUsers JoinedEventUser[]
-  eventHosts       EventHost[]
-  eventAssets      EventAsset[]
+  id                  String               @id @unique @default(uuid())
+  name                String
+  tiketPrice          Float?               @map("tiket_price")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  eventDate           DateTime             @map("event_date")
+  location            String?              @map("location")
+  description         String?
+  sponsors            String?
+  agenda              String?
+  speakers            String?
+  eventCategoryId     String               @map("category_id")
+  eventCategory       EventCategory        @relation(fields: [eventCategoryId], references: [id], onDelete: Cascade)
+  joinedEventUsers    JoinedEventUser[]
+  eventHosts          EventHost[]
+  eventAssets         EventAsset[]
+  eventLocationDetail EventLocationDetail?
 
   @@map("event")
+}
+
+model EventLocationDetail {
+  id        String @id @unique @default(uuid())
+  latitude  String
+  longitude String
+  eventId   String @unique @map("event_id")
+  event     Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_location_detail")
 }
 
 model EventHost {
