@@ -78,4 +78,9 @@ export class AuthController {
     return this.userService.findOne(userId);
   }
 
+  @Delete()
+  @Roles(Role.ALL)
+  async delete(@User('id') userId: string) {
+    return this.authService.delete(userId)
+  }
 }

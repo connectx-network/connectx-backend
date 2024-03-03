@@ -153,12 +153,14 @@ model EventAsset {
 }
 
 model JoinedEventUser {
-  id      String @id @unique @default(uuid())
-  eventId String @map("event_id")
-  userId  String @map("user_id")
-  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String  @id @unique @default(uuid())
+  eventId   String  @map("event_id")
+  userId    String  @map("user_id")
+  checkedIn Boolean @default(false) @map("checked_in")
+  event     Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, eventId])
   @@map("joined_event_user")
 }
 

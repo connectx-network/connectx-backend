@@ -434,4 +434,12 @@ export class AuthService {
       refreshToken,
     };
   }
+
+  async delete(userId: string) {
+    await this.prisma.user.delete({
+      where: {id: userId}
+    })
+
+    return {success: true}
+  }
 }
