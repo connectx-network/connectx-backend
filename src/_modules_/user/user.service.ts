@@ -20,6 +20,7 @@ export class UserService {
       phoneNumber,
       nickname,
       description,
+      company,
       gender,
       interests,
     } = updateUserDto;
@@ -51,6 +52,9 @@ export class UserService {
     }
     if (nickname) {
       updateUserPayload.nickname = nickname;
+    }
+    if (company) {
+      updateUserPayload.company = company;
     }
     if (gender) {
       updateUserPayload.gender = gender;

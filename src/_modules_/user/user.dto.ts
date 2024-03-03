@@ -23,6 +23,8 @@ export class UpdateUserDto {
   @OptionalProperty()
   address: string;
   @OptionalProperty()
+  company: string;
+  @OptionalProperty()
   description: string;
   @OptionalProperty({ enum: Gender })
   @IsEnum(Gender)

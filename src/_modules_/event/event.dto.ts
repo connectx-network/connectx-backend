@@ -93,3 +93,12 @@ export class FindJoinedEventUserDto extends BasePagingDto {
   @OptionalProperty()
   userId: string;
 }
+
+export class FindUserEventDto {
+  @ApiProperty({ required: true })
+  @IsNotEmpty()
+  eventId: string;
+  @ApiProperty({ required: true })
+  @IsNotEmpty()
+  userId: string;
+}

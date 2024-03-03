@@ -19,6 +19,7 @@ model User {
   description           String?
   country               String?
   phoneNumber           String?           @map("phone_number")
+  company               String?
   gender                Gender?
   address               String?
   avatarUrl             String?           @map("avatar_url")

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import {
   CreateEventDto,
@@ -272,16 +272,32 @@ export class EventService {
     return { success: true };
   }
 
-  // async findEventUser(userId: string, eventId: string) {
-  //   return this.prisma.joinedEventUser.findUnique({
-  //     where: {
-  //       userId,
-  //       eventId
-  //     },
-  //     include: {
-  //       user: true,
-  //       event: true
-  //     }
-  //   });
-  // }
+  async findEventUser(userId: string, eventId: string) {
+    return this.prisma.joinedEventUser.findUnique({
+      where: {
+        userId_eventId: {
+          userId,
+          eventId
+        }
+      },
+      include: {
+        user: true,
+        event: true
+      }
+    });
+  }
+
+  async checkIn(userId: string, eventId: string) {
+    const userEvent = await this.findEventUser(userId, eventId);
+    if (userEvent.checkedIn) {
+      throw new ConflictException("User has checked in this event!");
+    }
+    await this.prisma.joinedEventUser.update({
+      where: { id: userEvent.id },
+      data: {
+        checkedIn: true
+      }
+    });
+    return { success: true };
+  }
 }

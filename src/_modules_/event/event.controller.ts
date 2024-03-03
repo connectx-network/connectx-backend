@@ -1,11 +1,11 @@
-import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
 import { EventService } from "./event.service";
 import {
   CreateEventDto,
   CreateEventInvitationDto,
   FindEventDto,
   FindJoinedEventUserDto,
-  FindOneEventDto
+  FindOneEventDto, FindUserEventDto
 } from "./event.dto";
 import { ApiBody, ApiTags } from "@nestjs/swagger";
 import { Roles } from "../../decorators/role.decorator";
@@ -29,6 +29,13 @@ export class EventController {
   async findJoinedUser(@Query() findJoinedEventUserDto: FindJoinedEventUserDto) {
     return this.eventService.findJoinedEventUser(findJoinedEventUserDto);
   }
+
+  @Get('/user-event')
+  async findUser(@Query() findUserEventDto: FindUserEventDto) {
+    const {userId, eventId} = findUserEventDto
+    return this.eventService.findEventUser(userId, eventId);
+  }
+
   @Get("/:id")
   async findOne(@Param("id") id: string) {
     return this.eventService.findOne(id);
@@ -55,5 +62,12 @@ export class EventController {
   @Roles(Role.ALL)
   async invite(@User("id") userId: string, @Body() createEventInvitationDto: CreateEventInvitationDto) {
     return this.eventService.invite(userId, createEventInvitationDto);
+  }
+
+  @Patch('/check-in')
+  @Roles(Role.ADMIN)
+  async checkIn(@Body() findUserEventDto: FindUserEventDto) {
+    const {userId, eventId} = findUserEventDto
+    return this.eventService.checkIn(userId, eventId)
   }
 }
