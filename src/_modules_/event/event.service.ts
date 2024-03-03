@@ -124,7 +124,7 @@ export class EventService {
     };
   }
 
-  async findOne(id: string): Promise<Event> {
+  async findOne(id: string) {
     return this.prisma.event.findUnique({
       where: { id },
       include: {
@@ -134,6 +134,21 @@ export class EventService {
         eventLocationDetail: true,
       },
     });
+  }
+
+  async checkJoinedEvent(eventId: string, userId: string) {
+    const joinedUser = await this.prisma.joinedEventUser.findFirst({
+      where: {
+        eventId,
+        userId
+      }
+    })
+
+    if (joinedUser) {
+      return {joined: true}
+    }
+
+    return {joined: false}
   }
 
   async joinEvent(userId: string, eventId: string) {

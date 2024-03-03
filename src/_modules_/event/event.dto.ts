@@ -69,6 +69,11 @@ export class FindEventDto extends BasePagingDto {
   userId: string;
 }
 
+export class FindOneEventDto {
+  @OptionalProperty()
+  userId: string;
+}
+
 export class FindEventResponse extends BasePagingResponse<Event> {}
 
 export class CreateEventInvitationDto {
