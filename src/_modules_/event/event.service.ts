@@ -4,8 +4,8 @@ import {
   CreateEventDto,
   CreateEventInvitationDto,
   FindEventDto,
-  FindEventResponse,
-} from './event.dto';
+  FindEventResponse, FindJoinedEventUserDto
+} from "./event.dto";
 import { Event, Prisma } from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import * as moment from 'moment-timezone';
@@ -149,6 +149,48 @@ export class EventService {
     }
 
     return {joined: false}
+  }
+
+  async findJoinedEventUser(findJoinedEventUserDto: FindJoinedEventUserDto) {
+    const {size, page, eventId, userId} = findJoinedEventUserDto;
+    const skip = (page - 1) * size;
+
+    const findJoinedUserCondition : Prisma.JoinedEventUserWhereInput = {eventId}
+
+    const [joinedUsers, count] = await Promise.all([
+      this.prisma.joinedEventUser.findMany({
+        where: findJoinedUserCondition,
+        skip,
+        take: size,
+        select: {
+          user: {
+            include: {
+              followers: true,
+              following: true
+            }
+          }
+        }
+      }),
+      this.prisma.joinedEventUser.count({where: findJoinedUserCondition})
+    ])
+    let data = joinedUsers
+    if (userId) {
+      data = joinedUsers.map(item => {
+        const {user} = item
+        const {followers, following} = user
+        const followingUser = following.find(u => u.userId === userId)
+        const isFollowing = followingUser ? true : false
+        const newUser = {...user, isFollowing}
+        delete newUser.followers
+        delete newUser.following
+        return {...item, user: newUser}
+      })
+    }
+
+    return {
+      ...getDefaultPaginationReponse(findJoinedEventUserDto, count),
+      data: data,
+    };
   }
 
   async joinEvent(userId: string, eventId: string) {

@@ -1,8 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsNotEmpty } from 'class-validator';
-import { OptionalProperty } from '../../decorators/validator.decorator';
-import { BasePagingDto, BasePagingResponse } from '../../types/base.type';
-import { Event, EventAssetType } from '@prisma/client';
+import { ApiProperty } from "@nestjs/swagger";
+import { IsDateString, IsEnum, IsNotEmpty } from "class-validator";
+import { OptionalProperty } from "../../decorators/validator.decorator";
+import { BasePagingDto, BasePagingResponse } from "../../types/base.type";
+import { Event, EventAssetType } from "@prisma/client";
 
 export class CreateEventHostDto {
   @OptionalProperty()
@@ -21,13 +21,13 @@ export class CreateEventAssetDto {
 
 export class CreateEventDto {
   @ApiProperty({
-    required: true,
+    required: true
   })
   @IsNotEmpty()
   name: string;
 
   @ApiProperty({
-    required: true,
+    required: true
   })
   @IsNotEmpty()
   eventCategoryId: string;
@@ -36,7 +36,7 @@ export class CreateEventDto {
   tiketPrice?: number;
 
   @ApiProperty({
-    required: true,
+    required: true
   })
   @IsDateString()
   @IsNotEmpty()
@@ -74,7 +74,8 @@ export class FindOneEventDto {
   userId: string;
 }
 
-export class FindEventResponse extends BasePagingResponse<Event> {}
+export class FindEventResponse extends BasePagingResponse<Event> {
+}
 
 export class CreateEventInvitationDto {
   @ApiProperty({ required: true })
@@ -83,4 +84,12 @@ export class CreateEventInvitationDto {
   @ApiProperty({ required: true })
   @IsNotEmpty()
   receiverId: string;
+}
+
+export class FindJoinedEventUserDto extends BasePagingDto {
+  @ApiProperty({ required: true })
+  @IsNotEmpty()
+  eventId: string;
+  @OptionalProperty()
+  userId: string;
 }

@@ -1,6 +1,12 @@
 import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
 import { EventService } from "./event.service";
-import { CreateEventDto, CreateEventInvitationDto, FindEventDto, FindOneEventDto } from "./event.dto";
+import {
+  CreateEventDto,
+  CreateEventInvitationDto,
+  FindEventDto,
+  FindJoinedEventUserDto,
+  FindOneEventDto
+} from "./event.dto";
 import { ApiBody, ApiTags } from "@nestjs/swagger";
 import { Roles } from "../../decorators/role.decorator";
 import { Role } from "../../types/auth.type";
@@ -19,6 +25,10 @@ export class EventController {
     return this.eventService.create(createEventDto);
   }
 
+  @Get('/joined-user')
+  async findJoinedUser(@Query() findJoinedEventUserDto: FindJoinedEventUserDto) {
+    return this.eventService.findJoinedEventUser(findJoinedEventUserDto);
+  }
   @Get("/:id")
   async findOne(@Param("id") id: string) {
     return this.eventService.findOne(id);
