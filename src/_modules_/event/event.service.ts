@@ -34,6 +34,7 @@ export class EventService {
       location,
       speakers,
       sponsors,
+      eventEndDate,
       tiketPrice,
       agenda,
       name,
@@ -44,6 +45,7 @@ export class EventService {
     const createEventPayload: Prisma.EventUncheckedCreateInput = {
       eventCategoryId,
       eventDate,
+      eventEndDate,
       name,
     };
 

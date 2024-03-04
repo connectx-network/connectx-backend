@@ -108,6 +108,7 @@ model Event {
   tiketPrice          Float?               @map("tiket_price")
   createdAt           DateTime             @default(now()) @map("created_at")
   eventDate           DateTime             @map("event_date")
+  eventEndDate        DateTime             @map("event_end_date")
   location            String?              @map("location")
   description         String?
   sponsors            String?

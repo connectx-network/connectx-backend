@@ -41,6 +41,9 @@ export class CreateEventDto {
   @IsDateString()
   @IsNotEmpty()
   eventDate: Date;
+  @IsDateString()
+  @IsNotEmpty()
+  eventEndDate: Date;
 
   @OptionalProperty()
   location: string;
