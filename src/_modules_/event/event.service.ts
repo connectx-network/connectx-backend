@@ -209,6 +209,7 @@ export class EventService {
         select: {
           user: {
             include: {
+              _count: true,
               followers: true,
               following: true,
             },
