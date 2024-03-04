@@ -116,9 +116,27 @@ export class EventService {
           createdAt: 'desc',
         },
         include: {
+          _count: true,
           eventAssets: true,
           eventHosts: true,
           eventLocationDetail: true,
+          joinedEventUsers: {
+            take: 3,
+            orderBy: {
+              joinDate: 'desc',
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  nickname: true,
+                  avatarUrl: true,
+                  // _count: true
+                },
+              },
+            },
+          },
         },
         take: size,
       }),
@@ -135,6 +153,7 @@ export class EventService {
     return this.prisma.event.findUnique({
       where: { id },
       include: {
+        _count: true,
         eventCategory: true,
         eventAssets: true,
         eventHosts: true,
@@ -143,6 +162,16 @@ export class EventService {
           take: 3,
           orderBy: {
             joinDate: 'desc',
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                nickname: true,
+                avatarUrl: true,
+              },
+            },
           },
         },
       },
