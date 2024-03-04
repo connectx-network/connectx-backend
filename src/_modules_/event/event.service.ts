@@ -1,16 +1,21 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateEventDto,
   CreateEventInvitationDto,
   FindEventDto,
-  FindEventResponse, FindJoinedEventUserDto
-} from "./event.dto";
-import { Event, Prisma } from "@prisma/client";
-import { getDefaultPaginationReponse } from "../../utils/pagination.util";
-import * as moment from "moment-timezone";
-import { NotificationMessage } from "../../types/notification.type";
-import { NotificationService } from "../notification/notification.service";
+  FindEventResponse,
+  FindJoinedEventUserDto,
+} from './event.dto';
+import { Prisma } from '@prisma/client';
+import { getDefaultPaginationReponse } from '../../utils/pagination.util';
+import * as moment from 'moment-timezone';
+import { NotificationMessage } from '../../types/notification.type';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class EventService {
@@ -18,9 +23,8 @@ export class EventService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notificationService: NotificationService
-  ) {
-  }
+    private readonly notificationService: NotificationService,
+  ) {}
 
   async create(createEventDto: CreateEventDto) {
     const {
@@ -34,13 +38,13 @@ export class EventService {
       agenda,
       name,
       createEventAssetDto,
-      createEventHostDto
+      createEventHostDto,
     } = createEventDto;
 
     const createEventPayload: Prisma.EventUncheckedCreateInput = {
       eventCategoryId,
       eventDate,
-      name
+      name,
     };
 
     if (description) {
@@ -67,9 +71,9 @@ export class EventService {
         createMany: {
           data: createEventAssetDto.map((item) => ({
             url: item.url,
-            type: item.type
-          }))
-        }
+            type: item.type,
+          })),
+        },
       };
     }
 
@@ -78,14 +82,14 @@ export class EventService {
         createMany: {
           data: createEventHostDto.map((item) => ({
             url: item.url,
-            title: item.title
-          }))
-        }
+            title: item.title,
+          })),
+        },
       };
     }
 
     return this.prisma.event.create({
-      data: createEventPayload
+      data: createEventPayload,
     });
   }
 
@@ -97,8 +101,8 @@ export class EventService {
     if (userId) {
       findEventCondition.joinedEventUsers = {
         some: {
-          userId
-        }
+          userId,
+        },
       };
     }
 
@@ -107,21 +111,21 @@ export class EventService {
         where: findEventCondition,
         skip,
         orderBy: {
-          createdAt: "desc"
+          createdAt: 'desc',
         },
         include: {
           eventAssets: true,
           eventHosts: true,
-          eventLocationDetail: true
+          eventLocationDetail: true,
         },
-        take: size
+        take: size,
       }),
-      this.prisma.event.count({ where: findEventCondition })
+      this.prisma.event.count({ where: findEventCondition }),
     ]);
 
     return {
       ...getDefaultPaginationReponse(findEventDto, count),
-      data: events
+      data: events,
     };
   }
 
@@ -132,8 +136,14 @@ export class EventService {
         eventCategory: true,
         eventAssets: true,
         eventHosts: true,
-        eventLocationDetail: true
-      }
+        eventLocationDetail: true,
+        joinedEventUsers: {
+          take: 3,
+          orderBy: {
+            joinDate: 'desc',
+          },
+        },
+      },
     });
   }
 
@@ -141,8 +151,8 @@ export class EventService {
     const joinedUser = await this.prisma.joinedEventUser.findFirst({
       where: {
         eventId,
-        userId
-      }
+        userId,
+      },
     });
 
     if (joinedUser) {
@@ -156,7 +166,9 @@ export class EventService {
     const { size, page, eventId, userId } = findJoinedEventUserDto;
     const skip = (page - 1) * size;
 
-    const findJoinedUserCondition: Prisma.JoinedEventUserWhereInput = { eventId };
+    const findJoinedUserCondition: Prisma.JoinedEventUserWhereInput = {
+      eventId,
+    };
 
     const [joinedUsers, count] = await Promise.all([
       this.prisma.joinedEventUser.findMany({
@@ -167,19 +179,19 @@ export class EventService {
           user: {
             include: {
               followers: true,
-              following: true
-            }
-          }
-        }
+              following: true,
+            },
+          },
+        },
       }),
-      this.prisma.joinedEventUser.count({ where: findJoinedUserCondition })
+      this.prisma.joinedEventUser.count({ where: findJoinedUserCondition }),
     ]);
     let data = joinedUsers;
     if (userId) {
-      data = joinedUsers.map(item => {
+      data = joinedUsers.map((item) => {
         const { user } = item;
         const { following } = user;
-        const followingUser = following.find(u => u.userId === userId);
+        const followingUser = following.find((u) => u.userId === userId);
         const isFollowing = followingUser ? true : false;
         const newUser = { ...user, isFollowing };
         delete newUser.followers;
@@ -190,36 +202,36 @@ export class EventService {
 
     return {
       ...getDefaultPaginationReponse(findJoinedEventUserDto, count),
-      data: data
+      data: data,
     };
   }
 
   async joinEvent(userId: string, eventId: string) {
     const user = await this.prisma.user.findUnique({
       where: {
-        id: userId
-      }
+        id: userId,
+      },
     });
 
     if (!user) {
-      throw new NotFoundException("Not found user!");
+      throw new NotFoundException('Not found user!');
     }
 
     const event = await this.prisma.event.findUnique({
       where: {
-        id: eventId
-      }
+        id: eventId,
+      },
     });
 
     if (!event) {
-      throw new NotFoundException("Not found event!");
+      throw new NotFoundException('Not found event!');
     }
 
     await this.prisma.joinedEventUser.create({
       data: {
         userId,
-        eventId
-      }
+        eventId,
+      },
     });
 
     return { success: true };
@@ -227,13 +239,13 @@ export class EventService {
 
   async invite(
     userId: string,
-    createEventInvitationDto: CreateEventInvitationDto
+    createEventInvitationDto: CreateEventInvitationDto,
   ) {
     const { eventId, receiverId } = createEventInvitationDto;
     const sender = await this.prisma.user.findUnique({ where: { id: userId } });
 
     if (!sender) {
-      throw new NotFoundException("Not found sender!");
+      throw new NotFoundException('Not found sender!');
     }
 
     const currentDate = moment().tz(this.timezone).toDate();
@@ -242,21 +254,21 @@ export class EventService {
       where: {
         id: eventId,
         eventDate: {
-          gte: currentDate
-        }
-      }
+          gte: currentDate,
+        },
+      },
     });
 
     if (!event) {
-      throw new NotFoundException("Not found event or event is ended!");
+      throw new NotFoundException('Not found event or event is ended!');
     }
 
     const receiver = await this.prisma.user.findUnique({
-      where: { id: receiverId }
+      where: { id: receiverId },
     });
 
     if (!receiver) {
-      throw new NotFoundException("Not found receiver!");
+      throw new NotFoundException('Not found receiver!');
     }
 
     const { title, body } = NotificationMessage.EVENT_INVITATION;
@@ -265,8 +277,8 @@ export class EventService {
       body,
       senderId: userId,
       receiverId,
-      notificationType: "EVENT_INVITATION",
-      objectId: eventId
+      notificationType: 'EVENT_INVITATION',
+      objectId: eventId,
     });
 
     return { success: true };
@@ -277,26 +289,26 @@ export class EventService {
       where: {
         userId_eventId: {
           userId,
-          eventId
-        }
+          eventId,
+        },
       },
       include: {
         user: true,
-        event: true
-      }
+        event: true,
+      },
     });
   }
 
   async checkIn(userId: string, eventId: string) {
     const userEvent = await this.findEventUser(userId, eventId);
     if (userEvent.checkedIn) {
-      throw new ConflictException("User has checked in this event!");
+      throw new ConflictException('User has checked in this event!');
     }
     await this.prisma.joinedEventUser.update({
       where: { id: userEvent.id },
       data: {
-        checkedIn: true
-      }
+        checkedIn: true,
+      },
     });
     return { success: true };
   }
