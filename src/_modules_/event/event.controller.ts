@@ -31,6 +31,7 @@ export class EventController {
   }
 
   @Get('/user-event')
+  @Roles(Role.ADMIN)
   async findUser(@Query() findUserEventDto: FindUserEventDto) {
     const {userId, eventId} = findUserEventDto
     return this.eventService.findEventUser(userId, eventId);
