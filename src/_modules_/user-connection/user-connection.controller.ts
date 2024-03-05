@@ -1,9 +1,9 @@
-import { Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {Body, Controller, Delete, Get, Param, Post, Query} from '@nestjs/common';
 import { UserConnectionService } from './user-connection.service';
 import { User } from '../../decorators/user.decorator';
 import { Roles } from '../../decorators/role.decorator';
 import { Role } from '../../types/auth.type';
-import { FindUserConnectionDto } from './user-connection.dto';
+import {DeleteConnectionDto, FindUserConnectionDto} from './user-connection.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @Controller('user-connection')
@@ -29,5 +29,11 @@ export class UserConnectionController {
   @Get()
   async find(@Query() findUserConnectionDto: FindUserConnectionDto) {
     return this.userConnectionService.find(findUserConnectionDto);
+  }
+
+  @Delete()
+  async delete(@Body() deleteConnectionDto: DeleteConnectionDto, @User('id') userId: string) {
+    const {targetId} = deleteConnectionDto
+    return this.userConnectionService.delete(userId, targetId)
   }
 }

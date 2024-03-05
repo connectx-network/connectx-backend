@@ -150,4 +150,17 @@ export class UserConnectionService {
       return ConnectionStatus.FOLLOWING;
     }
   }
+
+  async delete(userId: string, targetId: string) {
+    await this.prisma.userConnection.delete({
+      where: {
+        userId_followUserId: {
+          userId,
+          followUserId: targetId
+        }
+      }
+    })
+
+    return {success: true}
+  }
 }

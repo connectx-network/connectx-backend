@@ -31,3 +31,8 @@ export class FindUserConnectionDto extends BasePagingDto {
 export class FindUserConnectionResponse extends BasePagingResponse<UserConnection> {
 }
 
+export class DeleteConnectionDto {
+  @ApiProperty({ required: true})
+  @IsNotEmpty()
+  targetId: string
+}
