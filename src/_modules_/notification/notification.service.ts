@@ -22,7 +22,16 @@ export class NotificationService {
   async send(sendNotificationDto: SendNotificationDto) {
     const { body, title, receiverId } = sendNotificationDto;
     const receiver = await this.prisma.user.findUnique({
-      where: { id: receiverId },
+      where: {
+        id: receiverId,
+        userTokens: {
+          some: {
+            deviceToken: {
+              not: null,
+            },
+          },
+        },
+      },
       include: {
         userTokens: {
           select: {
@@ -38,12 +47,17 @@ export class NotificationService {
     await Promise.all(
       receiver.userTokens.map((userToken) => {
         const { deviceToken } = userToken;
-        return firebase.messaging().send({
-          notification: { title, body },
-          token: deviceToken,
-        });
+        if (deviceToken) {
+          return firebase.messaging().send({
+            notification: { title, body },
+            token: deviceToken,
+          });
+        }
+        return;
       }),
     );
+
+    return { success: true };
   }
 
   async create(createNotificationDto: CreateNotificationDto) {
@@ -51,12 +65,18 @@ export class NotificationService {
     await this.prisma.notification.create({
       data: createNotificationDto,
     });
-
-    await this.notificationTaskQueue.add('send-notification', {
+    await this.send({
       title,
       body,
       receiverId,
     });
+    // await this.notificationTaskQueue.add('send-notification', {
+    //   title,
+    //   body,
+    //   receiverId,
+    // });
+    return { success: true };
+
   }
 
   async find(userId: string, findNotificationDto: FindNotificationDto) {
@@ -80,10 +100,10 @@ export class NotificationService {
               id: true,
               fullName: true,
               nickname: true,
-              avatarUrl: true
-            }
-          }
-        }
+              avatarUrl: true,
+            },
+          },
+        },
       }),
       this.prisma.notification.count({ where: findNotificationCondtion }),
     ]);
