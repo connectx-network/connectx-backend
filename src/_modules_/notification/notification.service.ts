@@ -41,7 +41,7 @@ export class NotificationService {
       },
     });
     if (!receiver) {
-      throw new NotFoundException('Not found user!');
+      return
     }
     const firebase = this.firebaseService.getFirebaseApp();
     await Promise.all(

@@ -38,7 +38,7 @@ export class UserConnectionService {
     });
 
     if (createdUserConnections) {
-      throw new ConflictException('You are following this user!');
+        throw new ConflictException('You are following this user!');
     }
 
     const createUserConnectionPayload: Prisma.UserConnectionUncheckedCreateInput =
