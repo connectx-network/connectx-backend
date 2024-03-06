@@ -4,11 +4,11 @@ import { ApiBody, ApiTags } from '@nestjs/swagger';
 import {
   CreateUserDto,
   RequestNewOtpDto,
-  ResetPasswordDto,
+  ResetPasswordDto, SignInAppleDto,
   SignInDto,
   SignInGoogleDto,
-  VerifyAccountDto,
-} from './auth.dto';
+  VerifyAccountDto
+} from "./auth.dto";
 import { User } from '../../decorators/user.decorator';
 import { UserService } from '../user/user.service';
 import { Roles } from '../../decorators/role.decorator';
@@ -39,6 +39,11 @@ export class AuthController {
   @ApiBody({ type: SignInGoogleDto })
   async signInGoogle(@Body() signInGoogleDto: SignInGoogleDto) {
     return this.authService.signInGoogle(signInGoogleDto);
+  }
+  @Post('/sign-in/apple')
+  @ApiBody({ type: SignInAppleDto })
+  async signInApple(@Body() signInAppleDto: SignInAppleDto) {
+    return this.authService.signInApple(signInAppleDto);
   }
 
   @Post('/verify-otp/account')

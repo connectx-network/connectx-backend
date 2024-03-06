@@ -61,10 +61,12 @@ export class SignInDto {
   deviceToken: string;
 }
 
-export class SignInGoogleDto {
+export class BaseSocialSignInDto {
   @ApiProperty({ required: true, description: 'This is required field' })
   @IsNotEmpty()
   token: string;
   @OptionalProperty()
   deviceToken: string;
 }
+export class SignInGoogleDto extends  BaseSocialSignInDto{}
+export class SignInAppleDto extends  BaseSocialSignInDto{}
