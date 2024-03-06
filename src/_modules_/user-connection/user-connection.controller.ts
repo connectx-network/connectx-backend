@@ -32,6 +32,7 @@ export class UserConnectionController {
   }
 
   @Delete()
+  @Roles(Role.ALL)
   async delete(@Body() deleteConnectionDto: DeleteConnectionDto, @User('id') userId: string) {
     const {targetId} = deleteConnectionDto
     return this.userConnectionService.delete(userId, targetId)
