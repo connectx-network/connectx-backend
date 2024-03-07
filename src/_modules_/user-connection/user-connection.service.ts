@@ -152,12 +152,22 @@ export class UserConnectionService {
   }
 
   async delete(userId: string, targetId: string) {
-    await this.prisma.userConnection.delete({
+    const createdUserConnection = await this.prisma.userConnection.findUnique({
       where: {
         userId_followUserId: {
           userId,
           followUserId: targetId
         }
+      }
+    })
+
+    if (!createdUserConnection) {
+      throw new NotFoundException('Not found connection!')
+    }
+
+    await this.prisma.userConnection.delete({
+      where: {
+        id: createdUserConnection.id
       }
     })
 
