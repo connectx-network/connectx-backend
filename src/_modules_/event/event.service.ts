@@ -16,6 +16,11 @@ import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import * as moment from 'moment-timezone';
 import { NotificationMessage } from '../../types/notification.type';
 import { NotificationService } from '../notification/notification.service';
+import { QrCodeDto } from '../mail/mail.dto';
+import { MailService } from '../mail/mail.service';
+import {InjectQueue} from "@nestjs/bull";
+import {Queue} from "bull";
+import {MailJob, Queues} from "../../types/queue.type";
 
 @Injectable()
 export class EventService {
@@ -24,6 +29,7 @@ export class EventService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
+    @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
   ) {}
 
   async create(createEventDto: CreateEventDto) {
@@ -259,12 +265,36 @@ export class EventService {
       throw new NotFoundException('Not found event!');
     }
 
+    const joinedEventUser = await this.prisma.joinedEventUser.findUnique({
+      where: {
+        userId_eventId: {
+          eventId,
+          userId
+        }
+      }
+    })
+
+    if (joinedEventUser) {
+      throw new NotFoundException("You have joined this event!");
+    }
+
     await this.prisma.joinedEventUser.create({
       data: {
         userId,
         eventId,
       },
     });
+
+    const payload: QrCodeDto = {
+      eventId,
+      eventName: event.name,
+      userId,
+      to: user.email,
+      subject: `Thanks To Join Event: ${event.name}`,
+      fullName: user.fullName,
+    };
+
+    await this.mailTaskQueue.add(MailJob.sendQrMail, payload);
 
     return { success: true };
   }

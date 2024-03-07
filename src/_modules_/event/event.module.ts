@@ -7,7 +7,7 @@ import { Queues } from '../../types/queue.type';
 @Module({
   imports: [
     BullModule.registerQueue({
-      name: Queues.notification,
+      name: Queues.mail,
     }),
   ],
   controllers: [EventController],

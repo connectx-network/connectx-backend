@@ -4,6 +4,7 @@ import { NotificationController } from './notification.controller';
 import { FirebaseModule } from '../firebase/firebase.module';
 import { BullModule } from '@nestjs/bull';
 import { Queues } from '../../types/queue.type';
+import {NotificationConsummer} from "./notification.consummer";
 @Global()
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { Queues } from '../../types/queue.type';
     }),
   ],
   controllers: [NotificationController],
-  providers: [NotificationService],
+  providers: [NotificationService, NotificationConsummer],
   exports: [NotificationService]
 })
 export class NotificationModule {}

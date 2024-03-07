@@ -4,7 +4,7 @@ import { NotificationJob, Queues } from 'src/types/queue.type';
 import { NotificationService } from './notification.service';
 
 @Processor(Queues.notification)
-export class ChallengeConsumer {
+export class NotificationConsummer {
   constructor(private readonly notificationService: NotificationService) {}
 
   @Process(NotificationJob.sendNotification)

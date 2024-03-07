@@ -9,3 +9,10 @@ export class OtpEmailDto extends EmailDto {
   fullName: string;
   expiredDate: Date;
 }
+
+export class QrCodeDto extends EmailDto {
+  eventId: string;
+  eventName: string;
+  userId: string;
+  fullName: string;
+}
