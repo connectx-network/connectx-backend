@@ -105,6 +105,7 @@ model EventCategory {
 model Event {
   id                  String               @id @unique @default(uuid())
   name                String
+  shortId             String               @unique
   tiketPrice          Float?               @map("tiket_price")
   createdAt           DateTime             @default(now()) @map("created_at")
   eventDate           DateTime             @map("event_date")
