@@ -213,6 +213,8 @@ export class EventService {
         skip,
         take: size,
         select: {
+          userId: true,
+          checkedIn: true,
           user: {
             include: {
               _count: true,
