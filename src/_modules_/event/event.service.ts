@@ -17,7 +17,6 @@ import * as moment from "moment-timezone";
 import { NotificationMessage } from "../../types/notification.type";
 import { NotificationService } from "../notification/notification.service";
 import { QrCodeDto } from "../mail/mail.dto";
-import * as shortid32 from "shortid32";
 import { InjectQueue } from "@nestjs/bull";
 import { Queue } from "bull";
 import { MailJob, Queues } from "../../types/queue.type";
@@ -49,7 +48,7 @@ export class EventService {
       createEventHostDto
     } = createEventDto;
 
-    const shortId = this.generateShotId()
+    const shortId = this.generateUniqueId(6)
 
     const createEventPayload: Prisma.EventUncheckedCreateInput = {
       eventCategoryId,
@@ -389,7 +388,12 @@ export class EventService {
     return { success: true };
   }
 
-  private generateShotId(): string {
-    return shortid32.generate()
+  private generateUniqueId(length: number = 6): string {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let uniqueId = '';
+    for (let i = 0; i < length; i++) {
+      uniqueId += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return uniqueId;
   }
 }
