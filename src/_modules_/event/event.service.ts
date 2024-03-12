@@ -48,7 +48,7 @@ export class EventService {
       createEventHostDto
     } = createEventDto;
 
-    const shortId = this.generateUniqueId(6)
+    const shortId = await this.generateUniqueCode()
 
     const createEventPayload: Prisma.EventUncheckedCreateInput = {
       eventCategoryId,
@@ -395,5 +395,20 @@ export class EventService {
       uniqueId += characters.charAt(Math.floor(Math.random() * characters.length));
     }
     return uniqueId;
+  }
+
+  private async generateUniqueCode(): Promise<string> {
+    let shortId: string;
+    let isUnique = false;
+
+    while (!isUnique) {
+      shortId = this.generateUniqueId(6);
+      const existingRecord = await this.prisma.event.findUnique({
+        where: { shortId }
+      });
+      isUnique = !existingRecord;
+    }
+
+    return shortId;
   }
 }
