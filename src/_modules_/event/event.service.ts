@@ -159,7 +159,7 @@ export class EventService {
   }
 
   async findOne(shortId: string) {
-    return this.prisma.event.findUnique({
+    const event = await this.prisma.event.findUnique({
       where: { shortId },
       include: {
         _count: true,
@@ -185,6 +185,12 @@ export class EventService {
         }
       }
     });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!')
+    }
+
+    return event
   }
 
   async checkJoinedEvent(eventId: string, userId: string) {
