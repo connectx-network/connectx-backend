@@ -189,9 +189,17 @@ export class EventService {
   }
 
   async checkJoinedEvent(eventId: string, userId: string) {
+    const event = await this.prisma.event.findUnique({
+      where: {shortId: eventId}
+    })
+
+    if (!event) {
+      throw new NotFoundException('Not found event!')
+    }
+
     const joinedUser = await this.prisma.joinedEventUser.findFirst({
       where: {
-        eventId,
+        eventId: event.id,
         userId
       }
     });
