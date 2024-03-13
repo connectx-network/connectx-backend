@@ -1,25 +1,25 @@
 import {
   ConflictException,
   Injectable,
-  NotFoundException
-} from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateEventDto,
   CreateEventInvitationDto,
   FindEventDto,
   FindEventResponse,
-  FindJoinedEventUserDto
-} from "./event.dto";
-import { Prisma } from "@prisma/client";
-import { getDefaultPaginationReponse } from "../../utils/pagination.util";
-import * as moment from "moment-timezone";
-import { NotificationMessage } from "../../types/notification.type";
-import { NotificationService } from "../notification/notification.service";
-import { QrCodeDto } from "../mail/mail.dto";
-import { InjectQueue } from "@nestjs/bull";
-import { Queue } from "bull";
-import { MailJob, Queues } from "../../types/queue.type";
+  FindJoinedEventUserDto,
+} from './event.dto';
+import { Prisma } from '@prisma/client';
+import { getDefaultPaginationReponse } from '../../utils/pagination.util';
+import * as moment from 'moment-timezone';
+import { NotificationMessage } from '../../types/notification.type';
+import { NotificationService } from '../notification/notification.service';
+import { QrCodeDto } from '../mail/mail.dto';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
+import { MailJob, Queues } from '../../types/queue.type';
 
 @Injectable()
 export class EventService {
@@ -28,9 +28,8 @@ export class EventService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
-    @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue
-  ) {
-  }
+    @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
+  ) {}
 
   async create(createEventDto: CreateEventDto) {
     const {
@@ -45,17 +44,17 @@ export class EventService {
       agenda,
       name,
       createEventAssetDto,
-      createEventHostDto
+      createEventHostDto,
     } = createEventDto;
 
-    const shortId = await this.generateUniqueCode()
+    const shortId = await this.generateUniqueCode();
 
     const createEventPayload: Prisma.EventUncheckedCreateInput = {
       eventCategoryId,
       eventDate,
       eventEndDate,
       shortId,
-      name
+      name,
     };
 
     if (description) {
@@ -82,9 +81,9 @@ export class EventService {
         createMany: {
           data: createEventAssetDto.map((item) => ({
             url: item.url,
-            type: item.type
-          }))
-        }
+            type: item.type,
+          })),
+        },
       };
     }
 
@@ -93,14 +92,14 @@ export class EventService {
         createMany: {
           data: createEventHostDto.map((item) => ({
             url: item.url,
-            title: item.title
-          }))
-        }
+            title: item.title,
+          })),
+        },
       };
     }
 
     return this.prisma.event.create({
-      data: createEventPayload
+      data: createEventPayload,
     });
   }
 
@@ -112,8 +111,8 @@ export class EventService {
     if (userId) {
       findEventCondition.joinedEventUsers = {
         some: {
-          userId
-        }
+          userId,
+        },
       };
     }
 
@@ -122,7 +121,7 @@ export class EventService {
         where: findEventCondition,
         skip,
         orderBy: {
-          createdAt: "desc"
+          createdAt: 'desc',
         },
         include: {
           _count: true,
@@ -132,7 +131,7 @@ export class EventService {
           joinedEventUsers: {
             take: 3,
             orderBy: {
-              joinDate: "desc"
+              joinDate: 'desc',
             },
             include: {
               user: {
@@ -140,21 +139,21 @@ export class EventService {
                   id: true,
                   fullName: true,
                   nickname: true,
-                  avatarUrl: true
+                  avatarUrl: true,
                   // _count: true
-                }
-              }
-            }
-          }
+                },
+              },
+            },
+          },
         },
-        take: size
+        take: size,
       }),
-      this.prisma.event.count({ where: findEventCondition })
+      this.prisma.event.count({ where: findEventCondition }),
     ]);
 
     return {
       ...getDefaultPaginationReponse(findEventDto, count),
-      data: events
+      data: events,
     };
   }
 
@@ -170,7 +169,7 @@ export class EventService {
         joinedEventUsers: {
           take: 3,
           orderBy: {
-            joinDate: "desc"
+            joinDate: 'desc',
           },
           include: {
             user: {
@@ -178,35 +177,44 @@ export class EventService {
                 id: true,
                 fullName: true,
                 nickname: true,
-                avatarUrl: true
-              }
-            }
-          }
-        }
-      }
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!event) {
-      throw new NotFoundException('Not found event!')
+      throw new NotFoundException('Not found event!');
     }
 
-    return event
+    return event;
   }
 
   async checkJoinedEvent(eventId: string, userId: string) {
-    const event = await this.prisma.event.findUnique({
-      where: {shortId: eventId}
-    })
+    const event = await this.prisma.event.findFirst({
+      where: {
+        OR: [
+          {
+            id: eventId,
+          },
+          {
+            shortId: eventId,
+          },
+        ],
+      },
+    });
 
     if (!event) {
-      throw new NotFoundException('Not found event!')
+      throw new NotFoundException('Not found event!');
     }
 
     const joinedUser = await this.prisma.joinedEventUser.findFirst({
       where: {
         eventId: event.id,
-        userId
-      }
+        userId,
+      },
     });
 
     if (joinedUser) {
@@ -221,7 +229,7 @@ export class EventService {
     const skip = (page - 1) * size;
 
     const findJoinedUserCondition: Prisma.JoinedEventUserWhereInput = {
-      eventId
+      eventId,
     };
 
     const [joinedUsers, count] = await Promise.all([
@@ -236,12 +244,12 @@ export class EventService {
             include: {
               _count: true,
               followers: true,
-              following: true
-            }
-          }
-        }
+              following: true,
+            },
+          },
+        },
       }),
-      this.prisma.joinedEventUser.count({ where: findJoinedUserCondition })
+      this.prisma.joinedEventUser.count({ where: findJoinedUserCondition }),
     ]);
     let data = joinedUsers;
     if (userId) {
@@ -259,49 +267,49 @@ export class EventService {
 
     return {
       ...getDefaultPaginationReponse(findJoinedEventUserDto, count),
-      data: data
+      data: data,
     };
   }
 
   async joinEvent(userId: string, eventId: string) {
     const user = await this.prisma.user.findUnique({
       where: {
-        id: userId
-      }
+        id: userId,
+      },
     });
 
     if (!user) {
-      throw new NotFoundException("Not found user!");
+      throw new NotFoundException('Not found user!');
     }
 
     const event = await this.prisma.event.findUnique({
       where: {
-        id: eventId
-      }
+        id: eventId,
+      },
     });
 
     if (!event) {
-      throw new NotFoundException("Not found event!");
+      throw new NotFoundException('Not found event!');
     }
 
     const joinedEventUser = await this.prisma.joinedEventUser.findUnique({
       where: {
         userId_eventId: {
           eventId,
-          userId
-        }
-      }
+          userId,
+        },
+      },
     });
 
     if (joinedEventUser) {
-      throw new NotFoundException("You have joined this event!");
+      throw new NotFoundException('You have joined this event!');
     }
 
     await this.prisma.joinedEventUser.create({
       data: {
         userId,
-        eventId
-      }
+        eventId,
+      },
     });
 
     const payload: QrCodeDto = {
@@ -310,7 +318,7 @@ export class EventService {
       userId,
       to: user.email,
       subject: `Thanks To Join Event: ${event.name}`,
-      fullName: user.fullName
+      fullName: user.fullName,
     };
 
     await this.mailTaskQueue.add(MailJob.sendQrMail, payload);
@@ -320,13 +328,13 @@ export class EventService {
 
   async invite(
     userId: string,
-    createEventInvitationDto: CreateEventInvitationDto
+    createEventInvitationDto: CreateEventInvitationDto,
   ) {
     const { eventId, receiverId } = createEventInvitationDto;
     const sender = await this.prisma.user.findUnique({ where: { id: userId } });
 
     if (!sender) {
-      throw new NotFoundException("Not found sender!");
+      throw new NotFoundException('Not found sender!');
     }
 
     const currentDate = moment().tz(this.timezone).toDate();
@@ -335,21 +343,21 @@ export class EventService {
       where: {
         id: eventId,
         eventDate: {
-          gte: currentDate
-        }
-      }
+          gte: currentDate,
+        },
+      },
     });
 
     if (!event) {
-      throw new NotFoundException("Not found event or event is ended!");
+      throw new NotFoundException('Not found event or event is ended!');
     }
 
     const receiver = await this.prisma.user.findUnique({
-      where: { id: receiverId }
+      where: { id: receiverId },
     });
 
     if (!receiver) {
-      throw new NotFoundException("Not found receiver!");
+      throw new NotFoundException('Not found receiver!');
     }
 
     const { title, body } = NotificationMessage.EVENT_INVITATION;
@@ -358,8 +366,8 @@ export class EventService {
       body,
       senderId: userId,
       receiverId,
-      notificationType: "EVENT_INVITATION",
-      objectId: eventId
+      notificationType: 'EVENT_INVITATION',
+      objectId: eventId,
     });
 
     return { success: true };
@@ -370,35 +378,38 @@ export class EventService {
       where: {
         userId_eventId: {
           userId,
-          eventId
-        }
+          eventId,
+        },
       },
       include: {
         user: true,
-        event: true
-      }
+        event: true,
+      },
     });
   }
 
   async checkIn(userId: string, eventId: string) {
     const userEvent = await this.findEventUser(userId, eventId);
     if (userEvent.checkedIn) {
-      throw new ConflictException("User has checked in this event!");
+      throw new ConflictException('User has checked in this event!');
     }
     await this.prisma.joinedEventUser.update({
       where: { id: userEvent.id },
       data: {
-        checkedIn: true
-      }
+        checkedIn: true,
+      },
     });
     return { success: true };
   }
 
   private generateUniqueId(length: number = 6): string {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const characters =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let uniqueId = '';
     for (let i = 0; i < length; i++) {
-      uniqueId += characters.charAt(Math.floor(Math.random() * characters.length));
+      uniqueId += characters.charAt(
+        Math.floor(Math.random() * characters.length),
+      );
     }
     return uniqueId;
   }
@@ -410,7 +421,7 @@ export class EventService {
     while (!isUnique) {
       shortId = this.generateUniqueId(6);
       const existingRecord = await this.prisma.event.findUnique({
-        where: { shortId }
+        where: { shortId },
       });
       isUnique = !existingRecord;
     }
