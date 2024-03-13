@@ -4,6 +4,8 @@ import { UpdateUserDto, UpdateUserInterestDto } from './user.dto';
 import { Prisma } from '@prisma/client';
 import { FileService } from '../file/file.service';
 import { FileType } from '../file/file.dto';
+import process from 'process';
+import { hash } from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -165,5 +167,31 @@ export class UserService {
       throw new NotFoundException('Not found user!');
     }
     return { ...user, following, followers };
+  }
+
+  async createMany(emails: string[]) {
+    return Promise.all(
+      emails.map(async (email) => {
+        const createdUser = await this.prisma.user.findUnique({
+          where: { email },
+        });
+
+        if (createdUser) {
+
+
+          return createdUser;
+        }
+
+        const fullName = email.match(/^([^@]*)@/)[1];
+
+        return this.prisma.user.create({
+          data: {
+            email,
+            fullName,
+            activated: true,
+          },
+        });
+      }),
+    );
   }
 }

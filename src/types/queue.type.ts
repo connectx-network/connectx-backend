@@ -9,4 +9,5 @@ export const NotificationJob = {
 
 export const MailJob = {
     sendQrMail: 'send-qr-mail',
+    sendQrImported: 'send-qr-imported',
 } as const;

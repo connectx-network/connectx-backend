@@ -5,7 +5,7 @@ import {
   CreateEventInvitationDto,
   FindEventDto,
   FindJoinedEventUserDto,
-  FindOneEventDto, FindUserEventDto
+  FindOneEventDto, FindUserEventDto, ManualImportEventUserDto
 } from "./event.dto";
 import { ApiBody, ApiTags } from "@nestjs/swagger";
 import { Roles } from "../../decorators/role.decorator";
@@ -65,10 +65,17 @@ export class EventController {
     return this.eventService.invite(userId, createEventInvitationDto);
   }
 
+  @Post("/import-user")
+  @Roles(Role.ADMIN)
+  async importUserEvent(@Body() manualImportEventUserDto: ManualImportEventUserDto) {
+    return this.eventService.manualImportEventUser(manualImportEventUserDto)
+  }
+
   @Patch('/check-in')
   @Roles(Role.ADMIN)
   async checkIn(@Body() findUserEventDto: FindUserEventDto) {
     const {userId, eventId} = findUserEventDto
     return this.eventService.checkIn(userId, eventId)
   }
+
 }

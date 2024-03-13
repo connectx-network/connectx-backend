@@ -10,6 +10,7 @@ import {
   FindEventDto,
   FindEventResponse,
   FindJoinedEventUserDto,
+  ManualImportEventUserDto,
 } from './event.dto';
 import { Prisma } from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
@@ -20,6 +21,7 @@ import { QrCodeDto } from '../mail/mail.dto';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { MailJob, Queues } from '../../types/queue.type';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class EventService {
@@ -28,6 +30,7 @@ export class EventService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
+    private readonly userService: UserService,
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
   ) {}
 
@@ -317,7 +320,7 @@ export class EventService {
       eventName: event.name,
       userId,
       to: user.email,
-      subject: `Thanks To Join Event: ${event.name}`,
+      subject: `Thank you for joining the event of ${event.name}`,
       fullName: user.fullName,
     };
 
@@ -427,5 +430,71 @@ export class EventService {
     }
 
     return shortId;
+  }
+
+  async manualImportEventUser(
+    manualImportEventUserDto: ManualImportEventUserDto,
+  ) {
+    const { eventId, emails } = manualImportEventUserDto;
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
+    const users = await this.userService.createMany(emails);
+    const joinUsers = await Promise.all(
+      users.map(async (user) => {
+        const joinedUser = await this.prisma.joinedEventUser.findUnique({
+          where: {
+            userId_eventId: {
+              userId: user.id,
+              eventId,
+            },
+          },
+          include: {
+            user: true
+          }
+        });
+
+        if (joinedUser) {
+          return;
+        }
+
+        return this.prisma.joinedEventUser.create({
+          data: {
+            userId: user.id,
+            eventId,
+          },
+          include: {
+            user: true
+          }
+        });
+      }),
+    );
+
+    const rawMailPayload : QrCodeDto[] = joinUsers.map(item => {
+      if (!item) {
+        return
+      }
+      const {user} = item
+      const {fullName, email} = user
+      return {
+        eventId,
+        subject: `Thank you for joining the event of ${event.name}`,
+        eventName: event.name,
+        fullName,
+        to: email,
+        userId: user.id
+      }
+    })
+
+    const mailPayload = rawMailPayload.filter(item => item)
+
+    await this.mailTaskQueue.add(MailJob.sendQrImported, mailPayload);
+
+    return {success: true}
   }
 }
