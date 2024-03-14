@@ -15,4 +15,5 @@ export class QrCodeDto extends EmailDto {
   eventName: string;
   userId: string;
   fullName: string;
+  fromDate: Date;
 }

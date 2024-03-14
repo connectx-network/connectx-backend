@@ -9,8 +9,8 @@ export class MailConsummer {
 
     @Process(MailJob.sendQrMail)
     async handleSendQrMail({ data }: Job) {
-        const { to, subject, fullName, eventId, userId, eventName } = data;
-        return this.mailService.sendJoinEventQrCodeEmail({ to, subject, fullName, eventId, userId, eventName });
+        const { to, subject, fullName, eventId, userId, eventName, fromDate } = data;
+        return this.mailService.sendJoinEventQrCodeEmail({ to, subject, fullName, eventId, userId, eventName, fromDate });
     }
     @Process(MailJob.sendQrImported)
     async handleSendQrImportedMail({ data }: Job) {

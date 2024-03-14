@@ -22,6 +22,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { MailJob, Queues } from '../../types/queue.type';
 import { UserService } from '../user/user.service';
+import {MailService} from "../mail/mail.service";
 
 @Injectable()
 export class EventService {
@@ -31,6 +32,7 @@ export class EventService {
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
     private readonly userService: UserService,
+    private readonly mailService: MailService,
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
   ) {}
 
@@ -320,8 +322,9 @@ export class EventService {
       eventName: event.name,
       userId,
       to: user.email,
-      subject: `Thank you for joining the event of ${event.name}`,
+      subject: `Ticket for ${event.name}`,
       fullName: user.fullName,
+      fromDate: event.eventDate
     };
 
     await this.mailTaskQueue.add(MailJob.sendQrMail, payload);
@@ -483,17 +486,19 @@ export class EventService {
       const {fullName, email} = user
       return {
         eventId,
-        subject: `Thank you for joining the event of ${event.name}`,
+        subject: `Ticket for ${event.name}`,
         eventName: event.name,
         fullName,
         to: email,
-        userId: user.id
+        userId: user.id,
+        fromDate: event.eventDate
       }
     })
 
     const mailPayload = rawMailPayload.filter(item => item)
 
     await this.mailTaskQueue.add(MailJob.sendQrImported, mailPayload);
+    // await this.mailService.sendManyImportedUserEventMail(mailPayload);
 
     return {success: true}
   }

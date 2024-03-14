@@ -18,7 +18,7 @@ import { QrCodeModule } from './_modules_/qr-code/qr-code.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({isGlobal: true}),
     PrismaModule,
     FirebaseModule,
     FileModule,
