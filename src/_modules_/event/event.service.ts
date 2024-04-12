@@ -112,7 +112,7 @@ export class EventService {
     const { size, page, userId } = findEventDto;
     const skip = (page - 1) * size;
 
-    const findEventCondition: Prisma.EventWhereInput = {};
+    const findEventCondition: Prisma.EventWhereInput = {isDeleted: false};
     if (userId) {
       findEventCondition.joinedEventUsers = {
         some: {

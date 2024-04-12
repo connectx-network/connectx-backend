@@ -115,6 +115,7 @@ model Event {
   sponsors            String?
   agenda              String?
   speakers            String?
+  isDeleted           Boolean              @default(false) @map("is_deleted")
   eventCategoryId     String               @map("category_id")
   eventCategory       EventCategory        @relation(fields: [eventCategoryId], references: [id], onDelete: Cascade)
   joinedEventUsers    JoinedEventUser[]
