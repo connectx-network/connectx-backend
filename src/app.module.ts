@@ -13,12 +13,15 @@ import { EventModule } from './_modules_/event/event.module';
 import { UserModule } from './_modules_/user/user.module';
 import { UserConnectionModule } from './_modules_/user-connection/user-connection.module';
 import { NotificationModule } from './_modules_/notification/notification.module';
-import {BullModule} from "@nestjs/bull";
+import { BullModule } from "@nestjs/bull";
 import { QrCodeModule } from './_modules_/qr-code/qr-code.module';
+import { IpfsService } from './_modules_/ipfs/ipfs.service';
+import { NftService } from './_modules_/nft/nft.service';
+import { NftModule } from './_modules_/nft/nft.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({isGlobal: true}),
+    ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     FirebaseModule,
     FileModule,
@@ -48,8 +51,9 @@ import { QrCodeModule } from './_modules_/qr-code/qr-code.module';
       },
     }),
     QrCodeModule,
+    NftModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, IpfsService],
 })
-export class AppModule {}
+export class AppModule { }
