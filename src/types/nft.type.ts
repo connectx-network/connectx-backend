@@ -16,3 +16,8 @@ export type MintParams = {
     amount: bigint,
     commonContentUrl: string
 }
+
+export type NftAttributes = {
+    trait_type: string;
+    value: string | number | boolean;
+}

@@ -1,3 +1,4 @@
+import { NftAttributes } from "src/types/nft.type";
 
 export type NftCollectionMetadata = {
     name: string;
@@ -7,10 +8,7 @@ export type NftCollectionMetadata = {
     social_links?: string[]
 }
 
-type NftAttributes = {
-    trait_type: string;
-    value: string | number | boolean;
-}
+
 
 export type NftMetadata = {
     name: string;

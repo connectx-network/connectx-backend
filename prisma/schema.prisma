@@ -59,7 +59,7 @@ model UserVerification {
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, type])
-  @@map("user_verification ")
+  @@map("user_verification")
 }
 
 model UserInterest {

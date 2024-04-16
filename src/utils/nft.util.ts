@@ -4,6 +4,7 @@ import {
     Cell,
     OpenedContract,
     TonClient,
+    WalletContractV3R2,
     WalletContractV4
 } from "ton"
 
@@ -13,7 +14,6 @@ export type OpenedWallet = {
 }
 
 export const openWallet = async (mnemonic: string[], testnet: boolean = true) => {
-
     const keypair = await mnemonicToPrivateKey(mnemonic)
 
     const toncenterBaseEndpoint: string = testnet ? "https://testnet.toncenter.com" : "https://toncenter.com";
@@ -36,8 +36,7 @@ export const openWallet = async (mnemonic: string[], testnet: boolean = true) =>
 
 export const waitSeqno = async (seqno: number, wallet: OpenedWallet) => {
     for (let attempt = 0; attempt < 10; attempt++) {
-        console.log(attempt)
-        await sleep(2000)
+        await sleep(500)
         const seqnoAfter = await wallet.contract.getSeqno();
         if (seqnoAfter == seqno + 1) break;
     }
@@ -52,12 +51,14 @@ const bufferToChunks = (buff: Buffer, chunkSize: number) => {
     const chunks: Buffer[] = [];
     while (buff.byteLength > 0) {
         chunks.push(buff.subarray(0, chunkSize));
+        buff = buff.subarray(chunkSize);
     }
-
     return chunks;
+
 }
 
 const makeSnakeCell = (data: Buffer): Cell => {
+
     const chunks = bufferToChunks(data, 127);
 
     if (chunks.length === 0) return beginCell().endCell();
