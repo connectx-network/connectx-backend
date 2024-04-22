@@ -1,9 +1,20 @@
-import {Body, Controller, Delete, Get, Param, Post, Query} from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { UserConnectionService } from './user-connection.service';
 import { User } from '../../decorators/user.decorator';
 import { Roles } from '../../decorators/role.decorator';
 import { Role } from '../../types/auth.type';
-import {DeleteConnectionDto, FindUserConnectionDto} from './user-connection.dto';
+import {
+  DeleteConnectionDto,
+  FindUserConnectionDto,
+} from './user-connection.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @Controller('user-connection')
@@ -33,8 +44,11 @@ export class UserConnectionController {
 
   @Delete()
   @Roles(Role.ALL)
-  async delete(@Body() deleteConnectionDto: DeleteConnectionDto, @User('id') userId: string) {
-    const {targetId} = deleteConnectionDto
-    return this.userConnectionService.delete(userId, targetId)
+  async delete(
+    @Body() deleteConnectionDto: DeleteConnectionDto,
+    @User('id') userId: string,
+  ) {
+    const { targetId } = deleteConnectionDto;
+    return this.userConnectionService.delete(userId, targetId);
   }
 }

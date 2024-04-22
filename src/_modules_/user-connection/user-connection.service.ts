@@ -12,13 +12,13 @@ import {
 } from './user-connection.dto';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import { NotificationMessage } from '../../types/notification.type';
-import {NotificationService} from "../notification/notification.service";
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class UserConnectionService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {}
 
   async create(userId: string, targetId: string) {
@@ -38,7 +38,7 @@ export class UserConnectionService {
     });
 
     if (createdUserConnections) {
-        throw new ConflictException('You are following this user!');
+      throw new ConflictException('You are following this user!');
     }
 
     const createUserConnectionPayload: Prisma.UserConnectionUncheckedCreateInput =
@@ -156,21 +156,21 @@ export class UserConnectionService {
       where: {
         userId_followUserId: {
           userId,
-          followUserId: targetId
-        }
-      }
-    })
+          followUserId: targetId,
+        },
+      },
+    });
 
     if (!createdUserConnection) {
-      throw new NotFoundException('Not found connection!')
+      throw new NotFoundException('Not found connection!');
     }
 
     await this.prisma.userConnection.delete({
       where: {
-        id: createdUserConnection.id
-      }
-    })
+        id: createdUserConnection.id,
+      },
+    });
 
-    return {success: true}
+    return { success: true };
   }
 }

@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Post, Query} from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { FindNotificationDto, SendNotificationDto } from './notification.dto';
 import { ApiTags } from '@nestjs/swagger';
