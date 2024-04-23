@@ -55,4 +55,4 @@ import { NftModule } from './_modules_/nft/nft.module';
   controllers: [AppController],
   providers: [AppService, IpfsService],
 })
-export class AppModule { }
+export class AppModule {}

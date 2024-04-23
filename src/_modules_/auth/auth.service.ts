@@ -39,9 +39,9 @@ export class AuthService {
     private readonly mailService: MailService,
     private jwtService: JwtService,
     private readonly firebaseService: FirebaseService,
-  ) { }
+  ) {}
 
-  async create (createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto) {
     const { fullName, password, email, userRole } = createUserDto;
 
     const createdUser = await this.prisma.user.findUnique({
@@ -101,11 +101,11 @@ export class AuthService {
     return { success: true };
   }
 
-  private async sendVerifyAccountEmail ({
+  private async sendVerifyAccountEmail({
     fullName,
     verifyCode,
     expiredDate,
-    email
+    email,
   }) {
     const payload: OtpEmailDto = {
       to: email,
@@ -118,7 +118,7 @@ export class AuthService {
     return this.mailService.sendCreateAccountOtpEmail(payload);
   }
 
-  private async generateUniqueCode (): Promise<string> {
+  private async generateUniqueCode(): Promise<string> {
     let verifyCode: string;
     let isUnique = false;
 
@@ -133,16 +133,16 @@ export class AuthService {
     return verifyCode;
   }
 
-  private generateRandomCode (): string {
-    const characters = "0123456789";
-    let code = "";
+  private generateRandomCode(): string {
+    const characters = '0123456789';
+    let code = '';
     for (let i = 0; i < 6; i++) {
       code += characters.charAt(Math.floor(Math.random() * characters.length));
     }
     return code;
   }
 
-  async verify (verifyAccountDto: VerifyAccountDto) {
+  async verify(verifyAccountDto: VerifyAccountDto) {
     const { email, verifyCode } = verifyAccountDto;
     const user = await this.prisma.user.findUnique({
       where: {
@@ -188,8 +188,8 @@ export class AuthService {
     return { success: true };
   }
 
-  async verifyResetPasswordOtp (
-    verifyAccountDto: VerifyAccountDto
+  async verifyResetPasswordOtp(
+    verifyAccountDto: VerifyAccountDto,
   ): Promise<boolean> {
     const { email, verifyCode } = verifyAccountDto;
     const user = await this.prisma.user.findUnique({
@@ -219,7 +219,7 @@ export class AuthService {
     return true;
   }
 
-  private async requestNewOtp (email: string, type: UserCodeType) {
+  private async requestNewOtp(email: string, type: UserCodeType) {
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -270,17 +270,17 @@ export class AuthService {
     return { success: true };
   }
 
-  async renewVerificationCode (requestNewOtpDto: RequestNewOtpDto) {
+  async renewVerificationCode(requestNewOtpDto: RequestNewOtpDto) {
     const { email } = requestNewOtpDto;
     return this.requestNewOtp(email, UserCodeType.VERIFICATION);
   }
 
-  async requestResetPassword (requestNewOtpDto: RequestNewOtpDto) {
+  async requestResetPassword(requestNewOtpDto: RequestNewOtpDto) {
     const { email } = requestNewOtpDto;
     return this.requestNewOtp(email, UserCodeType.PASSWORD_RESET);
   }
 
-  async resetPassword (resetPasswordDto: ResetPasswordDto) {
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
     const { email, password, otp } = resetPasswordDto;
     const user = await this.prisma.user.findUnique({
       where: {
@@ -329,7 +329,7 @@ export class AuthService {
     return { success: true };
   }
 
-  async signIn (signInDto: SignInDto) {
+  async signIn(signInDto: SignInDto) {
     const { email, password, deviceToken } = signInDto;
     const user = await this.validateUser(email, password);
 
@@ -349,7 +349,7 @@ export class AuthService {
     };
   }
 
-  private async generateTokens (user: User, deviceToken: string) {
+  private async generateTokens(user: User, deviceToken: string) {
     const { id, email, userRole } = user;
     const accessToken = this.jwtService.sign(
       { id, email, userRole, tonAddress },
@@ -384,7 +384,7 @@ export class AuthService {
     };
   }
 
-  async validateUser (email: string, password: string): Promise<User> {
+  async validateUser(email: string, password: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -407,7 +407,7 @@ export class AuthService {
     return user;
   }
 
-  async signInGoogle (signInGoogleDto: SignInGoogleDto) {
+  async signInGoogle(signInGoogleDto: SignInGoogleDto) {
     const { token, deviceToken } = signInGoogleDto;
     const firebaseAuth = this.firebaseService.getFirebaseApp().auth();
     const decodedToken = await firebaseAuth.verifyIdToken(token);
@@ -448,7 +448,7 @@ export class AuthService {
     };
   }
 
-  async signInApple (signInAppleDto: SignInAppleDto) {
+  async signInApple(signInAppleDto: SignInAppleDto) {
     const { token, deviceToken } = signInAppleDto;
     const firebaseAuth = this.firebaseService.getFirebaseApp().auth();
     const decodedToken = await firebaseAuth.verifyIdToken(token);
@@ -485,7 +485,7 @@ export class AuthService {
     };
   }
 
-  async delete (userId: string) {
+  async delete(userId: string) {
     await this.prisma.user.delete({
       where: { id: userId },
     });
@@ -493,7 +493,7 @@ export class AuthService {
     return { success: true };
   }
 
-  async createMessage () {
+  async createMessage() {
     const secretMessage = 'HELLO SECRET MESSAGE';
 
     // let foundTonAddress = await this.prisma.user.findFirst({
@@ -529,7 +529,7 @@ export class AuthService {
     return { tonProof };
   }
 
-  async checkTonProof (data: CheckTonProof) {
+  async checkTonProof(data: CheckTonProof) {
     const { deviceToken, tonProof } = data;
 
     // const foundUser = await this.prisma.user.findFirst({

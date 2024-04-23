@@ -1,311 +1,336 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { Address, Cell, internal, beginCell, contractAddress, StateInit, SendMode, toNano, address } from 'ton-core';
-import { encodeOffChainContent, OpenedWallet, openWallet, waitSeqno } from 'src/utils/nft.util';
+import {
+  Address,
+  Cell,
+  internal,
+  beginCell,
+  contractAddress,
+  StateInit,
+  SendMode,
+  toNano,
+  address,
+} from 'ton-core';
+import {
+  encodeOffChainContent,
+  OpenedWallet,
+  openWallet,
+  waitSeqno,
+} from 'src/utils/nft.util';
 import { CollectionData, MintParams } from 'src/types/nft.type';
 import { IpfsService } from '../ipfs/ipfs.service';
-import { createNftCollectionMetadata, createNftMetadata, NftCollectionMetadata, NftMetadata } from 'src/utils/nft.metadata.util';
+import {
+  createNftCollectionMetadata,
+  createNftMetadata,
+  NftCollectionMetadata,
+  NftMetadata,
+} from 'src/utils/nft.metadata.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { TonClient } from 'ton';
 
 @Injectable()
 export class NftService {
+  constructor(
+    private readonly ipfsService: IpfsService,
+    private readonly prisma: PrismaService,
+  ) {}
+  async getAddressByIndex(collectionAddress: string, itemIndex: number) {
+    console.log(collectionAddress, itemIndex);
 
-    constructor(private readonly ipfsService: IpfsService,
-        private readonly prisma: PrismaService,
-    ) { }
-    async getAddressByIndex (
-        collectionAddress: string,
-        itemIndex: number) {
+    const client = new TonClient({
+      endpoint: 'https://testnet.toncenter.com/api/v2/jsonRPC',
+      apiKey: process.env.TONCENTER_API_KEY,
+    });
 
-        console.log(collectionAddress, itemIndex)
+    const response = await client.runMethod(
+      address(collectionAddress),
+      'get_nft_address_by_index',
+      [{ type: 'int', value: BigInt(itemIndex) }],
+    );
 
-        const client = new TonClient({
-            endpoint: "https://testnet.toncenter.com/api/v2/jsonRPC",
-            apiKey: process.env.TONCENTER_API_KEY
-        });
+    console.log(response);
 
-        const response = await client.runMethod(
-            address(collectionAddress),
-            "get_nft_address_by_index",
-            [{ type: "int", value: BigInt(itemIndex) }]
-        );
+    return response.stack.readAddress();
+  }
 
-        console.log(response);
+  async createNftItem(
+    collectionAddress: string,
+    userAddress: string,
+    nftMetadata: NftMetadata,
+  ) {
+    const wallet = await openWallet(process.env.MNEMONIC.split(' '), true);
 
-        return response.stack.readAddress();
+    const collection = await this.prisma.nftCollection.findFirst({
+      where: { nftCollectionAddress: collectionAddress },
+      include: { nftItems: true },
+    });
+    if (!collection) {
+      throw new NotFoundException('Nft collection not found');
     }
 
-    async createNftItem (collectionAddress: string, userAddress: string, nftMetadata: NftMetadata) {
+    const itemIndex = collection.nftItems.length;
 
-        const wallet = await openWallet(process.env.MNEMONIC.split(' '), true)
+    const collectionData: CollectionData = {
+      ownerAddress: wallet.contract.address,
+      royaltyPercent: 0,
+      royaltyAddress: wallet.contract.address,
+      nextItemIndex: 0,
+      collectionContentUrl: collection.collectionContentUrl,
+      commonContentUrl: collection.commonContentUrl,
+    };
 
-        const collection = await this.prisma.nftCollection.findFirst({
-            where: { nftCollectionAddress: collectionAddress },
-            include: { nftItems: true }
-        })
-        if (!collection) {
-            throw new NotFoundException("Nft collection not found")
-        }
+    console.log(wallet.contract.address.toString());
 
-        const itemIndex = collection.nftItems.length
+    const addressX = this.getAddress(collectionData);
 
-        const collectionData: CollectionData = {
-            ownerAddress: wallet.contract.address,
-            royaltyPercent: 0,
-            royaltyAddress: wallet.contract.address,
-            nextItemIndex: 0,
-            collectionContentUrl: collection.collectionContentUrl,
-            commonContentUrl: collection.commonContentUrl
-        }
+    console.log(addressX.toString(), collection.nftCollectionAddress);
 
-        console.log(wallet.contract.address.toString())
+    const metadata = createNftMetadata(nftMetadata);
 
-        const addressX = this.getAddress(collectionData)
+    const res = await this.ipfsService.uploadJsonToIpfs(metadata, {
+      pinataMetadata: { name: nftMetadata.name },
+    });
 
-        console.log(addressX.toString(), collection.nftCollectionAddress)
+    const mintParams: MintParams = {
+      queryId: 0,
+      itemOwnerAddress: address(userAddress),
+      itemIndex: itemIndex,
+      amount: toNano('0.005'),
+      commonContentUrl: `https://turquoise-zygotic-puma-534.mypinata.cloud/ipfs/${res.IpfsHash}`,
+    };
 
-        const metadata = createNftMetadata(nftMetadata)
+    console.log('before topUpBalance');
+    const seqnoBal = await this.topUpBalance({
+      wallet: wallet,
+      nftAmount: 1,
+      collectionAddress: address(collection.nftCollectionAddress),
+    });
 
-        const res = await this.ipfsService.uploadJsonToIpfs(metadata, {
-            pinataMetadata: { name: nftMetadata.name }
-        })
+    console.log('seqnoBal', seqnoBal);
 
-        const mintParams: MintParams = {
-            queryId: 0,
-            itemOwnerAddress: address(userAddress),
-            itemIndex: itemIndex,
-            amount: toNano('0.005'),
-            commonContentUrl: `https://turquoise-zygotic-puma-534.mypinata.cloud/ipfs/${res.IpfsHash}`
-        }
+    await waitSeqno(seqnoBal, wallet);
 
-        console.log('before topUpBalance')
-        const seqnoBal = await this.topUpBalance({
-            wallet: wallet,
-            nftAmount: 1,
-            collectionAddress: address(collection.nftCollectionAddress),
-        })
+    const seqno = await wallet.contract.getSeqno();
 
-        console.log('seqnoBal', seqnoBal)
+    console.log('seqno', seqno);
 
-        await waitSeqno(seqnoBal, wallet);
+    try {
+      await wallet.contract.sendTransfer({
+        seqno,
+        secretKey: wallet.keypair.secretKey,
+        messages: [
+          internal({
+            value: '0.05',
+            to: address(collection.nftCollectionAddress),
+            body: this.createMintBody(mintParams),
+          }),
+        ],
+        sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
+      });
 
-        const seqno = await wallet.contract.getSeqno();
+      await waitSeqno(seqno, wallet);
 
-        console.log('seqno', seqno)
+      await this.prisma.nftCollection.update({
+        where: { id: collection.id },
+        data: {
+          nftItems: {
+            create: {
+              itemOwnerAddress: userAddress,
+              queryId: mintParams.queryId,
+              itemIndex: mintParams.itemIndex,
+              amount: mintParams.amount,
+              commonContentUrl: mintParams.commonContentUrl,
+            },
+          },
+        },
+      });
 
-        try {
-            await wallet.contract.sendTransfer({
-                seqno,
-                secretKey: wallet.keypair.secretKey,
-                messages: [
-                    internal({
-                        value: "0.05",
-                        to: address(collection.nftCollectionAddress),
-                        body: this.createMintBody(mintParams),
-                    }),
-                ],
-                sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
-            });
+      return seqno;
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
-            await waitSeqno(seqno, wallet);
+  async createCollection(metadata: NftCollectionMetadata) {
+    const metadataString = createNftCollectionMetadata(metadata);
 
-            await this.prisma.nftCollection.update({
-                where: { id: collection.id },
-                data: {
-                    nftItems: {
-                        create: {
-                            itemOwnerAddress: userAddress,
-                            queryId: mintParams.queryId,
-                            itemIndex: mintParams.itemIndex,
-                            amount: mintParams.amount,
-                            commonContentUrl: mintParams.commonContentUrl
-                        }
-                    }
-                }
-            })
+    const res = await this.ipfsService.uploadJsonToIpfs(metadataString, {
+      pinataMetadata: { name: metadata.name },
+    });
 
-            return seqno;
+    const wallet = await openWallet(process.env.MNEMONIC.split(' '), true);
 
-        } catch (error) {
-            console.log(error)
-        }
+    const collectionData: CollectionData = {
+      ownerAddress: wallet.contract.address,
+      royaltyPercent: 0,
+      royaltyAddress: wallet.contract.address,
+      nextItemIndex: 0,
+      collectionContentUrl: `https://turquoise-zygotic-puma-534.mypinata.cloud/ipfs/${res.IpfsHash}`,
+      commonContentUrl: `https://turquoise-zygotic-puma-534.mypinata.cloud/ipfs/`,
+    };
 
+    const nftCollection = await this.prisma.nftCollection.create({
+      data: {
+        name: metadata.name,
+        description: metadata.description,
+        image: metadata.image,
+        coverImage: metadata.cover_image,
+        socialLinks: metadata.social_links,
+        ownerAddress: collectionData.ownerAddress.toString(),
+        royaltyPercent: collectionData.royaltyPercent,
+        royaltyAddress: collectionData.royaltyAddress.toString(),
+        nextItemIndex: collectionData.nextItemIndex,
+        collectionContentUrl: collectionData.collectionContentUrl,
+        commonContentUrl: collectionData.commonContentUrl,
+      },
+    });
+
+    const { seqno, address } = await this.deployCollection(
+      wallet,
+      collectionData,
+    );
+
+    await waitSeqno(seqno, wallet);
+
+    if (address) {
+      await this.prisma.nftCollection.update({
+        where: { id: nftCollection.id },
+        data: {
+          nftCollectionAddress: address.toString(),
+        },
+      });
     }
 
-    async createCollection (metadata: NftCollectionMetadata) {
+    console.log(`Collection deployed: ${address}`);
 
-        const metadataString = createNftCollectionMetadata(metadata)
+    return { collectionAddress: address.toString({ bounceable: false }) };
+  }
 
-        const res = await this.ipfsService.uploadJsonToIpfs(metadataString, { pinataMetadata: { name: metadata.name } })
+  async deployCollection(wallet: OpenedWallet, collectionData: CollectionData) {
+    const seqno = await wallet.contract.getSeqno();
 
-        const wallet = await openWallet(process.env.MNEMONIC.split(' '), true)
+    const address = this.getAddress(collectionData);
 
-        const collectionData: CollectionData = {
-            ownerAddress: wallet.contract.address,
-            royaltyPercent: 0,
-            royaltyAddress: wallet.contract.address,
-            nextItemIndex: 0,
-            collectionContentUrl: `https://turquoise-zygotic-puma-534.mypinata.cloud/ipfs/${res.IpfsHash}`,
-            commonContentUrl: `https://turquoise-zygotic-puma-534.mypinata.cloud/ipfs/`,
-        }
+    const init = this.stateInit(collectionData);
 
-        const nftCollection = await this.prisma.nftCollection.create({
-            data: {
-                name: metadata.name,
-                description: metadata.description,
-                image: metadata.image,
-                coverImage: metadata.cover_image,
-                socialLinks: metadata.social_links,
-                ownerAddress: collectionData.ownerAddress.toString(),
-                royaltyPercent: collectionData.royaltyPercent,
-                royaltyAddress: collectionData.royaltyAddress.toString(),
-                nextItemIndex: collectionData.nextItemIndex,
-                collectionContentUrl: collectionData.collectionContentUrl,
-                commonContentUrl: collectionData.commonContentUrl,
-            }
-        })
+    await wallet.contract.sendTransfer({
+      seqno,
+      secretKey: wallet.keypair.secretKey,
+      messages: [
+        internal({
+          value: '0.05',
+          to: address,
+          init: init,
+        }),
+      ],
+      sendMode: SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS,
+    });
+    return { seqno, address };
+  }
 
-        let { seqno, address } = await this.deployCollection(wallet, collectionData);
+  async topUpBalance({
+    wallet,
+    nftAmount,
+    collectionAddress,
+  }: {
+    wallet: OpenedWallet;
+    nftAmount: number;
+    collectionAddress: Address;
+  }) {
+    const feeAmount = 0.026; // approximate value of fees for 1 transaction in our case
 
-        await waitSeqno(seqno, wallet);
+    const seqno = await wallet.contract.getSeqno();
+    const amount = nftAmount * feeAmount;
 
-        if (address) {
-            await this.prisma.nftCollection.update({
-                where: { id: nftCollection.id },
-                data: {
-                    nftCollectionAddress: address.toString()
-                }
-
-            })
-        }
-
-        console.log(`Collection deployed: ${address}`);
-
-        return { collectionAddress: address.toString({ bounceable: false }) };
+    try {
+      await wallet.contract.sendTransfer({
+        seqno,
+        secretKey: wallet.keypair.secretKey,
+        messages: [
+          internal({
+            value: amount.toString(),
+            to: collectionAddress,
+            body: new Cell(),
+          }),
+        ],
+        sendMode: SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS,
+      });
+    } catch (error) {
+      console.log(error);
     }
 
+    console.log('topUpBalance end', seqno);
 
-    async deployCollection (wallet: OpenedWallet, collectionData: CollectionData) {
-        const seqno = await wallet.contract.getSeqno();
+    return seqno;
+  }
 
-        const address = this.getAddress(collectionData)
+  public getAddress(collectionData: CollectionData) {
+    const stateInit = this.stateInit(collectionData);
 
-        const init = this.stateInit(collectionData)
+    return contractAddress(0, stateInit);
+  }
 
-        await wallet.contract.sendTransfer({
-            seqno,
-            secretKey: wallet.keypair.secretKey,
-            messages: [
-                internal({
-                    value: "0.05",
-                    to: address,
-                    init: init,
-                }),
-            ],
-            sendMode: SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS,
-        });
-        return { seqno, address };
-    }
+  public stateInit(collectionData: CollectionData) {
+    const code = this.createCodeCell();
+    const data = this.createDataCell(collectionData);
 
-    async topUpBalance ({ wallet, nftAmount, collectionAddress }: { wallet: OpenedWallet, nftAmount: number, collectionAddress: Address }) {
-        const feeAmount = 0.026 // approximate value of fees for 1 transaction in our case
+    return { code, data };
+  }
 
-        const seqno = await wallet.contract.getSeqno();
-        const amount = nftAmount * feeAmount;
+  private createMintBody(params: MintParams) {
+    const body = beginCell();
+    body.storeUint(1, 32);
+    body.storeUint(params.queryId || 0, 64);
+    body.storeUint(params.itemIndex, 64);
+    body.storeCoins(params.amount);
 
-        try {
-            await wallet.contract.sendTransfer({
-                seqno,
-                secretKey: wallet.keypair.secretKey,
-                messages: [
-                    internal({
-                        value: amount.toString(),
-                        to: collectionAddress,
-                        body: new Cell(),
-                    }),
-                ],
-                sendMode: SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS,
-            });
-        } catch (error) {
-            console.log(error)
-        }
+    const nftItemContent = beginCell();
+    nftItemContent.storeAddress(params.itemOwnerAddress);
 
+    const uriContent = beginCell();
+    uriContent.storeBuffer(Buffer.from(params.commonContentUrl));
+    nftItemContent.storeRef(uriContent.endCell());
 
+    body.storeRef(nftItemContent.endCell());
+    return body.endCell();
+  }
 
-        console.log("topUpBalance end", seqno)
+  private createDataCell(data: CollectionData) {
+    const dataCell = beginCell();
+    dataCell.storeAddress(data.ownerAddress);
+    dataCell.storeUint(data.nextItemIndex, 64);
+    const contentCell = beginCell();
 
-        return seqno;
+    const collectionContent = encodeOffChainContent(data.collectionContentUrl);
 
-    }
+    const commonContent = beginCell();
+    commonContent.storeBuffer(Buffer.from(data.commonContentUrl));
 
-    public getAddress (collectionData: CollectionData) {
-        const stateInit = this.stateInit(collectionData)
+    contentCell.storeRef(collectionContent);
+    contentCell.storeRef(commonContent.asCell());
+    dataCell.storeRef(contentCell);
 
-        return contractAddress(0, stateInit)
-    }
+    const NftItemCodeCell = Cell.fromBase64(
+      'te6cckECDQEAAdAAART/APSkE/S88sgLAQIBYgMCAAmhH5/gBQICzgcEAgEgBgUAHQDyMs/WM8WAc8WzMntVIAA7O1E0NM/+kAg10nCAJp/AfpA1DAQJBAj4DBwWW1tgAgEgCQgAET6RDBwuvLhTYALXDIhxwCSXwPg0NMDAXGwkl8D4PpA+kAx+gAxcdch+gAx+gAw8AIEs44UMGwiNFIyxwXy4ZUB+kDUMBAj8APgBtMf0z+CEF/MPRRSMLqOhzIQN14yQBPgMDQ0NTWCEC/LJqISuuMCXwSED/LwgCwoAcnCCEIt3FzUFyMv/UATPFhAkgEBwgBDIywVQB88WUAX6AhXLahLLH8s/Im6zlFjPFwGRMuIByQH7AAH2UTXHBfLhkfpAIfAB+kDSADH6AIIK+vCAG6EhlFMVoKHeItcLAcMAIJIGoZE24iDC//LhkiGOPoIQBRONkchQCc8WUAvPFnEkSRRURqBwgBDIywVQB88WUAX6AhXLahLLH8s/Im6zlFjPFwGRMuIByQH7ABBHlBAqN1viDACCAo41JvABghDVMnbbEDdEAG1xcIAQyMsFUAfPFlAF+gIVy2oSyx/LPyJus5RYzxcBkTLiAckB+wCTMDI04lUC8ANqhGIu',
+    );
+    dataCell.storeRef(NftItemCodeCell);
 
-    public stateInit (collectionData: CollectionData) {
-        const code = this.createCodeCell();
-        const data = this.createDataCell(collectionData);
+    const royaltyBase = 1000;
+    const royaltyFactor = Math.floor(data.royaltyPercent * royaltyBase);
 
-        return { code, data };
-    }
+    const royaltyCell = beginCell();
+    royaltyCell.storeUint(royaltyFactor, 16);
+    royaltyCell.storeUint(royaltyBase, 16);
+    royaltyCell.storeAddress(data.royaltyAddress);
+    dataCell.storeRef(royaltyCell);
 
-    private createMintBody (params: MintParams) {
-        const body = beginCell();
-        body.storeUint(1, 32);
-        body.storeUint(params.queryId || 0, 64);
-        body.storeUint(params.itemIndex, 64);
-        body.storeCoins(params.amount);
+    return dataCell.endCell();
+  }
 
-        const nftItemContent = beginCell();
-        nftItemContent.storeAddress(params.itemOwnerAddress);
+  private createCodeCell() {
+    const NftFixPriceSaleV2CodeBoc =
+      'te6cckECDAEAAikAART/APSkE/S88sgLAQIBIAMCAATyMAIBSAUEAFGgOFnaiaGmAaY/9IH0gfSB9AGoYaH0gfQB9IH0AGEEIIySsKAVgAKrAQICzQgGAfdmCEDuaygBSYKBSML7y4cIk0PpA+gD6QPoAMFOSoSGhUIehFqBSkHCAEMjLBVADzxYB+gLLaslx+wAlwgAl10nCArCOF1BFcIAQyMsFUAPPFgH6AstqyXH7ABAjkjQ04lpwgBDIywVQA88WAfoCy2rJcfsAcCCCEF/MPRSBwCCIYAYyMsFKs8WIfoCy2rLHxPLPyPPFlADzxbKACH6AsoAyYMG+wBxVVAGyMsAFcsfUAPPFgHPFgHPFgH6AszJ7VQC99AOhpgYC42EkvgnB9IBh2omhpgGmP/SB9IH0gfQBqGBNgAPloyhFrpOEBWccgGRwcKaDjgskvhHAoomOC+XD6AmmPwQgCicbIiV15cPrpn5j9IBggKwNkZYAK5Y+oAeeLAOeLAOeLAP0BZmT2qnAbE+OAcYED6Y/pn5gQwLCQFKwAGSXwvgIcACnzEQSRA4R2AQJRAkECPwBeA6wAPjAl8JhA/y8AoAyoIQO5rKABi+8uHJU0bHBVFSxwUVsfLhynAgghBfzD0UIYAQyMsFKM8WIfoCy2rLHxnLPyfPFifPFhjKACf6AhfKAMmAQPsAcQZQREUVBsjLABXLH1ADzxYBzxYBzxYB+gLMye1UABY3EDhHZRRDMHDwBTThaBI=';
 
-        const uriContent = beginCell();
-        uriContent.storeBuffer(Buffer.from(params.commonContentUrl));
-        nftItemContent.storeRef(uriContent.endCell());
-
-        body.storeRef(nftItemContent.endCell());
-        return body.endCell();
-    }
-
-    private createDataCell (data: CollectionData) {
-        const dataCell = beginCell();
-        dataCell.storeAddress(data.ownerAddress);
-        dataCell.storeUint(data.nextItemIndex, 64);
-        const contentCell = beginCell();
-
-        const collectionContent = encodeOffChainContent(data.collectionContentUrl);
-
-        const commonContent = beginCell();
-        commonContent.storeBuffer(Buffer.from(data.commonContentUrl));
-
-        contentCell.storeRef(collectionContent);
-        contentCell.storeRef(commonContent.asCell());
-        dataCell.storeRef(contentCell);
-
-        const NftItemCodeCell = Cell.fromBase64(
-            "te6cckECDQEAAdAAART/APSkE/S88sgLAQIBYgMCAAmhH5/gBQICzgcEAgEgBgUAHQDyMs/WM8WAc8WzMntVIAA7O1E0NM/+kAg10nCAJp/AfpA1DAQJBAj4DBwWW1tgAgEgCQgAET6RDBwuvLhTYALXDIhxwCSXwPg0NMDAXGwkl8D4PpA+kAx+gAxcdch+gAx+gAw8AIEs44UMGwiNFIyxwXy4ZUB+kDUMBAj8APgBtMf0z+CEF/MPRRSMLqOhzIQN14yQBPgMDQ0NTWCEC/LJqISuuMCXwSED/LwgCwoAcnCCEIt3FzUFyMv/UATPFhAkgEBwgBDIywVQB88WUAX6AhXLahLLH8s/Im6zlFjPFwGRMuIByQH7AAH2UTXHBfLhkfpAIfAB+kDSADH6AIIK+vCAG6EhlFMVoKHeItcLAcMAIJIGoZE24iDC//LhkiGOPoIQBRONkchQCc8WUAvPFnEkSRRURqBwgBDIywVQB88WUAX6AhXLahLLH8s/Im6zlFjPFwGRMuIByQH7ABBHlBAqN1viDACCAo41JvABghDVMnbbEDdEAG1xcIAQyMsFUAfPFlAF+gIVy2oSyx/LPyJus5RYzxcBkTLiAckB+wCTMDI04lUC8ANqhGIu"
-        );
-        dataCell.storeRef(NftItemCodeCell);
-
-        const royaltyBase = 1000;
-        const royaltyFactor = Math.floor(data.royaltyPercent * royaltyBase);
-
-        const royaltyCell = beginCell();
-        royaltyCell.storeUint(royaltyFactor, 16);
-        royaltyCell.storeUint(royaltyBase, 16);
-        royaltyCell.storeAddress(data.royaltyAddress);
-        dataCell.storeRef(royaltyCell);
-
-        return dataCell.endCell();
-    }
-
-    private createCodeCell () {
-        const NftFixPriceSaleV2CodeBoc =
-            "te6cckECDAEAAikAART/APSkE/S88sgLAQIBIAMCAATyMAIBSAUEAFGgOFnaiaGmAaY/9IH0gfSB9AGoYaH0gfQB9IH0AGEEIIySsKAVgAKrAQICzQgGAfdmCEDuaygBSYKBSML7y4cIk0PpA+gD6QPoAMFOSoSGhUIehFqBSkHCAEMjLBVADzxYB+gLLaslx+wAlwgAl10nCArCOF1BFcIAQyMsFUAPPFgH6AstqyXH7ABAjkjQ04lpwgBDIywVQA88WAfoCy2rJcfsAcCCCEF/MPRSBwCCIYAYyMsFKs8WIfoCy2rLHxPLPyPPFlADzxbKACH6AsoAyYMG+wBxVVAGyMsAFcsfUAPPFgHPFgHPFgH6AszJ7VQC99AOhpgYC42EkvgnB9IBh2omhpgGmP/SB9IH0gfQBqGBNgAPloyhFrpOEBWccgGRwcKaDjgskvhHAoomOC+XD6AmmPwQgCicbIiV15cPrpn5j9IBggKwNkZYAK5Y+oAeeLAOeLAOeLAP0BZmT2qnAbE+OAcYED6Y/pn5gQwLCQFKwAGSXwvgIcACnzEQSRA4R2AQJRAkECPwBeA6wAPjAl8JhA/y8AoAyoIQO5rKABi+8uHJU0bHBVFSxwUVsfLhynAgghBfzD0UIYAQyMsFKM8WIfoCy2rLHxnLPyfPFifPFhjKACf6AhfKAMmAQPsAcQZQREUVBsjLABXLH1ADzxYBzxYBzxYB+gLMye1UABY3EDhHZRRDMHDwBTThaBI=";
-
-        return Cell.fromBase64(NftFixPriceSaleV2CodeBoc);
-    }
+    return Cell.fromBase64(NftFixPriceSaleV2CodeBoc);
+  }
 }
