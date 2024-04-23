@@ -22,7 +22,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { MailJob, Queues } from '../../types/queue.type';
 import { UserService } from '../user/user.service';
-import {MailService} from "../mail/mail.service";
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class EventService {
@@ -112,7 +112,7 @@ export class EventService {
     const { size, page, userId } = findEventDto;
     const skip = (page - 1) * size;
 
-    const findEventCondition: Prisma.EventWhereInput = {isDeleted: false};
+    const findEventCondition: Prisma.EventWhereInput = { isDeleted: false };
     if (userId) {
       findEventCondition.joinedEventUsers = {
         some: {
@@ -324,7 +324,7 @@ export class EventService {
       to: user.email,
       subject: `Ticket for ${event.name}`,
       fullName: user.fullName,
-      fromDate: event.eventDate
+      fromDate: event.eventDate,
     };
 
     await this.mailTaskQueue.add(MailJob.sendQrMail, payload);
@@ -458,8 +458,8 @@ export class EventService {
             },
           },
           include: {
-            user: true
-          }
+            user: true,
+          },
         });
 
         if (joinedUser) {
@@ -472,18 +472,18 @@ export class EventService {
             eventId,
           },
           include: {
-            user: true
-          }
+            user: true,
+          },
         });
       }),
     );
 
-    const rawMailPayload : QrCodeDto[] = joinUsers.map(item => {
+    const rawMailPayload: QrCodeDto[] = joinUsers.map((item) => {
       if (!item) {
-        return
+        return;
       }
-      const {user} = item
-      const {fullName, email} = user
+      const { user } = item;
+      const { fullName, email } = user;
       return {
         eventId,
         subject: `Ticket for ${event.name}`,
@@ -491,15 +491,15 @@ export class EventService {
         fullName,
         to: email,
         userId: user.id,
-        fromDate: event.eventDate
-      }
-    })
+        fromDate: event.eventDate,
+      };
+    });
 
-    const mailPayload = rawMailPayload.filter(item => item)
+    const mailPayload = rawMailPayload.filter((item) => item);
 
     await this.mailTaskQueue.add(MailJob.sendQrImported, mailPayload);
     // await this.mailService.sendManyImportedUserEventMail(mailPayload);
 
-    return {success: true}
+    return { success: true };
   }
 }

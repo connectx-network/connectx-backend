@@ -12,7 +12,7 @@ datasource db {
 
 model User {
   id                    String            @id @unique @default(uuid())
-  email                 String            @unique
+  email                 String?           @unique
   password              String?
   fullName              String            @map("full_name")
   nickname              String?
@@ -25,6 +25,7 @@ model User {
   avatarUrl             String?           @map("avatar_url")
   isPrivate             Boolean           @default(false) @map("is_private")
   activated             Boolean           @default(false)
+  tonAddress            String?           @map("ton_address")
   userRole              UserRole          @default(USER)
   userImages            UserImage[]
   userInterests         UserInterest[]

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -41,7 +41,7 @@ export class NotificationService {
       },
     });
     if (!receiver) {
-      return
+      return;
     }
     const firebase = this.firebaseService.getFirebaseApp();
     await Promise.all(
@@ -76,7 +76,6 @@ export class NotificationService {
     //   receiverId,
     // });
     return { success: true };
-
   }
 
   async find(userId: string, findNotificationDto: FindNotificationDto) {

@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
-import {OtpEmailDto, QrCodeDto} from './mail.dto';
+import { OtpEmailDto, QrCodeDto } from './mail.dto';
 import { resolve } from 'path';
 import { renderFile } from 'ejs';
 import { SendMailOptions } from 'nodemailer';
 import { QrCodeService } from '../qr-code/qr-code.service';
 import { Readable } from 'stream';
-import * as moment from "moment-timezone";
+import * as moment from 'moment-timezone';
 @Injectable()
 export class MailService {
   private logoUrl = process.env.LOGO_URL;
@@ -68,17 +68,28 @@ export class MailService {
   // }
 
   async sendJoinEventQrCodeEmail(data: QrCodeDto) {
-    const iosLink = process.env.DOWNLOAD_APP_LINK_IOS
-    const androidLink = process.env.DOWNLOAD_APP_LINK_ANDROID
-    const webLink = process.env.APP_LINK_WEB
+    const iosLink = process.env.DOWNLOAD_APP_LINK_IOS;
+    const androidLink = process.env.DOWNLOAD_APP_LINK_ANDROID;
+    const webLink = process.env.APP_LINK_WEB;
 
-    const { to, subject, fullName, eventId, userId, eventName, fromDate } = data;
-    const qrCode = await this.qrCodeService.generateQrCode(`${eventId};${userId}`)
-    const qrCodeStream = Readable.from(Buffer.from(qrCode.split('base64,')[1], 'base64'));
+    const { to, subject, fullName, eventId, userId, eventName, fromDate } =
+      data;
+    const qrCode = await this.qrCodeService.generateQrCode(
+      `${eventId};${userId}`,
+    );
+    const qrCodeStream = Readable.from(
+      Buffer.from(qrCode.split('base64,')[1], 'base64'),
+    );
 
-    const formattedDate = moment(fromDate).tz(this.timezone).format('hh:ss, dddd, DD MMMM YYYY')
+    const formattedDate = moment(fromDate)
+      .tz(this.timezone)
+      .format('hh:ss, dddd, DD MMMM YYYY');
 
-    const templatePath = resolve(__dirname, 'templates', 'mail.qrcode.imported.ejs');
+    const templatePath = resolve(
+      __dirname,
+      'templates',
+      'mail.qrcode.imported.ejs',
+    );
     const renderedHTML = await renderFile(templatePath, {
       fullName,
       qrCode,
@@ -87,7 +98,7 @@ export class MailService {
       iosLink,
       androidLink,
       webLink,
-      eventDate: formattedDate
+      eventDate: formattedDate,
     });
     const mailOptions: SendMailOptions = {
       from: process.env.MAIL_ADDRESS,
@@ -108,6 +119,6 @@ export class MailService {
   }
 
   async sendManyImportedUserEventMail(data: QrCodeDto[]) {
-    return Promise.all(data.map(item => this.sendJoinEventQrCodeEmail(item)))
+    return Promise.all(data.map((item) => this.sendJoinEventQrCodeEmail(item)));
   }
 }

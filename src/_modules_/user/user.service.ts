@@ -12,9 +12,9 @@ export class UserService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly fileService: FileService,
-  ) {}
+  ) { }
 
-  async update(userId: string, updateUserDto: UpdateUserDto) {
+  async update (userId: string, updateUserDto: UpdateUserDto) {
     const {
       fullName,
       country,
@@ -115,7 +115,7 @@ export class UserService {
     return { success: true };
   }
 
-  async updateAvatar(userId: string, file: Express.Multer.File) {
+  async updateAvatar (userId: string, file: Express.Multer.File) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('Not found user!');
@@ -139,7 +139,7 @@ export class UserService {
     return { url };
   }
 
-  async findOne(userId: string) {
+  async findOne (userId: string) {
     const [following, followers] = await Promise.all([
       this.prisma.userConnection.count({
         where: {
@@ -169,7 +169,7 @@ export class UserService {
     return { ...user, following, followers };
   }
 
-  async createMany(emails: string[]) {
+  async createMany (emails: string[]) {
     return Promise.all(
       emails.map(async (email) => {
         const createdUser = await this.prisma.user.findUnique({
@@ -177,8 +177,6 @@ export class UserService {
         });
 
         if (createdUser) {
-
-
           return createdUser;
         }
 

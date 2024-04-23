@@ -38,7 +38,7 @@ export class BaseUpdatePasswordDto {
   password: string;
 }
 
-export class ResetPasswordDto extends BaseUpdatePasswordDto{
+export class ResetPasswordDto extends BaseUpdatePasswordDto {
   @ApiProperty({ required: true, description: 'This is required field' })
   @IsNotEmpty()
   otp: string;
@@ -50,6 +50,7 @@ export class RequestNewOtpDto {
   @IsNotEmpty()
   email: string;
 }
+
 export class SignInDto {
   @ApiProperty({ required: true, description: 'This is required field' })
   @IsNotEmpty()
@@ -68,5 +69,5 @@ export class BaseSocialSignInDto {
   @OptionalProperty()
   deviceToken: string;
 }
-export class SignInGoogleDto extends  BaseSocialSignInDto{}
-export class SignInAppleDto extends  BaseSocialSignInDto{}
+export class SignInGoogleDto extends BaseSocialSignInDto {}
+export class SignInAppleDto extends BaseSocialSignInDto {}

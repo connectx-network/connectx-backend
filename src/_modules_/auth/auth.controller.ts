@@ -1,19 +1,28 @@
-import {Body, Controller, Delete, Get, Param, Post, UseInterceptors} from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Post,
+  UseInterceptors,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import {
   CreateUserDto,
   RequestNewOtpDto,
-  ResetPasswordDto, SignInAppleDto,
+  ResetPasswordDto,
+  SignInAppleDto,
   SignInDto,
   SignInGoogleDto,
-  VerifyAccountDto
-} from "./auth.dto";
+  VerifyAccountDto,
+} from './auth.dto';
 import { User } from '../../decorators/user.decorator';
 import { UserService } from '../user/user.service';
 import { Roles } from '../../decorators/role.decorator';
 import { Role } from '../../types/auth.type';
 import { UserTransformInterceptor } from '../../interceptors/user.interceptor';
+import { CheckTonProof } from './tonmessage.dto';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -86,6 +95,18 @@ export class AuthController {
   @Delete()
   @Roles(Role.ALL)
   async delete(@User('id') userId: string) {
-    return this.authService.delete(userId)
+    return this.authService.delete(userId);
+  }
+
+  @Post('ton/generate-payload')
+  // @ApiBody({ type: TonMessageDto })
+  async createMessage() {
+    return this.authService.createMessage();
+  }
+
+  @Post('ton/check-proof')
+  @ApiBody({ type: CheckTonProof })
+  async checkTonProof(@Body() data: CheckTonProof) {
+    return this.authService.checkTonProof(data);
   }
 }
