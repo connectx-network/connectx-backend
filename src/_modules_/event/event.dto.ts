@@ -41,6 +41,9 @@ export class CreateEventDto {
   @IsDateString()
   @IsNotEmpty()
   eventDate: Date;
+  @ApiProperty({
+    required: true,
+  })
   @IsDateString()
   @IsNotEmpty()
   eventEndDate: Date;

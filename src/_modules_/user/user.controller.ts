@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, Put, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { UserService } from "./user.service";
-import { UpdateAvatarDto, UpdateUserDto } from "./user.dto";
+import {ManualCreateUserDto, UpdateAvatarDto, UpdateUserDto} from "./user.dto";
 import { Roles } from "../../decorators/role.decorator";
 import { Role } from "../../types/auth.type";
 import { User } from "../../decorators/user.decorator";
@@ -13,6 +13,12 @@ import { UserTransformInterceptor } from "../../interceptors/user.interceptor";
 @ApiTags('user')
 export class UserController {
   constructor(private readonly userService: UserService) {
+  }
+
+  @Post('/import-event')
+  @ApiBody({ type: ManualCreateUserDto })
+  async importEventt(@Body() manualCreateUserDto: ManualCreateUserDto) {
+    return this.userService.manualCreate(manualCreateUserDto);
   }
 
   @Put()

@@ -17,3 +17,6 @@ export class QrCodeDto extends EmailDto {
   fullName: string;
   fromDate: Date;
 }
+export class ManualImportEmailDto extends QrCodeDto {
+  password: string
+}

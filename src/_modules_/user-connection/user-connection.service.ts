@@ -6,19 +6,20 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import {
+  AcceptConnectionDto,
   ConnectionStatus,
   FindUserConnectionDto,
   FindUserConnectionResponse,
 } from './user-connection.dto';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import { NotificationMessage } from '../../types/notification.type';
-import {NotificationService} from "../notification/notification.service";
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class UserConnectionService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {}
 
   async create(userId: string, targetId: string) {
@@ -30,27 +31,31 @@ export class UserConnectionService {
       throw new NotFoundException('Not found user!');
     }
 
-    const createdUserConnections = await this.prisma.userConnection.findFirst({
+    const createdUserConnections = await this.prisma.userConnection.findUnique({
       where: {
-        userId,
-        followUserId: targetId,
+        userId_followUserId: {
+          userId,
+          followUserId: targetId,
+        },
       },
     });
 
     if (createdUserConnections) {
-        throw new ConflictException('You are following this user!');
+      if (createdUserConnections.accepted) {
+        throw new ConflictException('You are connected to this user!');
+      } else {
+        throw new ConflictException(
+          'You requested connection to is this user!',
+        );
+      }
     }
 
     const createUserConnectionPayload: Prisma.UserConnectionUncheckedCreateInput =
       {
-        accepted: true,
+        accepted: false,
         followUserId: targetId,
         userId: userId,
       };
-
-    if (target.isPrivate) {
-      createUserConnectionPayload.accepted = false;
-    }
 
     await this.prisma.userConnection.create({
       data: createUserConnectionPayload,
@@ -117,38 +122,19 @@ export class UserConnectionService {
   }
 
   async getRelationship(userId: string, targetId: string) {
-    const userConnectionWithTarget = await this.prisma.userConnection.findFirst(
-      {
+    const userConnectionWithTarget =
+      await this.prisma.userConnection.findUnique({
         where: {
-          userId,
-          followUserId: targetId,
+          userId_followUserId: {
+            userId,
+            followUserId: targetId,
+          },
         },
-      },
-    );
-
-    const targetConnectionWithUser = await this.prisma.userConnection.findFirst(
-      {
-        where: {
-          userId: targetId,
-          followUserId: userId,
-        },
-      },
-    );
-    if (!targetConnectionWithUser && !userConnectionWithTarget) {
-      return ConnectionStatus.NO_CONNECTION;
+      });
+    if (userConnectionWithTarget.accepted) {
+      return ConnectionStatus.CONNECTED;
     }
-
-    if (userConnectionWithTarget && targetConnectionWithUser) {
-      return ConnectionStatus.FRIEND;
-    }
-
-    if (!userConnectionWithTarget && targetConnectionWithUser) {
-      return ConnectionStatus.FOLLOWER;
-    }
-
-    if (userConnectionWithTarget && !targetConnectionWithUser) {
-      return ConnectionStatus.FOLLOWING;
-    }
+    return ConnectionStatus.NOT_CONNECTED;
   }
 
   async delete(userId: string, targetId: string) {
@@ -156,21 +142,48 @@ export class UserConnectionService {
       where: {
         userId_followUserId: {
           userId,
-          followUserId: targetId
-        }
-      }
-    })
+          followUserId: targetId,
+        },
+      },
+    });
 
     if (!createdUserConnection) {
-      throw new NotFoundException('Not found connection!')
+      throw new NotFoundException('Not found connection!');
     }
 
     await this.prisma.userConnection.delete({
       where: {
-        id: createdUserConnection.id
-      }
-    })
+        id: createdUserConnection.id,
+      },
+    });
 
-    return {success: true}
+    return { success: true };
+  }
+
+  async acceptConnection(userId: string, acceptConnectionDto: AcceptConnectionDto) {
+    const { isAccepted, targetId } = acceptConnectionDto;
+    const createdUserConnection = await this.prisma.userConnection.findUnique({
+      where: {
+        userId_followUserId: {
+          userId: targetId,
+          followUserId: userId,
+        },
+      },
+    });
+
+    if (!createdUserConnection) {
+      throw new NotFoundException('Not found connection!');
+    }
+
+    await this.prisma.userConnection.update({
+      where: {
+        id: createdUserConnection.id,
+      },
+      data: {
+        accepted: isAccepted,
+      },
+    });
+
+    return { success: true };
   }
 }

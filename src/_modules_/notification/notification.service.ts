@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -35,28 +35,40 @@ export class NotificationService {
       include: {
         userTokens: {
           select: {
+            id: true,
             deviceToken: true,
           },
         },
       },
     });
     if (!receiver) {
-      return
+      return;
     }
     const firebase = this.firebaseService.getFirebaseApp();
+    const tokens = receiver.userTokens.filter((item) => item.deviceToken);
     await Promise.all(
-      receiver.userTokens.map((userToken) => {
-        const { deviceToken } = userToken;
+      tokens.map((userToken) => {
+        const { deviceToken, id } = userToken;
         if (deviceToken) {
-          return firebase.messaging().send({
-            notification: { title, body },
-            token: deviceToken,
-          });
+          try {
+            firebase.messaging().send({
+              notification: { title, body },
+              token: deviceToken,
+            });
+            return;
+          } catch (err) {
+            this.prisma.userToken.update({
+              where: { id },
+              data: {
+                deviceToken: null,
+              },
+            });
+            return;
+          }
         }
         return;
       }),
     );
-
     return { success: true };
   }
 
@@ -76,7 +88,6 @@ export class NotificationService {
     //   receiverId,
     // });
     return { success: true };
-
   }
 
   async find(userId: string, findNotificationDto: FindNotificationDto) {

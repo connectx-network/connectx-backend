@@ -1,7 +1,7 @@
 import { BasePagingDto, BasePagingResponse } from "../../types/base.type";
 import { UserConnection } from "@prisma/client";
-import { OptionalProperty } from "../../decorators/validator.decorator";
-import { IsEnum, IsNotEmpty } from "class-validator";
+import {IsBool, OptionalProperty} from "../../decorators/validator.decorator";
+import {IsBoolean, IsEnum, IsNotEmpty} from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
 export enum FollowType {
@@ -10,10 +10,8 @@ export enum FollowType {
 }
 
 export const ConnectionStatus = {
-  FRIEND: "FRIEND",
-  NO_CONNECTION: "NO_CONNECTION",
-  FOLLOWING: "FOLLOWING",
-  FOLLOWER: "FOLLOWER"
+  CONNECTED: 'CONNECTED',
+  NOT_CONNECTED: 'NOT_CONNECTED'
 } as const
 
 export class FindUserConnectionDto extends BasePagingDto {
@@ -35,4 +33,13 @@ export class DeleteConnectionDto {
   @ApiProperty({ required: true})
   @IsNotEmpty()
   targetId: string
+}
+
+export class AcceptConnectionDto {
+  @ApiProperty({ required: true})
+  @IsNotEmpty()
+  targetId: string
+  @ApiProperty({ required: true})
+  @IsBoolean()
+  isAccepted: boolean
 }

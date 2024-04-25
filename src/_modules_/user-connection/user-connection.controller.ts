@@ -3,7 +3,7 @@ import { UserConnectionService } from './user-connection.service';
 import { User } from '../../decorators/user.decorator';
 import { Roles } from '../../decorators/role.decorator';
 import { Role } from '../../types/auth.type';
-import {DeleteConnectionDto, FindUserConnectionDto} from './user-connection.dto';
+import {AcceptConnectionDto, DeleteConnectionDto, FindUserConnectionDto} from './user-connection.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @Controller('user-connection')
@@ -11,6 +11,11 @@ import { ApiTags } from '@nestjs/swagger';
 export class UserConnectionController {
   constructor(private readonly userConnectionService: UserConnectionService) {}
 
+  @Post('/accept')
+  @Roles(Role.ALL)
+  async accept(@User('id') userId: string, @Body() acceptConnectionDto: AcceptConnectionDto) {
+    return this.userConnectionService.acceptConnection(userId, acceptConnectionDto)
+  }
   @Post('/:id')
   @Roles(Role.ALL)
   async create(@Param('id') targetId: string, @User('id') userId: string) {

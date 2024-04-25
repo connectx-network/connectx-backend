@@ -1,17 +1,24 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { UpdateUserDto, UpdateUserInterestDto } from './user.dto';
+import {
+  ManualCreateUserDto,
+  UpdateUserDto,
+  UpdateUserInterestDto,
+} from './user.dto';
 import { Prisma } from '@prisma/client';
 import { FileService } from '../file/file.service';
 import { FileType } from '../file/file.dto';
-import process from 'process';
 import { hash } from 'bcrypt';
+import { MailJob, Queues } from '../../types/queue.type';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly fileService: FileService,
+    @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
   ) {}
 
   async update(userId: string, updateUserDto: UpdateUserDto) {
@@ -140,18 +147,6 @@ export class UserService {
   }
 
   async findOne(userId: string) {
-    const [following, followers] = await Promise.all([
-      this.prisma.userConnection.count({
-        where: {
-          userId,
-        },
-      }),
-      this.prisma.userConnection.count({
-        where: {
-          followUserId: userId,
-        },
-      }),
-    ]);
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -166,6 +161,18 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('Not found user!');
     }
+    const [following, followers] = await Promise.all([
+      this.prisma.userConnection.count({
+        where: {
+          userId,
+        },
+      }),
+      this.prisma.userConnection.count({
+        where: {
+          followUserId: userId,
+        },
+      }),
+    ]);
     return { ...user, following, followers };
   }
 
@@ -177,8 +184,6 @@ export class UserService {
         });
 
         if (createdUser) {
-
-
           return createdUser;
         }
 
@@ -193,5 +198,128 @@ export class UserService {
         });
       }),
     );
+  }
+
+  async manualCreate(manualCreateUserDto: ManualCreateUserDto) {
+    const {
+      company,
+      gender,
+      country,
+      address,
+      phoneNumber,
+      nickname,
+      fullName,
+      email,
+      jobTitle,
+      pharseIds,
+      eventId,
+      knowEventBy,
+    } = manualCreateUserDto;
+
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
+    const password = this.generatePassword();
+    const saltOrRounds = +process.env.USER_SALT;
+    const encryptedPassword = await hash(password, saltOrRounds);
+
+    const createUserInput: Prisma.UserUncheckedCreateInput = {
+      email,
+      fullName,
+      phoneNumber,
+      company,
+      gender,
+      password: encryptedPassword,
+      activated: true
+    };
+
+    if (country) {
+      createUserInput.country = country;
+    }
+    if (address) {
+      createUserInput.address = address;
+    }
+    if (nickname) {
+      createUserInput.nickname = nickname;
+    }
+    if (jobTitle) {
+      createUserInput.jobTitle = jobTitle;
+    }
+
+    if (knowEventBy) {
+      createUserInput.joinedEventUsers = {
+        create: {
+          eventId,
+          knowEventBy,
+        },
+      };
+    } else {
+      createUserInput.joinedEventUsers = {
+        create: {
+          eventId,
+        },
+      };
+    }
+
+    if (pharseIds) {
+      createUserInput.joinedEventPharseUsers = {
+        createMany: {
+          data: pharseIds.map((item) => ({
+            eventId,
+            eventPharseId: item,
+          })),
+        },
+      };
+    }
+
+    const user = await this.prisma.user.create({
+      data: createUserInput,
+    });
+
+    const payload = {
+      eventId,
+      subject: `Ticket for ${event.name}`,
+      eventName: event.name,
+      fullName,
+      password,
+      to: email,
+      userId: user.id,
+      fromDate: event.eventDate,
+    };
+
+    await this.mailTaskQueue.add(MailJob.sendSingleQrImported, payload);
+
+    return { success: true };
+  }
+
+  private generatePassword(): string {
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const digits = '0123456789';
+    const specialChars = '@%&*?';
+    const passwordElements = [
+      lowercase[Math.floor(Math.random() * lowercase.length)],
+      uppercase[Math.floor(Math.random() * uppercase.length)],
+      digits[Math.floor(Math.random() * digits.length)],
+      specialChars[Math.floor(Math.random() * specialChars.length)],
+    ];
+    const passwordLength = 8;
+    while (passwordElements.length < passwordLength) {
+      const charSet = [lowercase, uppercase, digits, specialChars];
+      const randomSetIndex = Math.floor(Math.random() * charSet.length);
+      passwordElements.push(
+        charSet[randomSetIndex][
+          Math.floor(Math.random() * charSet[randomSetIndex].length)
+        ],
+      );
+    }
+    passwordElements.sort(() => Math.random() - 0.5);
+
+    return passwordElements.join('');
   }
 }

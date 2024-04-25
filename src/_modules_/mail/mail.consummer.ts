@@ -16,4 +16,9 @@ export class MailConsummer {
     async handleSendQrImportedMail({ data }: Job) {
         return this.mailService.sendManyImportedUserEventMail(data);
     }
+
+    @Process(MailJob.sendSingleQrImported)
+    async handleSendSingleQrImportedMail({ data }: Job) {
+        return this.mailService.sendManualImportUserToEventEmail(data);
+    }
 }

@@ -10,4 +10,5 @@ export const NotificationJob = {
 export const MailJob = {
     sendQrMail: 'send-qr-mail',
     sendQrImported: 'send-qr-imported',
+    sendSingleQrImported: 'send-single-qr-imported',
 } as const;

@@ -383,6 +383,10 @@ export class AuthService {
       throw new NotFoundException("Not found user!");
     }
 
+    if (!user.password) {
+      throw new NotAcceptableException("You have not set up password yet!");
+    }
+
     const isMatch = await compare(password, user.password);
 
     if (!isMatch) {
