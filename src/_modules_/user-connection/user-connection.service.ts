@@ -160,7 +160,10 @@ export class UserConnectionService {
     return { success: true };
   }
 
-  async acceptConnection(userId: string, acceptConnectionDto: AcceptConnectionDto) {
+  async acceptConnection(
+    userId: string,
+    acceptConnectionDto: AcceptConnectionDto,
+  ) {
     const { isAccepted, targetId } = acceptConnectionDto;
     const createdUserConnection = await this.prisma.userConnection.findUnique({
       where: {
@@ -175,14 +178,22 @@ export class UserConnectionService {
       throw new NotFoundException('Not found connection!');
     }
 
-    await this.prisma.userConnection.update({
-      where: {
-        id: createdUserConnection.id,
-      },
-      data: {
-        accepted: isAccepted,
-      },
-    });
+    if (isAccepted) {
+      await this.prisma.userConnection.update({
+        where: {
+          id: createdUserConnection.id,
+        },
+        data: {
+          accepted: isAccepted,
+        },
+      });
+    } else {
+      await this.prisma.userConnection.delete({
+        where: {
+          id: createdUserConnection.id,
+        },
+      });
+    }
 
     return { success: true };
   }
