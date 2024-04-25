@@ -1,4 +1,4 @@
-import pinataSDK, { PinataPinOptions } from '@pinata/sdk';
+import { PinataPinOptions } from '@pinata/sdk';
 import { Injectable } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 
@@ -16,7 +16,7 @@ export class IpfsService {
     });
   }
 
-  async uploadJsonToIpfs(body: string, options?: PinataPinOptions) {
+  async uploadJsonToIpfs(body: any, options?: PinataPinOptions) {
     try {
       const res = await this.pinataInstance.post('/pinning/pinJSONToIPFS', {
         pinataContent: body,
@@ -27,6 +27,26 @@ export class IpfsService {
       return res.data;
     } catch (error) {
       console.log(error);
+      throw new Error(error?.message || 'Something went wrong');
+    }
+  }
+
+  async uploadFileToIpfs(body: any, options?: PinataPinOptions) {
+    try {
+      const res = await this.pinataInstance.post(
+        '/pinning/pinFileToIPFS',
+        {
+          file: body,
+          pinataOptions: options?.pinataOptions,
+          pinataMetadata: options?.pinataMetadata,
+        },
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      );
+
+      return res.data;
+    } catch (error) {
+      console.log(error);
+      throw new Error(error?.message || 'Something went wrong');
     }
   }
 

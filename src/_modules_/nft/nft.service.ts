@@ -1,32 +1,35 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotAcceptableException,
+  NotFoundException,
+} from '@nestjs/common';
 
 import {
-  Address,
-  Cell,
-  internal,
-  beginCell,
-  contractAddress,
-  StateInit,
-  SendMode,
-  toNano,
-  address,
-} from 'ton-core';
-import {
-  encodeOffChainContent,
+  collectionData,
   OpenedWallet,
   openWallet,
   waitSeqno,
 } from 'src/utils/nft.util';
-import { CollectionData, MintParams } from 'src/types/nft.type';
 import { IpfsService } from '../ipfs/ipfs.service';
 import {
   createNftCollectionMetadata,
   createNftMetadata,
-  NftCollectionMetadata,
   NftMetadata,
 } from 'src/utils/nft.metadata.util';
 import { PrismaService } from '../prisma/prisma.service';
-import { TonClient } from 'ton';
+import { NftCollection } from './utils/NftCollection';
+import axios from 'axios';
+import { Address, toNano } from 'ton-core';
+import { NftItem } from './utils/NftItem';
+
+interface DeployCollection {
+  name: string;
+  description: string;
+  image?: string;
+  cover_image?: string;
+  social_links?: string[];
+}
 
 @Injectable()
 export class NftService {
@@ -34,303 +37,198 @@ export class NftService {
     private readonly ipfsService: IpfsService,
     private readonly prisma: PrismaService,
   ) {}
-  async getAddressByIndex(collectionAddress: string, itemIndex: number) {
-    console.log(collectionAddress, itemIndex);
 
-    const client = new TonClient({
-      endpoint: 'https://testnet.toncenter.com/api/v2/jsonRPC',
-      apiKey: process.env.TONCENTER_API_KEY,
+  async deployCollection(
+    eventId: string,
+    { name, description, image, cover_image, social_links }: DeployCollection,
+  ) {
+    const adminWallet = await this.getAdminWallet();
+
+    const collectionMetadata = createNftCollectionMetadata({
+      name: name,
+      description: description,
+      image: image,
+      cover_image,
+      social_links,
     });
 
-    const response = await client.runMethod(
-      address(collectionAddress),
-      'get_nft_address_by_index',
-      [{ type: 'int', value: BigInt(itemIndex) }],
-    );
+    try {
+      const { IpfsHash } = await this.ipfsService.uploadJsonToIpfs(
+        collectionMetadata,
+        { pinataMetadata: { name: name } },
+      );
 
-    console.log(response);
+      const collectionDt: collectionData = {
+        ownerAddress: adminWallet.contract.address,
+        royaltyPercent: 0,
+        royaltyAddress: adminWallet.contract.address,
+        nextItemIndex: 0,
+        collectionContentUrl: `ipfs://${IpfsHash}`,
+        commonContentUrl: '',
+      };
 
-    return response.stack.readAddress();
+      const collection = new NftCollection(collectionDt);
+      const seqno = await collection.deploy(adminWallet);
+      await waitSeqno(seqno, adminWallet);
+
+      await this.prisma.nftCollection.create({
+        data: {
+          name: name,
+          description: description,
+          image: image,
+          coverImage: cover_image || '',
+          socialLinks: social_links || [],
+          nftCollectionAddress: collection.address.toString(),
+          event: {
+            connect: {
+              id: eventId,
+            },
+          },
+          ...collectionDt,
+          ownerAddress: collectionDt.ownerAddress.toString(),
+          royaltyAddress: collectionDt.royaltyAddress.toString(),
+        },
+      });
+
+      return {
+        nftCollectionAddress: collection.address.toString(),
+        success: true,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        error?.message || 'Internal Server Error: Deploy Collection Failed',
+      );
+    }
   }
 
   async createNftItem(
-    collectionAddress: string,
-    userAddress: string,
-    nftMetadata: NftMetadata,
+    eventId: string,
+    userId: string,
+    {
+      name,
+      description,
+      image,
+      attributes,
+      lottie,
+      content_url,
+      content_type,
+    }: NftMetadata,
   ) {
-    const wallet = await openWallet(process.env.MNEMONIC.split(' '), true);
+    const adminWallet = await this.getAdminWallet();
 
-    const collection = await this.prisma.nftCollection.findFirst({
-      where: { nftCollectionAddress: collectionAddress },
-      include: { nftItems: true },
-    });
-    if (!collection) {
-      throw new NotFoundException('Nft collection not found');
-    }
-
-    const itemIndex = collection.nftItems.length;
-
-    const collectionData: CollectionData = {
-      ownerAddress: wallet.contract.address,
-      royaltyPercent: 0,
-      royaltyAddress: wallet.contract.address,
-      nextItemIndex: 0,
-      collectionContentUrl: collection.collectionContentUrl,
-      commonContentUrl: collection.commonContentUrl,
-    };
-
-    console.log(wallet.contract.address.toString());
-
-    const addressX = this.getAddress(collectionData);
-
-    console.log(addressX.toString(), collection.nftCollectionAddress);
-
-    const metadata = createNftMetadata(nftMetadata);
-
-    const res = await this.ipfsService.uploadJsonToIpfs(metadata, {
-      pinataMetadata: { name: nftMetadata.name },
-    });
-
-    const mintParams: MintParams = {
-      queryId: 0,
-      itemOwnerAddress: address(userAddress),
-      itemIndex: itemIndex,
-      amount: toNano('0.005'),
-      commonContentUrl: `https://turquoise-zygotic-puma-534.mypinata.cloud/ipfs/${res.IpfsHash}`,
-    };
-
-    console.log('before topUpBalance');
-    const seqnoBal = await this.topUpBalance({
-      wallet: wallet,
-      nftAmount: 1,
-      collectionAddress: address(collection.nftCollectionAddress),
-    });
-
-    console.log('seqnoBal', seqnoBal);
-
-    await waitSeqno(seqnoBal, wallet);
-
-    const seqno = await wallet.contract.getSeqno();
-
-    console.log('seqno', seqno);
-
-    try {
-      await wallet.contract.sendTransfer({
-        seqno,
-        secretKey: wallet.keypair.secretKey,
-        messages: [
-          internal({
-            value: '0.05',
-            to: address(collection.nftCollectionAddress),
-            body: this.createMintBody(mintParams),
-          }),
-        ],
-        sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
-      });
-
-      await waitSeqno(seqno, wallet);
-
-      await this.prisma.nftCollection.update({
-        where: { id: collection.id },
-        data: {
-          nftItems: {
-            create: {
-              itemOwnerAddress: userAddress,
-              queryId: mintParams.queryId,
-              itemIndex: mintParams.itemIndex,
-              amount: mintParams.amount,
-              commonContentUrl: mintParams.commonContentUrl,
-            },
-          },
-        },
-      });
-
-      return seqno;
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async createCollection(metadata: NftCollectionMetadata) {
-    const metadataString = createNftCollectionMetadata(metadata);
-
-    const res = await this.ipfsService.uploadJsonToIpfs(metadataString, {
-      pinataMetadata: { name: metadata.name },
-    });
-
-    const wallet = await openWallet(process.env.MNEMONIC.split(' '), true);
-
-    const collectionData: CollectionData = {
-      ownerAddress: wallet.contract.address,
-      royaltyPercent: 0,
-      royaltyAddress: wallet.contract.address,
-      nextItemIndex: 0,
-      collectionContentUrl: `https://turquoise-zygotic-puma-534.mypinata.cloud/ipfs/${res.IpfsHash}`,
-      commonContentUrl: `https://turquoise-zygotic-puma-534.mypinata.cloud/ipfs/`,
-    };
-
-    const nftCollection = await this.prisma.nftCollection.create({
-      data: {
-        name: metadata.name,
-        description: metadata.description,
-        image: metadata.image,
-        coverImage: metadata.cover_image,
-        socialLinks: metadata.social_links,
-        ownerAddress: collectionData.ownerAddress.toString(),
-        royaltyPercent: collectionData.royaltyPercent,
-        royaltyAddress: collectionData.royaltyAddress.toString(),
-        nextItemIndex: collectionData.nextItemIndex,
-        collectionContentUrl: collectionData.collectionContentUrl,
-        commonContentUrl: collectionData.commonContentUrl,
+    const nftCollection = await this.prisma.nftCollection.findFirst({
+      where: {
+        eventId: eventId,
+      },
+      select: {
+        id: true,
+        ownerAddress: true,
+        royaltyPercent: true,
+        royaltyAddress: true,
+        nextItemIndex: true,
+        collectionContentUrl: true,
+        commonContentUrl: true,
+        nftCollectionAddress: true,
       },
     });
 
-    const { seqno, address } = await this.deployCollection(
-      wallet,
-      collectionData,
-    );
+    const foundUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
 
-    await waitSeqno(seqno, wallet);
-
-    if (address) {
-      await this.prisma.nftCollection.update({
-        where: { id: nftCollection.id },
-        data: {
-          nftCollectionAddress: address.toString(),
-        },
-      });
+    if (!foundUser) {
+      throw new NotFoundException('Not found user!');
     }
 
-    console.log(`Collection deployed: ${address}`);
+    if (!nftCollection) {
+      throw new NotFoundException('NFT Collection Not Found');
+    }
 
-    return { collectionAddress: address.toString({ bounceable: false }) };
-  }
+    if (!foundUser.tonAddress) {
+      throw new NotAcceptableException('User does not have ton address');
+    }
 
-  async deployCollection(wallet: OpenedWallet, collectionData: CollectionData) {
-    const seqno = await wallet.contract.getSeqno();
+    const {
+      nftCollectionAddress,
+      id: collectionId,
+      ...nftCollectionData
+    } = nftCollection;
 
-    const address = this.getAddress(collectionData);
-
-    const init = this.stateInit(collectionData);
-
-    await wallet.contract.sendTransfer({
-      seqno,
-      secretKey: wallet.keypair.secretKey,
-      messages: [
-        internal({
-          value: '0.05',
-          to: address,
-          init: init,
-        }),
-      ],
-      sendMode: SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS,
+    const collection = new NftCollection({
+      ...nftCollectionData,
+      ownerAddress: adminWallet.contract.address,
+      royaltyAddress: adminWallet.contract.address,
     });
-    return { seqno, address };
-  }
 
-  async topUpBalance({
-    wallet,
-    nftAmount,
-    collectionAddress,
-  }: {
-    wallet: OpenedWallet;
-    nftAmount: number;
-    collectionAddress: Address;
-  }) {
-    const feeAmount = 0.026; // approximate value of fees for 1 transaction in our case
+    console.log(collection.address.toString(), nftCollectionAddress);
 
-    const seqno = await wallet.contract.getSeqno();
-    const amount = nftAmount * feeAmount;
+    let listItems: any;
 
     try {
-      await wallet.contract.sendTransfer({
-        seqno,
-        secretKey: wallet.keypair.secretKey,
-        messages: [
-          internal({
-            value: amount.toString(),
-            to: collectionAddress,
-            body: new Cell(),
-          }),
-        ],
-        sendMode: SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS,
-      });
+      listItems = await axios.get(
+        `https://testnet.tonapi.io/v2/nfts/collections/${collection.address}/items`,
+      );
     } catch (error) {
-      console.log(error);
+      throw new InternalServerErrorException("Can't get items from collection");
     }
 
-    console.log('topUpBalance end', seqno);
+    const itemMetadata = createNftMetadata({
+      name,
+      description,
+      image,
+      attributes,
+      lottie,
+      content_url,
+      content_type,
+    });
 
-    return seqno;
+    const { IpfsHash } = await this.ipfsService.uploadJsonToIpfs(itemMetadata, {
+      pinataMetadata: { name: name },
+    });
+
+    console.log(listItems);
+    const itemIndex = listItems?.data?.nft_items?.length;
+
+    const amount = '0.01';
+
+    const mintParams = {
+      queryId: 0,
+      itemOwnerAddress: Address.parseRaw(foundUser.tonAddress),
+      itemIndex: itemIndex,
+      amount: toNano(amount),
+      commonContentUrl: `ipfs://${IpfsHash}`,
+    };
+
+    const nftItem = new NftItem(collection);
+
+    const seqno = await nftItem.deploy(adminWallet, mintParams);
+    await waitSeqno(seqno, adminWallet);
+
+    await this.prisma.nftItem.create({
+      data: {
+        itemOwnerAddress: foundUser.tonAddress,
+        queryId: mintParams.queryId,
+        itemIndex: mintParams.itemIndex,
+        amount: mintParams.amount.toString(),
+        commonContentUrl: mintParams.commonContentUrl,
+        nftCollection: {
+          connect: {
+            id: collectionId,
+          },
+        },
+      },
+    });
+
+    return {
+      collectionAddress: collection.address.toString(),
+      tokenId: itemIndex,
+      success: true,
+    };
   }
 
-  public getAddress(collectionData: CollectionData) {
-    const stateInit = this.stateInit(collectionData);
-
-    return contractAddress(0, stateInit);
-  }
-
-  public stateInit(collectionData: CollectionData) {
-    const code = this.createCodeCell();
-    const data = this.createDataCell(collectionData);
-
-    return { code, data };
-  }
-
-  private createMintBody(params: MintParams) {
-    const body = beginCell();
-    body.storeUint(1, 32);
-    body.storeUint(params.queryId || 0, 64);
-    body.storeUint(params.itemIndex, 64);
-    body.storeCoins(params.amount);
-
-    const nftItemContent = beginCell();
-    nftItemContent.storeAddress(params.itemOwnerAddress);
-
-    const uriContent = beginCell();
-    uriContent.storeBuffer(Buffer.from(params.commonContentUrl));
-    nftItemContent.storeRef(uriContent.endCell());
-
-    body.storeRef(nftItemContent.endCell());
-    return body.endCell();
-  }
-
-  private createDataCell(data: CollectionData) {
-    const dataCell = beginCell();
-    dataCell.storeAddress(data.ownerAddress);
-    dataCell.storeUint(data.nextItemIndex, 64);
-    const contentCell = beginCell();
-
-    const collectionContent = encodeOffChainContent(data.collectionContentUrl);
-
-    const commonContent = beginCell();
-    commonContent.storeBuffer(Buffer.from(data.commonContentUrl));
-
-    contentCell.storeRef(collectionContent);
-    contentCell.storeRef(commonContent.asCell());
-    dataCell.storeRef(contentCell);
-
-    const NftItemCodeCell = Cell.fromBase64(
-      'te6cckECDQEAAdAAART/APSkE/S88sgLAQIBYgMCAAmhH5/gBQICzgcEAgEgBgUAHQDyMs/WM8WAc8WzMntVIAA7O1E0NM/+kAg10nCAJp/AfpA1DAQJBAj4DBwWW1tgAgEgCQgAET6RDBwuvLhTYALXDIhxwCSXwPg0NMDAXGwkl8D4PpA+kAx+gAxcdch+gAx+gAw8AIEs44UMGwiNFIyxwXy4ZUB+kDUMBAj8APgBtMf0z+CEF/MPRRSMLqOhzIQN14yQBPgMDQ0NTWCEC/LJqISuuMCXwSED/LwgCwoAcnCCEIt3FzUFyMv/UATPFhAkgEBwgBDIywVQB88WUAX6AhXLahLLH8s/Im6zlFjPFwGRMuIByQH7AAH2UTXHBfLhkfpAIfAB+kDSADH6AIIK+vCAG6EhlFMVoKHeItcLAcMAIJIGoZE24iDC//LhkiGOPoIQBRONkchQCc8WUAvPFnEkSRRURqBwgBDIywVQB88WUAX6AhXLahLLH8s/Im6zlFjPFwGRMuIByQH7ABBHlBAqN1viDACCAo41JvABghDVMnbbEDdEAG1xcIAQyMsFUAfPFlAF+gIVy2oSyx/LPyJus5RYzxcBkTLiAckB+wCTMDI04lUC8ANqhGIu',
-    );
-    dataCell.storeRef(NftItemCodeCell);
-
-    const royaltyBase = 1000;
-    const royaltyFactor = Math.floor(data.royaltyPercent * royaltyBase);
-
-    const royaltyCell = beginCell();
-    royaltyCell.storeUint(royaltyFactor, 16);
-    royaltyCell.storeUint(royaltyBase, 16);
-    royaltyCell.storeAddress(data.royaltyAddress);
-    dataCell.storeRef(royaltyCell);
-
-    return dataCell.endCell();
-  }
-
-  private createCodeCell() {
-    const NftFixPriceSaleV2CodeBoc =
-      'te6cckECDAEAAikAART/APSkE/S88sgLAQIBIAMCAATyMAIBSAUEAFGgOFnaiaGmAaY/9IH0gfSB9AGoYaH0gfQB9IH0AGEEIIySsKAVgAKrAQICzQgGAfdmCEDuaygBSYKBSML7y4cIk0PpA+gD6QPoAMFOSoSGhUIehFqBSkHCAEMjLBVADzxYB+gLLaslx+wAlwgAl10nCArCOF1BFcIAQyMsFUAPPFgH6AstqyXH7ABAjkjQ04lpwgBDIywVQA88WAfoCy2rJcfsAcCCCEF/MPRSBwCCIYAYyMsFKs8WIfoCy2rLHxPLPyPPFlADzxbKACH6AsoAyYMG+wBxVVAGyMsAFcsfUAPPFgHPFgHPFgH6AszJ7VQC99AOhpgYC42EkvgnB9IBh2omhpgGmP/SB9IH0gfQBqGBNgAPloyhFrpOEBWccgGRwcKaDjgskvhHAoomOC+XD6AmmPwQgCicbIiV15cPrpn5j9IBggKwNkZYAK5Y+oAeeLAOeLAOeLAP0BZmT2qnAbE+OAcYED6Y/pn5gQwLCQFKwAGSXwvgIcACnzEQSRA4R2AQJRAkECPwBeA6wAPjAl8JhA/y8AoAyoIQO5rKABi+8uHJU0bHBVFSxwUVsfLhynAgghBfzD0UIYAQyMsFKM8WIfoCy2rLHxnLPyfPFifPFhjKACf6AhfKAMmAQPsAcQZQREUVBsjLABXLH1ADzxYBzxYBzxYB+gLMye1UABY3EDhHZRRDMHDwBTThaBI=';
-
-    return Cell.fromBase64(NftFixPriceSaleV2CodeBoc);
+  // Private functions
+  private async getAdminWallet(): Promise<OpenedWallet> {
+    const wallet = await openWallet(process.env.MNEMONIC!.split(' '), true);
+    return wallet;
   }
 }

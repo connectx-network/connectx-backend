@@ -20,7 +20,7 @@ export type NftMetadata = {
 
 function create<T>(metadata: T) {
   const filteredMetadata = filterNonNullFields(metadata);
-  return JSON.stringify(filteredMetadata);
+  return filteredMetadata;
 }
 
 export const createNftCollectionMetadata = (
@@ -33,7 +33,7 @@ export const createNftMetadata = (metadata: NftMetadata) => {
   return create<NftMetadata>(metadata);
 };
 
-function filterNonNullFields(obj: Object) {
+function filterNonNullFields(obj: { [key: string]: any }) {
   return Object.entries(obj).reduce((acc, [key, value]) => {
     if (value !== null && value !== undefined) {
       acc[key] = value;

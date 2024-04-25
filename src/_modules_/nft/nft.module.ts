@@ -8,5 +8,6 @@ import { IpfsService } from '../ipfs/ipfs.service';
   imports: [UserModule],
   controllers: [NftController],
   providers: [NftService, IpfsService],
+  exports: [NftService],
 })
 export class NftModule {}

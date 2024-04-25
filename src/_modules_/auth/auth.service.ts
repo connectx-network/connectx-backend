@@ -350,7 +350,7 @@ export class AuthService {
   }
 
   private async generateTokens(user: User, deviceToken: string) {
-    const { id, email, userRole } = user;
+    const { id, email, userRole, tonAddress } = user;
     const accessToken = this.jwtService.sign(
       { id, email, userRole, tonAddress },
       {
