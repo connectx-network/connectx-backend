@@ -6,6 +6,8 @@ import { Queues } from '../../types/queue.type';
 import { UserModule } from '../user/user.module';
 import { MailModule } from '../mail/mail.module';
 import { NftService } from '../nft/nft.service';
+import { IpfsService } from '../ipfs/ipfs.service';
+import { QrCodeModule } from '../qr-code/qr-code.module';
 
 @Module({
   imports: [
@@ -14,8 +16,9 @@ import { NftService } from '../nft/nft.service';
       name: Queues.mail,
     }),
     MailModule,
+    QrCodeModule,
   ],
   controllers: [EventController],
-  providers: [EventService, NftService],
+  providers: [EventService, NftService, IpfsService],
 })
-export class EventModule { }
+export class EventModule {}

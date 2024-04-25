@@ -1,6 +1,8 @@
 import { PinataPinOptions } from '@pinata/sdk';
 import { Injectable } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
+import path from 'path';
+import fs from 'fs';
 
 @Injectable()
 export class IpfsService {
@@ -31,21 +33,44 @@ export class IpfsService {
     }
   }
 
-  async uploadFileToIpfs(body: any, options?: PinataPinOptions) {
+  async uploadFileToIpfs(imageDataUrl: any, options?: PinataPinOptions) {
+    const base64Data: string = imageDataUrl.split(',')[1];
+
+    // Convert base64 to binary
+    const binaryData: string = atob(base64Data);
+
+    // Create an ArrayBuffer with the correct length
+    const length: number = binaryData.length;
+    const buffer: ArrayBuffer = new ArrayBuffer(length);
+
+    // Create a view (as an 8-bit unsigned integer) into the buffer
+    const view: Uint8Array = new Uint8Array(buffer);
+
+    // Fill the view with binary data
+    for (let i = 0; i < length; i++) {
+      view[i] = binaryData.charCodeAt(i);
+    }
+
+    // Create a Blob from the ArrayBuffer
+    const blob: Blob = new Blob([buffer], { type: 'image/png' });
+    const form = new FormData();
+    form.append('file', blob);
+    if (options?.pinataMetadata) {
+      form.append('pinataMetadata', JSON.stringify(options.pinataMetadata));
+    }
+    if (options?.pinataOptions) {
+      form.append('pinataOptions', JSON.stringify(options.pinataOptions));
+    }
+
     try {
       const res = await this.pinataInstance.post(
         '/pinning/pinFileToIPFS',
-        {
-          file: body,
-          pinataOptions: options?.pinataOptions,
-          pinataMetadata: options?.pinataMetadata,
-        },
+        form,
         { headers: { 'Content-Type': 'multipart/form-data' } },
       );
 
       return res.data;
     } catch (error) {
-      console.log(error);
       throw new Error(error?.message || 'Something went wrong');
     }
   }

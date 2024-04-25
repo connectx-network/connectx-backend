@@ -15,6 +15,7 @@ import { IpfsService } from '../ipfs/ipfs.service';
 import {
   createNftCollectionMetadata,
   createNftMetadata,
+  DataUrlStream,
   NftMetadata,
 } from 'src/utils/nft.metadata.util';
 import { PrismaService } from '../prisma/prisma.service';
@@ -22,6 +23,7 @@ import { NftCollection } from './utils/NftCollection';
 import axios from 'axios';
 import { Address, toNano } from 'ton-core';
 import { NftItem } from './utils/NftItem';
+import { QrCodeService } from '../qr-code/qr-code.service';
 
 interface DeployCollection {
   name: string;
@@ -36,6 +38,7 @@ export class NftService {
   constructor(
     private readonly ipfsService: IpfsService,
     private readonly prisma: PrismaService,
+    private readonly qrCodeService: QrCodeService,
   ) {}
 
   async deployCollection(
@@ -118,7 +121,7 @@ export class NftService {
 
     const nftCollection = await this.prisma.nftCollection.findFirst({
       where: {
-        eventId: eventId,
+        id: eventId,
       },
       select: {
         id: true,
@@ -172,10 +175,16 @@ export class NftService {
       throw new InternalServerErrorException("Can't get items from collection");
     }
 
+    const qrcode = await this.qrCodeService.generateQrCode(
+      `${eventId};${userId}`,
+    );
+
+    const itemIndex = listItems?.data?.nft_items?.length;
+
     const itemMetadata = createNftMetadata({
-      name,
+      name: `${name} #${itemIndex}`,
       description,
-      image,
+      image: qrcode,
       attributes,
       lottie,
       content_url,
@@ -186,13 +195,10 @@ export class NftService {
       pinataMetadata: { name: name },
     });
 
-    console.log(listItems);
-    const itemIndex = listItems?.data?.nft_items?.length;
-
     const amount = '0.01';
 
     const mintParams = {
-      queryId: 0,
+      queryId: itemIndex,
       itemOwnerAddress: Address.parseRaw(foundUser.tonAddress),
       itemIndex: itemIndex,
       amount: toNano(amount),
@@ -202,6 +208,7 @@ export class NftService {
     const nftItem = new NftItem(collection);
 
     const seqno = await nftItem.deploy(adminWallet, mintParams);
+
     await waitSeqno(seqno, adminWallet);
 
     await this.prisma.nftItem.create({

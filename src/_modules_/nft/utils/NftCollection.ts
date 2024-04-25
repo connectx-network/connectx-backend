@@ -57,7 +57,7 @@ export class NftCollection {
       secretKey: wallet.keyPair.secretKey,
       messages: [
         internal({
-          value: '0.05',
+          value: '0.001',
           to: this.address,
           init: this.stateInit,
         }),

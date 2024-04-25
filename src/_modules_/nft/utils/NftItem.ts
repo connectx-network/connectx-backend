@@ -15,6 +15,7 @@ export class NftItem {
     params: mintParams,
   ): Promise<number> {
     const seqno = await wallet.contract.getSeqno();
+
     await wallet.contract.sendTransfer({
       seqno,
       secretKey: wallet.keyPair.secretKey,

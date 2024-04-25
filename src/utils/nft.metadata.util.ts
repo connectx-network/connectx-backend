@@ -1,4 +1,6 @@
 import { NftAttributes } from 'src/types/nft.type';
+import { Readable } from 'stream';
+import fs from 'fs';
 
 export type NftCollectionMetadata = {
   name: string;
@@ -32,6 +34,28 @@ export const createNftCollectionMetadata = (
 export const createNftMetadata = (metadata: NftMetadata) => {
   return create<NftMetadata>(metadata);
 };
+
+export class DataUrlStream extends Readable {
+  private data: string;
+  private offset: number;
+  constructor(data: string) {
+    super();
+    this.data = data;
+    this.offset = 0;
+  }
+
+  _read(size) {
+    if (this.offset >= this.data.length) {
+      // End of stream
+      this.push(null);
+      return;
+    }
+
+    const chunk = this.data.slice(this.offset, this.offset + size);
+    this.offset += chunk.length;
+    this.push(chunk);
+  }
+}
 
 function filterNonNullFields(obj: { [key: string]: any }) {
   return Object.entries(obj).reduce((acc, [key, value]) => {

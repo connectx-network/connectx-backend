@@ -34,11 +34,11 @@ export class EventService {
     private readonly notificationService: NotificationService,
     private readonly userService: UserService,
     private readonly mailService: MailService,
-    private readonly nftService: NftService
+    private readonly nftService: NftService,
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
-  ) { }
+  ) {}
 
-  async create (createEventDto: CreateEventDto) {
+  async create(createEventDto: CreateEventDto) {
     const {
       eventCategoryId,
       eventDate,
@@ -83,8 +83,8 @@ export class EventService {
       createEventPayload.agenda = agenda;
     }
 
-    let image = ''
-    let coverImage = ''
+    let image = '';
+    let coverImage = '';
     if (createEventAssetDto) {
       createEventPayload.eventAssets = {
         createMany: {
@@ -96,12 +96,12 @@ export class EventService {
       };
 
       createEventAssetDto.forEach((item) => {
-        if (item.type === "IMAGE") {
-          image = item.url
-        } else if (item.type === "BACKGROUND") {
-          coverImage = item.url
+        if (item.type === 'IMAGE') {
+          image = item.url;
+        } else if (item.type === 'BACKGROUND') {
+          coverImage = item.url;
         }
-      })
+      });
     }
 
     if (createEventHostDto) {
@@ -120,17 +120,21 @@ export class EventService {
     });
 
     try {
-
-      await this.nftService.deployCollection(createdEvent.id, { name: createdEvent.name, description: createdEvent.description, image: image || undefined, cover_image: coverImage || undefined })
+      await this.nftService.deployCollection(createdEvent.id, {
+        name: createdEvent.name,
+        description: createdEvent.description,
+        image: image || undefined,
+        cover_image: coverImage || undefined,
+      });
 
       return createdEvent;
     } catch (error) {
-      this.prisma.event.delete({ where: { id: createdEvent.id } })
+      this.prisma.event.delete({ where: { id: createdEvent.id } });
       throw new Error(error.message);
     }
   }
 
-  async find (findEventDto: FindEventDto): Promise<FindEventResponse> {
+  async find(findEventDto: FindEventDto): Promise<FindEventResponse> {
     const { size, page, userId } = findEventDto;
     const skip = (page - 1) * size;
 
@@ -184,7 +188,7 @@ export class EventService {
     };
   }
 
-  async findOne (shortId: string) {
+  async findOne(shortId: string) {
     const event = await this.prisma.event.findUnique({
       where: { shortId },
       include: {
@@ -219,7 +223,7 @@ export class EventService {
     return event;
   }
 
-  async checkJoinedEvent (eventId: string, userId: string) {
+  async checkJoinedEvent(eventId: string, userId: string) {
     const event = await this.prisma.event.findFirst({
       where: {
         OR: [
@@ -251,7 +255,7 @@ export class EventService {
     return { joined: false };
   }
 
-  async findJoinedEventUser (findJoinedEventUserDto: FindJoinedEventUserDto) {
+  async findJoinedEventUser(findJoinedEventUserDto: FindJoinedEventUserDto) {
     const { size, page, eventId, userId } = findJoinedEventUserDto;
     const skip = (page - 1) * size;
 
@@ -298,7 +302,7 @@ export class EventService {
     };
   }
 
-  async joinEvent (userId: string, eventId: string) {
+  async joinEvent(userId: string, eventId: string) {
     const user = await this.prisma.user.findUnique({
       where: {
         id: userId,
@@ -339,6 +343,15 @@ export class EventService {
       },
     });
 
+    if (user?.tonAddress) {
+      await this.nftService.createNftItem(eventId, userId, {
+        name: event.name,
+        description: event.description,
+      });
+
+      return { success: true };
+    }
+
     if (user?.email) {
       const payload: QrCodeDto = {
         eventId,
@@ -351,13 +364,11 @@ export class EventService {
       };
 
       await this.mailTaskQueue.add(MailJob.sendQrMail, payload);
+      return { success: true };
     }
-
-
-    return { success: true };
   }
 
-  async invite (
+  async invite(
     userId: string,
     createEventInvitationDto: CreateEventInvitationDto,
   ) {
@@ -404,7 +415,7 @@ export class EventService {
     return { success: true };
   }
 
-  async findEventUser (userId: string, eventId: string) {
+  async findEventUser(userId: string, eventId: string) {
     return this.prisma.joinedEventUser.findUnique({
       where: {
         userId_eventId: {
@@ -419,7 +430,7 @@ export class EventService {
     });
   }
 
-  async checkIn (userId: string, eventId: string) {
+  async checkIn(userId: string, eventId: string) {
     const userEvent = await this.findEventUser(userId, eventId);
     if (userEvent.checkedIn) {
       throw new ConflictException('User has checked in this event!');
@@ -433,7 +444,7 @@ export class EventService {
     return { success: true };
   }
 
-  private generateUniqueId (length: number = 6): string {
+  private generateUniqueId(length: number = 6): string {
     const characters =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let uniqueId = '';
@@ -445,7 +456,7 @@ export class EventService {
     return uniqueId;
   }
 
-  private async generateUniqueCode (): Promise<string> {
+  private async generateUniqueCode(): Promise<string> {
     let shortId: string;
     let isUnique = false;
 
@@ -460,7 +471,7 @@ export class EventService {
     return shortId;
   }
 
-  async manualImportEventUser (
+  async manualImportEventUser(
     manualImportEventUserDto: ManualImportEventUserDto,
   ) {
     const { eventId, emails } = manualImportEventUserDto;
