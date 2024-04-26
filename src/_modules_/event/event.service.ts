@@ -171,6 +171,11 @@ export class EventService {
         eventAssets: true,
         eventHosts: true,
         eventLocationDetail: true,
+        eventPharses: {
+          orderBy: {
+            order: 'asc',
+          },
+        },
         joinedEventUsers: {
           take: 3,
           orderBy: {

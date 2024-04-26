@@ -124,7 +124,7 @@ model Event {
   eventHosts             EventHost[]
   eventAssets            EventAsset[]
   eventLocationDetail    EventLocationDetail?
-  EventPharse            EventPharse?
+  eventPharses           EventPharse[]
   joinedEventPharseUsers JoinedEventPharseUser[]
 
   @@map("event")
@@ -134,9 +134,12 @@ model EventPharse {
   id                     String                  @id @unique @default(uuid())
   title                  String
   description            String?
-  eventId                String                  @unique @map("event_id")
+  order                  Int                     @default(1)
+  eventId                String                  @map("event_id")
   event                  Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
   joinedEventPharseUsers JoinedEventPharseUser[]
+
+  @@map("event_pharse")
 }
 
 model EventLocationDetail {
