@@ -69,7 +69,7 @@ export class ManualCreateUserDto {
   eventId: string;
   @OptionalProperty({ type: 'string', isArray: true })
   @IsNotEmpty()
-  pharseIds: string[];
+  phaseIds: string[];
   @OptionalProperty()
   knowEventBy: string;
 }

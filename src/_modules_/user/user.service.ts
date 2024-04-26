@@ -211,7 +211,7 @@ export class UserService {
       fullName,
       email,
       jobTitle,
-      pharseIds,
+      phaseIds,
       eventId,
       knowEventBy,
     } = manualCreateUserDto;
@@ -266,12 +266,12 @@ export class UserService {
       };
     }
 
-    if (pharseIds) {
-      createUserInput.joinedEventPharseUsers = {
+    if (phaseIds) {
+      createUserInput.joinedEventPhaseUsers = {
         createMany: {
-          data: pharseIds.map((item) => ({
+          data: phaseIds.map((item) => ({
             eventId,
-            eventPharseId: item,
+            eventPhaseId: item,
           })),
         },
       };
