@@ -216,12 +216,23 @@ export class UserService {
       knowEventBy,
     } = manualCreateUserDto;
 
-    const event = await this.prisma.event.findUnique({
-      where: { id: eventId },
-    });
+    const [event, foundUser] = await Promise.all([
+      this.prisma.event.findUnique({
+        where: { id: eventId },
+      }),
+      this.prisma.user.findUnique({
+        where: {
+          email,
+        },
+      }),
+    ]);
 
     if (!event) {
       throw new NotFoundException('Not found event!');
+    }
+
+    if (foundUser) {
+      throw new NotFoundException('User has created!');
     }
 
     const password = this.generatePassword();
@@ -235,7 +246,7 @@ export class UserService {
       company,
       gender,
       password: encryptedPassword,
-      activated: true
+      activated: true,
     };
 
     if (country) {

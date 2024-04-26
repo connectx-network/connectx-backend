@@ -17,7 +17,7 @@ export class UserController {
 
   @Post('/import-event')
   @ApiBody({ type: ManualCreateUserDto })
-  async importEventt(@Body() manualCreateUserDto: ManualCreateUserDto) {
+  async importEvent(@Body() manualCreateUserDto: ManualCreateUserDto) {
     return this.userService.manualCreate(manualCreateUserDto);
   }
 
