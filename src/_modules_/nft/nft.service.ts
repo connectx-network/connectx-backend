@@ -121,7 +121,7 @@ export class NftService {
 
     const nftCollection = await this.prisma.nftCollection.findFirst({
       where: {
-        id: eventId,
+        eventId: eventId,
       },
       select: {
         id: true,
@@ -192,7 +192,7 @@ export class NftService {
     });
 
     const { IpfsHash } = await this.ipfsService.uploadJsonToIpfs(itemMetadata, {
-      pinataMetadata: { name: name },
+      pinataMetadata: { name: `${name} #${itemIndex}` },
     });
 
     const amount = '0.01';

@@ -195,8 +195,8 @@ model NftCollection {
   name String
   description String
   image String?
-  coverImage String?
-  socialLinks	 String[]
+  coverImage String? @map("cover_image")
+  socialLinks	 String[] @map("social_links")
   nftCollectionAddress String? @map("nft_collection_address") 
   ownerAddress String @map("owner_address")
   royaltyPercent Int @map("royalty_percent")
@@ -207,6 +207,7 @@ model NftCollection {
   eventId String? @map("event_id") @unique
   event Event? @relation(fields: [eventId], references: [id])
   nftItems NftItem[] 
+  @@map("nft_collection")
 }
 
 model NftItem {
@@ -218,6 +219,8 @@ model NftItem {
   queryId Int? @map("query_id")
   amount String 
   nftCollection NftCollection  @relation(fields: [nftCollectionId], references: [id])
+
+  @@map("nft_item")
 }
 
 enum Gender {

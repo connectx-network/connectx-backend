@@ -531,7 +531,7 @@ export class AuthService {
 
   async checkTonProof(data: CheckTonProof) {
     const { deviceToken, tonProof } = data;
-
+    console.log(tonProof);
     // const foundUser = await this.prisma.user.findFirst({
     //   where: { tonAddress: tonProof.address },
     //   include: { userVerification: true },
@@ -556,7 +556,7 @@ export class AuthService {
 
     try {
       const { data } = await axios.post(
-        `https://${tonProof.network === '-3' ? 'testnet.' : ''}tonapi.io/v2/tonconnect/stateinit`,
+        `https://${tonProof?.network === '-3' ? 'testnet.' : ''}tonapi.io/v2/tonconnect/stateinit`,
         { state_init: tonProof.proof.state_init },
         {
           headers: {
@@ -615,7 +615,7 @@ export class AuthService {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { password, ...rest } = foundUser;
 
-        return { accessToken, refreshToken, use: rest };
+        return { accessToken, refreshToken, user: rest };
       } catch (error) {
         throw new UnprocessableEntityException(error.message);
       }
