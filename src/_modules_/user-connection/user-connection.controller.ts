@@ -1,9 +1,21 @@
-import {Body, Controller, Delete, Get, Param, Post, Query} from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { UserConnectionService } from './user-connection.service';
 import { User } from '../../decorators/user.decorator';
 import { Roles } from '../../decorators/role.decorator';
 import { Role } from '../../types/auth.type';
-import {AcceptConnectionDto, DeleteConnectionDto, FindUserConnectionDto} from './user-connection.dto';
+import {
+  AcceptConnectionDto,
+  DeleteConnectionDto,
+  FindUserConnectionDto,
+} from './user-connection.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @Controller('user-connection')
@@ -13,8 +25,14 @@ export class UserConnectionController {
 
   @Post('/accept')
   @Roles(Role.ALL)
-  async accept(@User('id') userId: string, @Body() acceptConnectionDto: AcceptConnectionDto) {
-    return this.userConnectionService.acceptConnection(userId, acceptConnectionDto)
+  async accept(
+    @User('id') userId: string,
+    @Body() acceptConnectionDto: AcceptConnectionDto,
+  ) {
+    return this.userConnectionService.acceptConnection(
+      userId,
+      acceptConnectionDto,
+    );
   }
   @Post('/:id')
   @Roles(Role.ALL)
@@ -38,8 +56,11 @@ export class UserConnectionController {
 
   @Delete()
   @Roles(Role.ALL)
-  async delete(@Body() deleteConnectionDto: DeleteConnectionDto, @User('id') userId: string) {
-    const {targetId} = deleteConnectionDto
-    return this.userConnectionService.delete(userId, targetId)
+  async delete(
+    @Body() deleteConnectionDto: DeleteConnectionDto,
+    @User('id') userId: string,
+  ) {
+    const { targetId } = deleteConnectionDto;
+    return this.userConnectionService.delete(userId, targetId);
   }
 }

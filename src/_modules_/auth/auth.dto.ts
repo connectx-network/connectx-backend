@@ -38,7 +38,7 @@ export class BaseUpdatePasswordDto {
   password: string;
 }
 
-export class ResetPasswordDto extends BaseUpdatePasswordDto{
+export class ResetPasswordDto extends BaseUpdatePasswordDto {
   @ApiProperty({ required: true, description: 'This is required field' })
   @IsNotEmpty()
   otp: string;
@@ -68,5 +68,45 @@ export class BaseSocialSignInDto {
   @OptionalProperty()
   deviceToken: string;
 }
-export class SignInGoogleDto extends  BaseSocialSignInDto{}
-export class SignInAppleDto extends  BaseSocialSignInDto{}
+export class SignInGoogleDto extends BaseSocialSignInDto {}
+export class SignInAppleDto extends BaseSocialSignInDto {}
+
+enum CHAIN {
+  TESTNET = '-3',
+  MAINNET = '-239',
+}
+export class CheckTonProofDto {
+  @ApiProperty()
+  address: string;
+
+  @ApiProperty({ enum: CHAIN })
+  @IsNotEmpty()
+  network: CHAIN;
+
+  @ApiProperty({
+    type: 'object',
+    properties: {
+      state_init: { type: 'string' },
+      timestamp: { type: 'number' },
+      domain: {
+        type: 'object',
+        properties: {
+          lengthBytes: { type: 'number' },
+          value: { type: 'string' },
+        },
+      },
+      payload: { type: 'string' },
+      signature: { type: 'string' },
+    },
+  })
+  proof: {
+    state_init: string;
+    timestamp: number;
+    domain: {
+      lengthBytes: number;
+      value: string;
+    };
+    payload: string;
+    signature: string;
+  };
+}
