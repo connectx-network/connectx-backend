@@ -1,13 +1,13 @@
 {
   "apps": [
     {
-      "name": "connectx",
+      "name": "connectx-ton",
       "script": "dist/main.js",
       "instances": 1,
       "exec_mode": "cluster",
       "env": {
         "NODE_ENV": "prod",
-        "PORT": 8080
+        "PORT": 5000
       }
     }
   ]
