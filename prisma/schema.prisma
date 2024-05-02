@@ -12,10 +12,11 @@ datasource db {
 
 model User {
   id                    String                 @id @unique @default(uuid())
-  email                 String                 @unique
+  email                 String?                @unique
   password              String?
   fullName              String                 @map("full_name")
   nickname              String?
+  tonRawAddress         String?                @map("ton_raw_address") 
   description           String?
   country               String?
   phoneNumber           String?                @map("phone_number")

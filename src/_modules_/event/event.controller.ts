@@ -1,22 +1,31 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
-import { EventService } from "./event.service";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { EventService } from './event.service';
 import {
   CreateEventDto,
   CreateEventInvitationDto,
   FindEventDto,
   FindJoinedEventUserDto,
-  FindOneEventDto, FindUserEventDto, ManualImportEventUserDto
-} from "./event.dto";
-import { ApiBody, ApiTags } from "@nestjs/swagger";
-import { Roles } from "../../decorators/role.decorator";
-import { Role } from "../../types/auth.type";
-import { User } from "../../decorators/user.decorator";
+  FindOneEventDto,
+  FindUserEventDto,
+  ManualImportEventUserDto,
+} from './event.dto';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { Roles } from '../../decorators/role.decorator';
+import { Role } from '../../types/auth.type';
+import { User } from '../../decorators/user.decorator';
 
-@Controller("event")
-@ApiTags("event")
+@Controller('event')
+@ApiTags('event')
 export class EventController {
-  constructor(private readonly eventService: EventService) {
-  }
+  constructor(private readonly eventService: EventService) {}
 
   @Post()
   @Roles(Role.ADMIN)
@@ -26,25 +35,30 @@ export class EventController {
   }
 
   @Get('/joined-user')
-  async findJoinedUser(@Query() findJoinedEventUserDto: FindJoinedEventUserDto) {
+  async findJoinedUser(
+    @Query() findJoinedEventUserDto: FindJoinedEventUserDto,
+  ) {
     return this.eventService.findJoinedEventUser(findJoinedEventUserDto);
   }
 
   @Get('/user-event')
   @Roles(Role.ADMIN)
   async findUser(@Query() findUserEventDto: FindUserEventDto) {
-    const {userId, eventId} = findUserEventDto
+    const { userId, eventId } = findUserEventDto;
     return this.eventService.findEventUser(userId, eventId);
   }
 
-  @Get("/:id")
-  async findOne(@Param("id") id: string) {
+  @Get('/:id')
+  async findOne(@Param('id') id: string) {
     return this.eventService.findOne(id);
   }
 
-  @Get("/check-join/:id")
+  @Get('/check-join/:id')
   @Roles(Role.ALL)
-  async checkJoinedEvent(@Param("id") eventId: string, @User("id") userId: string) {
+  async checkJoinedEvent(
+    @Param('id') eventId: string,
+    @User('id') userId: string,
+  ) {
     return this.eventService.checkJoinedEvent(eventId, userId);
   }
 
@@ -53,29 +67,33 @@ export class EventController {
     return this.eventService.find(findEventDto);
   }
 
-  @Post("/join/:id")
+  @Post('/join/:id')
   @Roles(Role.ALL)
-  async join(@Param("id") eventId: string, @User("id") userId: string) {
+  async join(@Param('id') eventId: string, @User('id') userId: string) {
     return this.eventService.joinEvent(userId, eventId);
   }
 
-  @Post("/invite")
+  @Post('/invite')
   @Roles(Role.ALL)
-  async invite(@User("id") userId: string, @Body() createEventInvitationDto: CreateEventInvitationDto) {
+  async invite(
+    @User('id') userId: string,
+    @Body() createEventInvitationDto: CreateEventInvitationDto,
+  ) {
     return this.eventService.invite(userId, createEventInvitationDto);
   }
 
-  @Post("/import-user")
+  @Post('/import-user')
   @Roles(Role.ADMIN)
-  async importUserEvent(@Body() manualImportEventUserDto: ManualImportEventUserDto) {
-    return this.eventService.manualImportEventUser(manualImportEventUserDto)
+  async importUserEvent(
+    @Body() manualImportEventUserDto: ManualImportEventUserDto,
+  ) {
+    return this.eventService.manualImportEventUser(manualImportEventUserDto);
   }
 
   @Patch('/check-in')
   @Roles(Role.ADMIN)
   async checkIn(@Body() findUserEventDto: FindUserEventDto) {
-    const {userId, eventId} = findUserEventDto
-    return this.eventService.checkIn(userId, eventId)
+    const { userId, eventId } = findUserEventDto;
+    return this.eventService.checkIn(userId, eventId);
   }
-
 }
