@@ -13,10 +13,10 @@ async function bootstrap() {
     }),
   );
   const config = new DocumentBuilder()
-    .setTitle('ConnectX API')
-    .setDescription('ConnectX API description')
+    .setTitle('ConnectX-TON API')
+    .setDescription('ConnectX-TON API description')
     .setVersion('1.0')
-    .addTag('ConnectX API')
+    .addTag('ConnectX-TON API')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
