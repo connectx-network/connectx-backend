@@ -269,6 +269,18 @@ export class UserService {
         data: joinedEventPhaseUsersPayload
       })]);
 
+      const payload = {
+        eventId,
+        subject: `Ticket for ${event.name}`,
+        eventName: event.name,
+        fullName,
+        to: email,
+        userId: foundUser.id,
+        fromDate: event.eventDate
+      };
+
+      await this.mailTaskQueue.add(MailJob.sendQrMail, payload);
+
       return { success: true };
 
     } else {
