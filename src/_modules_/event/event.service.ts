@@ -130,7 +130,11 @@ export class EventService {
         },
         include: {
           _count: true,
-          eventAssets: true,
+          eventAssets: {
+            orderBy: {
+              type: 'asc'
+            }
+          },
           eventHosts: true,
           eventLocationDetail: true,
           joinedEventUsers: {
@@ -168,7 +172,11 @@ export class EventService {
       include: {
         _count: true,
         eventCategory: true,
-        eventAssets: true,
+        eventAssets: {
+          orderBy: {
+            type: 'asc'
+          }
+        },
         eventHosts: true,
         eventLocationDetail: true,
         eventPhases: {
