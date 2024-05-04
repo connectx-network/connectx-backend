@@ -3,7 +3,7 @@ import { EventCategoryService } from './event-category.service';
 import { CreateEventCategoryDto } from './event-category.dto';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../decorators/role.decorator';
-import {Role} from "../../types/auth.type";
+import { Role } from '../../types/auth.type';
 
 @Controller('event-category')
 @ApiTags('event-category')

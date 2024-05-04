@@ -16,6 +16,6 @@ export class EventCategoryService {
   }
 
   async find() {
-    return this.prisma.eventCategory.findMany()
+    return this.prisma.eventCategory.findMany();
   }
 }

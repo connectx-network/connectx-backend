@@ -1,26 +1,34 @@
 import {
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   NotAcceptableException,
   NotFoundException,
-  UnauthorizedException
-} from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
+  UnauthorizedException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import {
+  CheckTonProofDto,
   CreateUserDto,
   RequestNewOtpDto,
-  ResetPasswordDto, SignInAppleDto,
-  SignInDto, SignInGoogleDto,
-  VerifyAccountDto
-} from "./auth.dto";
-import { compare, hash } from "bcrypt";
-import * as moment from "moment-timezone";
-import { Prisma, User, UserCodeType } from "@prisma/client";
-import { MailService } from "../mail/mail.service";
-import { OtpEmailDto } from "../mail/mail.dto";
-import * as process from "process";
-import { JwtService } from "@nestjs/jwt";
-import { FirebaseService } from "../firebase/firebase.service";
+  ResetPasswordDto,
+  SignInAppleDto,
+  SignInDto,
+  SignInGoogleDto,
+  VerifyAccountDto,
+} from './auth.dto';
+import { compare, hash } from 'bcrypt';
+import * as moment from 'moment-timezone';
+import { Prisma, User, UserCodeType } from '@prisma/client';
+import { MailService } from '../mail/mail.service';
+import { OtpEmailDto } from '../mail/mail.dto';
+import * as process from 'process';
+import { JwtService } from '@nestjs/jwt';
+import { FirebaseService } from '../firebase/firebase.service';
+import * as crypto from 'crypto';
+import axios from 'axios';
+import { ConvertTonProofMessage, CreateMessage } from 'src/utils/ton.util';
+import * as nacl from 'tweetnacl';
 
 @Injectable()
 export class AuthService {
@@ -30,29 +38,28 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
     private jwtService: JwtService,
-    private readonly firebaseService: FirebaseService
-  ) {
-  }
+    private readonly firebaseService: FirebaseService,
+  ) {}
 
   async create(createUserDto: CreateUserDto) {
     const { fullName, password, email, userRole } = createUserDto;
 
     const createdUser = await this.prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (createdUser) {
       if (!createdUser.activated) {
-        throw new NotAcceptableException("User has not activated yet!");
+        throw new NotAcceptableException('User has not activated yet!');
       }
       throw new ConflictException(
-        "Email is already used for an existing account!"
+        'Email is already used for an existing account!',
       );
     }
     const saltOrRounds = +process.env.USER_SALT;
     const encryptedPassword = await hash(password, saltOrRounds);
     const verifyCode = await this.generateUniqueCode();
-    const expiredDate = moment().tz(this.timezone).add(3, "minutes").toDate();
+    const expiredDate = moment().tz(this.timezone).add(3, 'minutes').toDate();
 
     const createUserPayload: Prisma.UserUncheckedCreateInput = {
       email,
@@ -62,9 +69,9 @@ export class AuthService {
         create: {
           verifyCode,
           expiredDate,
-          type: "VERIFICATION"
-        }
-      }
+          type: 'VERIFICATION',
+        },
+      },
     };
 
     if (userRole) {
@@ -74,8 +81,8 @@ export class AuthService {
     const user = await this.prisma.user.create({
       data: createUserPayload,
       include: {
-        userVerification: true
-      }
+        userVerification: true,
+      },
     });
 
     try {
@@ -83,7 +90,7 @@ export class AuthService {
         fullName: user.fullName,
         verifyCode: user.userVerification.verifyCode,
         expiredDate: user.userVerification.verifyCode,
-        email: user.email
+        email: user.email,
       });
     } catch (err) {
       console.log(err);
@@ -95,17 +102,17 @@ export class AuthService {
   }
 
   private async sendVerifyAccountEmail({
-                                         fullName,
-                                         verifyCode,
-                                         expiredDate,
-                                         email
-                                       }) {
+    fullName,
+    verifyCode,
+    expiredDate,
+    email,
+  }) {
     const payload: OtpEmailDto = {
       to: email,
-      subject: "Welcome To ConnectX",
+      subject: 'Welcome To ConnectX',
       otp: verifyCode,
       expiredDate,
-      fullName
+      fullName,
     };
 
     return this.mailService.sendCreateAccountOtpEmail(payload);
@@ -118,7 +125,7 @@ export class AuthService {
     while (!isUnique) {
       verifyCode = this.generateRandomCode();
       const existingRecord = await this.prisma.userVerification.findUnique({
-        where: { verifyCode }
+        where: { verifyCode },
       });
       isUnique = !existingRecord;
     }
@@ -127,8 +134,8 @@ export class AuthService {
   }
 
   private generateRandomCode(): string {
-    const characters = "0123456789";
-    let code = "";
+    const characters = '0123456789';
+    let code = '';
     for (let i = 0; i < 6; i++) {
       code += characters.charAt(Math.floor(Math.random() * characters.length));
     }
@@ -141,106 +148,106 @@ export class AuthService {
       where: {
         email,
         userVerification: {
-          type: "VERIFICATION"
-        }
+          type: 'VERIFICATION',
+        },
       },
       include: {
-        userVerification: true
-      }
+        userVerification: true,
+      },
     });
     if (!user) {
-      throw new NotFoundException("Not found user!");
+      throw new NotFoundException('Not found user!');
     }
 
     const { userVerification } = user;
 
     if (verifyCode !== userVerification.verifyCode) {
-      throw new NotAcceptableException("OTP is not correct!");
+      throw new NotAcceptableException('OTP is not correct!');
     }
 
     if (moment().isAfter(userVerification.expiredDate)) {
-      throw new NotAcceptableException("OTP is expired!");
+      throw new NotAcceptableException('OTP is expired!');
     }
 
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: {
-          id: user.id
+          id: user.id,
         },
         data: {
-          activated: true
-        }
+          activated: true,
+        },
       }),
       this.prisma.userVerification.delete({
         where: {
-          id: userVerification.id
-        }
-      })
+          id: userVerification.id,
+        },
+      }),
     ]);
 
     return { success: true };
   }
 
   async verifyResetPasswordOtp(
-    verifyAccountDto: VerifyAccountDto
+    verifyAccountDto: VerifyAccountDto,
   ): Promise<boolean> {
     const { email, verifyCode } = verifyAccountDto;
     const user = await this.prisma.user.findUnique({
       where: {
         email,
         userVerification: {
-          type: "PASSWORD_RESET"
-        }
+          type: 'PASSWORD_RESET',
+        },
       },
       include: {
-        userVerification: true
-      }
+        userVerification: true,
+      },
     });
     if (!user) {
-      throw new NotFoundException("Not found user!");
+      throw new NotFoundException('Not found user!');
     }
 
     const { userVerification } = user;
 
     if (verifyCode !== userVerification.verifyCode) {
-      throw new NotAcceptableException("OTP is not correct!");
+      throw new NotAcceptableException('OTP is not correct!');
     }
 
     if (moment().isAfter(userVerification.expiredDate)) {
-      throw new NotAcceptableException("OTP is expired!");
+      throw new NotAcceptableException('OTP is expired!');
     }
     return true;
   }
 
   private async requestNewOtp(email: string, type: UserCodeType) {
     const user = await this.prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (!user) {
-      throw new NotFoundException("Not found user!");
+      throw new NotFoundException('Not found user!');
     }
 
     const verifyCode = await this.generateUniqueCode();
-    const expiredDate = moment().tz(this.timezone).add(3, "minutes").toDate();
+    const expiredDate = moment().tz(this.timezone).add(3, 'minutes').toDate();
 
     const verificationCode = await this.prisma.userVerification.findUnique({
       where: {
         userId: user.id,
-        type: type
-      }
+        type: type,
+      },
     });
 
     if (verificationCode) {
       await this.prisma.userVerification.update({
         where: {
           userId: user.id,
-          type: type
+          type: type,
         },
         data: {
           verifyCode,
-          expiredDate
-        }
+          expiredDate,
+        },
       });
     } else {
       await this.prisma.userVerification.create({
@@ -248,8 +255,8 @@ export class AuthService {
           userId: user.id,
           type: type,
           verifyCode,
-          expiredDate
-        }
+          expiredDate,
+        },
       });
     }
 
@@ -257,7 +264,7 @@ export class AuthService {
       fullName: user.fullName,
       verifyCode: verifyCode,
       expiredDate: expiredDate,
-      email: user.email
+      email: user.email,
     });
 
     return { success: true };
@@ -279,25 +286,25 @@ export class AuthService {
       where: {
         email,
         userVerification: {
-          type: "PASSWORD_RESET"
-        }
+          type: 'PASSWORD_RESET',
+        },
       },
       include: {
-        userVerification: true
-      }
+        userVerification: true,
+      },
     });
     if (!user) {
-      throw new NotFoundException("Not found user!");
+      throw new NotFoundException('Not found user!');
     }
 
     const { userVerification } = user;
 
     if (otp !== userVerification.verifyCode) {
-      throw new NotAcceptableException("OTP is not correct!");
+      throw new NotAcceptableException('OTP is not correct!');
     }
 
     if (moment().isAfter(userVerification.expiredDate)) {
-      throw new NotAcceptableException("OTP is expired!");
+      throw new NotAcceptableException('OTP is expired!');
     }
 
     const saltOrRounds = +process.env.USER_SALT;
@@ -306,17 +313,17 @@ export class AuthService {
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: {
-          id: user.id
+          id: user.id,
         },
         data: {
-          password: encryptedPassword
-        }
+          password: encryptedPassword,
+        },
       }),
       this.prisma.userVerification.delete({
         where: {
-          id: userVerification.id
-        }
-      })
+          id: userVerification.id,
+        },
+      }),
     ]);
 
     return { success: true };
@@ -327,15 +334,18 @@ export class AuthService {
     const user = await this.validateUser(email, password);
 
     if (!user) {
-      throw new NotFoundException("Not found user!");
+      throw new NotFoundException('Not found user!');
     }
 
-    const { accessToken, refreshToken } = await this.generateTokens(user, deviceToken);
+    const { accessToken, refreshToken } = await this.generateTokens(
+      user,
+      deviceToken,
+    );
 
     return {
       user,
       accessToken,
-      refreshToken
+      refreshToken,
     };
   }
 
@@ -345,56 +355,56 @@ export class AuthService {
       { id, email, userRole },
       {
         expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRATION_TIME,
-        secret: process.env.ACCESS_TOKEN_SECRET
-      }
+        secret: process.env.ACCESS_TOKEN_SECRET,
+      },
     );
 
     const refreshToken = this.jwtService.sign(
       { sub: id },
       {
         expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRATION_TIME,
-        secret: process.env.REFRESH_TOKEN_SECRET
-      }
+        secret: process.env.REFRESH_TOKEN_SECRET,
+      },
     );
 
-    const expiredDate = moment().tz(this.timezone).add(1, "years").toDate();
+    const expiredDate = moment().tz(this.timezone).add(1, 'years').toDate();
 
     await this.prisma.userToken.create({
       data: {
         userId: user.id,
         refreshToken,
         expiredDate,
-        deviceToken
-      }
+        deviceToken,
+      },
     });
 
     return {
       accessToken,
-      refreshToken
+      refreshToken,
     };
   }
 
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (!user) {
-      throw new NotFoundException("Not found user!");
+      throw new NotFoundException('Not found user!');
     }
 
     if (!user.password) {
-      throw new NotAcceptableException("You have not set up password yet!");
+      throw new NotAcceptableException('You have not set up password yet!');
     }
 
     const isMatch = await compare(password, user.password);
 
     if (!isMatch) {
-      throw new UnauthorizedException("Username or password is not correct!");
+      throw new UnauthorizedException('Username or password is not correct!');
     }
 
     if (!user.activated) {
-      throw new NotAcceptableException("Please verify account before sign in!");
+      throw new NotAcceptableException('Please verify account before sign in!');
     }
 
     delete user.password;
@@ -407,7 +417,7 @@ export class AuthService {
     const decodedToken = await firebaseAuth.verifyIdToken(token);
 
     if (!decodedToken) {
-      throw new NotAcceptableException("Failed!");
+      throw new NotAcceptableException('Failed!');
     }
 
     const { email, uid } = decodedToken;
@@ -418,7 +428,6 @@ export class AuthService {
 
     let user = await this.prisma.user.findUnique({ where: { email } });
 
-
     if (!user) {
       user = await this.prisma.user.create({
         data: {
@@ -426,17 +435,20 @@ export class AuthService {
           fullName: displayName,
           avatarUrl: photoURL,
           phoneNumber,
-          activated: true
-        }
+          activated: true,
+        },
       });
     }
 
-    const { accessToken, refreshToken } = await this.generateTokens(user, deviceToken);
+    const { accessToken, refreshToken } = await this.generateTokens(
+      user,
+      deviceToken,
+    );
 
     return {
       user,
       accessToken,
-      refreshToken
+      refreshToken,
     };
   }
 
@@ -445,9 +457,8 @@ export class AuthService {
     const firebaseAuth = this.firebaseService.getFirebaseApp().auth();
     const decodedToken = await firebaseAuth.verifyIdToken(token);
 
-
     if (!decodedToken) {
-      throw new NotAcceptableException("Failed!");
+      throw new NotAcceptableException('Failed!');
     }
 
     const { email } = decodedToken;
@@ -461,25 +472,143 @@ export class AuthService {
         data: {
           email,
           fullName,
-          activated: true
-        }
+          activated: true,
+        },
       });
     }
 
-    const { accessToken, refreshToken } = await this.generateTokens(user, deviceToken);
+    const { accessToken, refreshToken } = await this.generateTokens(
+      user,
+      deviceToken,
+    );
 
     return {
       user,
       accessToken,
-      refreshToken
+      refreshToken,
     };
   }
 
   async delete(userId: string) {
     await this.prisma.user.delete({
-      where: { id: userId }
+      where: { id: userId },
     });
 
     return { success: true };
+  }
+
+  async generateTonProof() {
+    const randomBits = crypto.randomBytes(8);
+
+    const expiredTime = moment().tz(this.timezone).add(3, 'minutes').unix();
+
+    // Convert expiration time to buffer
+    const expirationBuffer = Buffer.alloc(8);
+    expirationBuffer.writeBigUInt64LE(BigInt(expiredTime));
+
+    // Generate payload hex buffer
+    const payloadBuffer = crypto.randomBytes(48);
+
+    // Concatenate buffers
+    const payload = Buffer.concat([
+      randomBits,
+      expirationBuffer,
+      payloadBuffer,
+    ]);
+
+    // Generate SHA2 signature
+    const sha256 = crypto.createHash('sha256');
+    sha256.update(payload);
+    const signature = sha256.digest();
+
+    // Concatenate signature with payload
+    const payloadWithSignature = Buffer.concat([payload, signature]);
+
+    return { tonProof: payloadWithSignature.toString('hex') };
+  }
+
+  async checkTonProof(tonProof: CheckTonProofDto) {
+    const payloadBuffer = Buffer.from(tonProof.proof.payload, 'hex');
+    const expirationBuffer = payloadBuffer.slice(8, 16);
+    const expirationTimeSeconds = Number(
+      expirationBuffer.readBigUInt64LE().toString(),
+    );
+    if (moment().unix() > expirationTimeSeconds) {
+      throw new NotAcceptableException('Ton proof is expired!');
+    }
+
+    let tondata;
+    try {
+      tondata = await axios.post(
+        `https://${tonProof?.network === '-3' ? 'testnet.' : ''}tonapi.io/v2/tonconnect/stateinit`,
+        { state_init: tonProof.proof.state_init },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
+    }
+
+    if (!tondata) {
+      throw new Error('Could not get address state stateinit');
+    }
+
+    const { data } = tondata;
+
+    if (data.address !== tonProof.address) {
+      throw new NotAcceptableException('Ton address is not correct!');
+    }
+
+    const pubkey = Buffer.from(data.public_key, 'hex');
+
+    const parsedMessage = ConvertTonProofMessage(
+      {
+        account: {
+          address: tonProof.address,
+          walletStateInit: tonProof.proof.state_init,
+        },
+      },
+      tonProof,
+    );
+
+    const checkMessage = await CreateMessage(parsedMessage);
+
+    const isVerify = nacl.sign.detached.verify(
+      checkMessage,
+      parsedMessage.Signature,
+      pubkey,
+    );
+
+    if (!isVerify) {
+      throw new NotAcceptableException('Ton signature is not correct!');
+    }
+
+    let foundUser = await this.prisma.user.findFirst({
+      where: {
+        tonRawAddress: data.address,
+      },
+    });
+
+    if (!foundUser) {
+      foundUser = await this.prisma.user.create({
+        data: {
+          tonRawAddress: data.address,
+          fullName: data.address,
+        },
+      });
+    }
+
+    const { accessToken, refreshToken } = await this.generateTokens(
+      foundUser,
+      '',
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...rest } = foundUser;
+
+    return { accessToken, refreshToken, user: rest };
   }
 }

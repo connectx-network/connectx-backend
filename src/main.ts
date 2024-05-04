@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as process from "process";
+import * as process from 'process';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,10 +13,10 @@ async function bootstrap() {
     }),
   );
   const config = new DocumentBuilder()
-    .setTitle('ConnectX API')
-    .setDescription('ConnectX API description')
+    .setTitle('ConnectX-Ton API')
+    .setDescription('ConnectX-Ton API description')
     .setVersion('1.0')
-    .addTag('ConnectX API')
+    .addTag('ConnectX-Ton API')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);

@@ -1,14 +1,24 @@
-import {Body, Controller, Delete, Get, Param, Post, UseInterceptors} from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  UseInterceptors,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import {
+  CheckTonProofDto,
   CreateUserDto,
   RequestNewOtpDto,
-  ResetPasswordDto, SignInAppleDto,
+  ResetPasswordDto,
+  SignInAppleDto,
   SignInDto,
   SignInGoogleDto,
-  VerifyAccountDto
-} from "./auth.dto";
+  VerifyAccountDto,
+} from './auth.dto';
 import { User } from '../../decorators/user.decorator';
 import { UserService } from '../user/user.service';
 import { Roles } from '../../decorators/role.decorator';
@@ -86,6 +96,16 @@ export class AuthController {
   @Delete()
   @Roles(Role.ALL)
   async delete(@User('id') userId: string) {
-    return this.authService.delete(userId)
+    return this.authService.delete(userId);
+  }
+
+  @Post('ton/generate-payload')
+  async generateTonProof() {
+    return this.authService.generateTonProof();
+  }
+
+  @Post('ton/check-ton-proof')
+  async checkTonProof(@Body() data: CheckTonProofDto) {
+    return this.authService.checkTonProof(data);
   }
 }

@@ -5,8 +5,8 @@ import { RolesGuard } from '../guards/role.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 export const Roles = (role: Role) =>
-    applyDecorators(
-        ApiBearerAuth(),
-        UseGuards(JwtAuthGuard, RolesGuard),
-        SetMetadata('role', role),
-    );
+  applyDecorators(
+    ApiBearerAuth(),
+    UseGuards(JwtAuthGuard, RolesGuard),
+    SetMetadata('role', role),
+  );
