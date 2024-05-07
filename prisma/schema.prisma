@@ -16,7 +16,7 @@ model User {
   password              String?
   fullName              String                 @map("full_name")
   nickname              String?
-  tonRawAddress         String?                @map("ton_raw_address") 
+  tonRawAddress         String?                @map("ton_raw_address")
   description           String?
   country               String?
   phoneNumber           String?                @map("phone_number")
@@ -127,6 +127,7 @@ model Event {
   eventLocationDetail   EventLocationDetail?
   eventPhases           EventPhase[]
   joinedEventPhaseUsers JoinedEventPhaseUser[]
+  eventLinks            EventLink[]
 
   @@map("event")
 }
@@ -171,6 +172,16 @@ model EventAsset {
   event   Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@map("event_asset")
+}
+
+model EventLink {
+  id      String @id @unique @default(uuid())
+  title   String
+  url     String
+  eventId String @map("event_id")
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_link")
 }
 
 model JoinedEventUser {

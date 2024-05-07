@@ -179,6 +179,7 @@ export class EventService {
         },
         eventHosts: true,
         eventLocationDetail: true,
+        eventLinks: true,
         eventPhases: {
           orderBy: {
             order: 'asc',
