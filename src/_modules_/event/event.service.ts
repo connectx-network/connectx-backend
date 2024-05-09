@@ -260,7 +260,12 @@ export class EventService {
           userId: true,
           checkedIn: true,
           user: {
-            include: {
+            select: {
+              id: true,
+              company: true,
+              fullName: true,
+              gender: true,
+              jobTitle: true,
               _count: true,
               followers: true,
               following: true,
