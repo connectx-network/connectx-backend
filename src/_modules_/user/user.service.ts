@@ -238,6 +238,20 @@ export class UserService {
       throw new NotFoundException('Not found event!');
     }
 
+    await this.prisma.eventUserTemp.create({
+      data: {
+        company,
+        fullName,
+        email,
+        jobTitle,
+        eventId,
+        knowEventBy,
+        linkedInUrl,
+        telegramId,
+        companyUrl,
+      },
+    });
+
     if (foundUser) {
       const joinedEventUser = await this.prisma.joinedEventUser.findUnique({
         where: {

@@ -133,6 +133,7 @@ model Event {
   eventPhases           EventPhase[]
   joinedEventPhaseUsers JoinedEventPhaseUser[]
   eventLinks            EventLink[]
+  eventUserTemps        EventUserTemp[]
 
   @@map("event")
 }
@@ -215,6 +216,22 @@ model JoinedEventPhaseUser {
 
   @@unique([userId, eventId, eventPhaseId])
   @@map("joined_event_phase_user")
+}
+
+model EventUserTemp {
+  id          String  @id @unique @default(uuid())
+  email       String? @unique
+  fullName    String  @map("full_name")
+  company     String?
+  jobTitle    String? @map("job_title")
+  linkedInUrl String? @map("link_in_url")
+  telegramId  String? @map("telegram_id")
+  companyUrl  String? @map("company_url")
+  knowEventBy String? @map("know_event_by")
+  eventId     String  @map("event_id")
+  event       Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_user_temp")
 }
 
 model Notification {
