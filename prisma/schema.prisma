@@ -25,6 +25,9 @@ model User {
   gender                Gender?
   address               String?
   avatarUrl             String?                @map("avatar_url")
+  linkedInUrl           String?                @map("link_in_url")
+  telegramId            String?                @map("telegram_id")
+  companyUrl            String?                @map("company_url")
   isPrivate             Boolean                @default(false) @map("is_private")
   activated             Boolean                @default(false)
   userRole              UserRole               @default(USER)
@@ -120,6 +123,8 @@ model Event {
   speakers              String?
   isDeleted             Boolean                @default(false) @map("is_deleted")
   eventCategoryId       String                 @map("category_id")
+  eventType             EventType              @default(NORMAL) @map("event_type")
+  registUrl             String?                @map("regist_url")
   eventCategory         EventCategory          @relation(fields: [eventCategoryId], references: [id], onDelete: Cascade)
   joinedEventUsers      JoinedEventUser[]
   eventHosts            EventHost[]
@@ -262,4 +267,9 @@ enum EventAssetType {
 enum NotificationStatus {
   ACTIVE
   INACTIVE
+}
+
+enum EventType {
+  NORMAL
+  READONLY
 }

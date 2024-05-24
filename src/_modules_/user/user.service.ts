@@ -1,26 +1,29 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import {
   ManualCreateUserDto,
   UpdateUserDto,
-  UpdateUserInterestDto
-} from "./user.dto";
-import { Prisma } from "@prisma/client";
-import { FileService } from "../file/file.service";
-import { FileType } from "../file/file.dto";
-import { hash } from "bcrypt";
-import { MailJob, Queues } from "../../types/queue.type";
-import { InjectQueue } from "@nestjs/bull";
-import { Queue } from "bull";
+  UpdateUserInterestDto,
+} from './user.dto';
+import { Prisma } from '@prisma/client';
+import { FileService } from '../file/file.service';
+import { FileType } from '../file/file.dto';
+import { hash } from 'bcrypt';
+import { MailJob, Queues } from '../../types/queue.type';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly fileService: FileService,
-    @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue
-  ) {
-  }
+    @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
+  ) {}
 
   async update(userId: string, updateUserDto: UpdateUserDto) {
     const {
@@ -32,15 +35,15 @@ export class UserService {
       description,
       company,
       gender,
-      interests
+      interests,
     } = updateUserDto;
 
     const user = await this.prisma.user.findUnique({
-      where: { id: userId }
+      where: { id: userId },
     });
 
     if (!user) {
-      throw new NotFoundException("Not found user!");
+      throw new NotFoundException('Not found user!');
     }
 
     const updateUserPayload: Prisma.UserUpdateInput = {};
@@ -77,7 +80,7 @@ export class UserService {
             UpdateUserInterestDto[],
             UpdateUserInterestDto[],
           ],
-          obj: UpdateUserInterestDto
+          obj: UpdateUserInterestDto,
         ) => {
           if (obj.id !== undefined) {
             withId.push(obj);
@@ -86,13 +89,13 @@ export class UserService {
           }
           return [withId, withoutId];
         },
-        [[], []]
+        [[], []],
       );
 
       updateUserPayload.userInterests = {
         createMany: {
-          data: newInterests
-        }
+          data: newInterests,
+        },
       };
 
       await Promise.all([
@@ -100,24 +103,24 @@ export class UserService {
           where: {
             userId: userId,
             id: {
-              notIn: currentInterests.map((i) => i.id)
-            }
-          }
+              notIn: currentInterests.map((i) => i.id),
+            },
+          },
         }),
         Promise.all(
           currentInterests.map((i) => {
             return this.prisma.userInterest.update({
               where: { id: i.id },
-              data: { name: i.name }
+              data: { name: i.name },
             });
-          })
-        )
+          }),
+        ),
       ]);
     }
 
     await this.prisma.user.update({
       where: { id: userId },
-      data: updateUserPayload
+      data: updateUserPayload,
     });
 
     return { success: true };
@@ -126,7 +129,7 @@ export class UserService {
   async updateAvatar(userId: string, file: Express.Multer.File) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException("Not found user!");
+      throw new NotFoundException('Not found user!');
     }
 
     const fileDto = { fileType: FileType.USER_AVATAR };
@@ -135,14 +138,14 @@ export class UserService {
     await Promise.all([
       this.prisma.user.update({
         where: { id: userId },
-        data: { avatarUrl: url }
+        data: { avatarUrl: url },
       }),
       this.prisma.userImage.create({
         data: {
           url,
-          userId
-        }
-      })
+          userId,
+        },
+      }),
     ]);
     return { url };
   }
@@ -154,25 +157,25 @@ export class UserService {
         userInterests: {
           select: {
             id: true,
-            name: true
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     });
     if (!user) {
-      throw new NotFoundException("Not found user!");
+      throw new NotFoundException('Not found user!');
     }
     const [following, followers] = await Promise.all([
       this.prisma.userConnection.count({
         where: {
-          userId
-        }
+          userId,
+        },
       }),
       this.prisma.userConnection.count({
         where: {
-          followUserId: userId
-        }
-      })
+          followUserId: userId,
+        },
+      }),
     ]);
     return { ...user, following, followers };
   }
@@ -181,7 +184,7 @@ export class UserService {
     return Promise.all(
       emails.map(async (email) => {
         const createdUser = await this.prisma.user.findUnique({
-          where: { email }
+          where: { email },
         });
 
         if (createdUser) {
@@ -194,10 +197,10 @@ export class UserService {
           data: {
             email,
             fullName,
-            activated: true
-          }
+            activated: true,
+          },
         });
-      })
+      }),
     );
   }
 
@@ -214,60 +217,69 @@ export class UserService {
       jobTitle,
       phaseIds,
       eventId,
-      knowEventBy
+      knowEventBy,
+      linkedInUrl,
+      telegramId,
+      companyUrl,
     } = manualCreateUserDto;
 
     const [event, foundUser] = await Promise.all([
       this.prisma.event.findUnique({
-        where: { id: eventId }
+        where: { id: eventId },
       }),
       this.prisma.user.findUnique({
         where: {
-          email
-        }
-      })
+          email,
+        },
+      }),
     ]);
 
     if (!event) {
-      throw new NotFoundException("Not found event!");
+      throw new NotFoundException('Not found event!');
     }
 
     if (foundUser) {
-
       const joinedEventUser = await this.prisma.joinedEventUser.findUnique({
         where: {
           userId_eventId: {
             userId: foundUser.id,
-            eventId
-          }
-        }
+            eventId,
+          },
+        },
       });
 
       if (joinedEventUser) {
-        throw new ConflictException("User has joined this event!");
+        throw new ConflictException('User has joined this event!');
       }
 
-      const joinedEventPayload: Prisma.JoinedEventUserUncheckedCreateInput = { userId: foundUser.id, eventId };
+      const joinedEventPayload: Prisma.JoinedEventUserUncheckedCreateInput = {
+        userId: foundUser.id,
+        eventId,
+      };
 
       if (knowEventBy) {
         joinedEventPayload.knowEventBy = knowEventBy;
       }
 
-      let joinedEventPhaseUsersPayload: Prisma.JoinedEventPhaseUserUncheckedCreateInput[] = [];
+      let joinedEventPhaseUsersPayload: Prisma.JoinedEventPhaseUserUncheckedCreateInput[] =
+        [];
 
       if (phaseIds) {
         joinedEventPhaseUsersPayload = phaseIds.map((item) => ({
           userId: foundUser.id,
           eventId,
-          eventPhaseId: item
+          eventPhaseId: item,
         }));
       }
 
-      await Promise.all([this.prisma.joinedEventUser.create({
-        data: joinedEventPayload
-      }), this.prisma.joinedEventPhaseUser.createMany({
-        data: joinedEventPhaseUsersPayload
-      })]);
+      await Promise.all([
+        this.prisma.joinedEventUser.create({
+          data: joinedEventPayload,
+        }),
+        this.prisma.joinedEventPhaseUser.createMany({
+          data: joinedEventPhaseUsersPayload,
+        }),
+      ]);
 
       const payload = {
         eventId,
@@ -276,13 +288,12 @@ export class UserService {
         fullName,
         to: email,
         userId: foundUser.id,
-        fromDate: event.eventDate
+        fromDate: event.eventDate,
       };
 
       await this.mailTaskQueue.add(MailJob.sendQrMail, payload);
 
       return { success: true };
-
     } else {
       const password = this.generatePassword();
       const saltOrRounds = +process.env.USER_SALT;
@@ -295,7 +306,7 @@ export class UserService {
         company,
         gender,
         password: encryptedPassword,
-        activated: true
+        activated: true,
       };
 
       if (country) {
@@ -310,19 +321,27 @@ export class UserService {
       if (jobTitle) {
         createUserInput.jobTitle = jobTitle;
       }
-
+      if (linkedInUrl) {
+        createUserInput.linkedInUrl = linkedInUrl;
+      }
+      if (companyUrl) {
+        createUserInput.companyUrl = companyUrl;
+      }
+      if (telegramId) {
+        createUserInput.telegramId = telegramId;
+      }
       if (knowEventBy) {
         createUserInput.joinedEventUsers = {
           create: {
             eventId,
-            knowEventBy
-          }
+            knowEventBy,
+          },
         };
       } else {
         createUserInput.joinedEventUsers = {
           create: {
-            eventId
-          }
+            eventId,
+          },
         };
       }
 
@@ -331,14 +350,14 @@ export class UserService {
           createMany: {
             data: phaseIds.map((item) => ({
               eventId,
-              eventPhaseId: item
-            }))
-          }
+              eventPhaseId: item,
+            })),
+          },
         };
       }
 
       const user = await this.prisma.user.create({
-        data: createUserInput
+        data: createUserInput,
       });
 
       const payload = {
@@ -349,7 +368,7 @@ export class UserService {
         password,
         to: email,
         userId: user.id,
-        fromDate: event.eventDate
+        fromDate: event.eventDate,
       };
 
       await this.mailTaskQueue.add(MailJob.sendSingleQrImported, payload);
@@ -359,15 +378,15 @@ export class UserService {
   }
 
   private generatePassword(): string {
-    const lowercase = "abcdefghijklmnopqrstuvwxyz";
-    const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const digits = "0123456789";
-    const specialChars = "@%&*?";
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const digits = '0123456789';
+    const specialChars = '@%&*?';
     const passwordElements = [
       lowercase[Math.floor(Math.random() * lowercase.length)],
       uppercase[Math.floor(Math.random() * uppercase.length)],
       digits[Math.floor(Math.random() * digits.length)],
-      specialChars[Math.floor(Math.random() * specialChars.length)]
+      specialChars[Math.floor(Math.random() * specialChars.length)],
     ];
     const passwordLength = 8;
     while (passwordElements.length < passwordLength) {
@@ -376,11 +395,11 @@ export class UserService {
       passwordElements.push(
         charSet[randomSetIndex][
           Math.floor(Math.random() * charSet[randomSetIndex].length)
-          ]
+        ],
       );
     }
     passwordElements.sort(() => Math.random() - 0.5);
 
-    return passwordElements.join("");
+    return passwordElements.join('');
   }
 }

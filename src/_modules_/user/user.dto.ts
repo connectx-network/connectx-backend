@@ -63,7 +63,6 @@ export class ManualCreateUserDto {
   @ApiProperty({ required: true, enum: Gender })
   @IsEnum(Gender)
   gender: Gender;
-
   @ApiProperty({ required: true })
   @IsNotEmpty()
   eventId: string;
@@ -72,4 +71,11 @@ export class ManualCreateUserDto {
   phaseIds: string[];
   @OptionalProperty()
   knowEventBy: string;
+  @OptionalProperty()
+  linkedInUrl: string;
+  @OptionalProperty()
+  companyUrl: string;
+  @ApiProperty({ required: true })
+  @IsNotEmpty()
+  telegramId: string;
 }
