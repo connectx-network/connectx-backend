@@ -207,11 +207,6 @@ export class UserService {
   async manualCreate(manualCreateUserDto: ManualCreateUserDto) {
     const {
       company,
-      gender,
-      country,
-      address,
-      phoneNumber,
-      nickname,
       fullName,
       email,
       jobTitle,
@@ -316,22 +311,10 @@ export class UserService {
       const createUserInput: Prisma.UserUncheckedCreateInput = {
         email,
         fullName,
-        phoneNumber,
         company,
-        gender,
         password: encryptedPassword,
         activated: true,
       };
-
-      if (country) {
-        createUserInput.country = country;
-      }
-      if (address) {
-        createUserInput.address = address;
-      }
-      if (nickname) {
-        createUserInput.nickname = nickname;
-      }
       if (jobTitle) {
         createUserInput.jobTitle = jobTitle;
       }

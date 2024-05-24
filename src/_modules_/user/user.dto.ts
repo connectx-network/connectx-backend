@@ -46,23 +46,11 @@ export class ManualCreateUserDto {
   @ApiProperty({ required: true })
   @IsNotEmpty()
   fullName: string;
-  @OptionalProperty()
-  nickname: string;
-  @ApiProperty({ required: true })
-  @IsNotEmpty()
-  phoneNumber: string;
-  @OptionalProperty()
-  country: string;
-  @OptionalProperty()
-  address: string;
   @ApiProperty({ required: true })
   @IsNotEmpty()
   company: string;
   @OptionalProperty()
   jobTitle: string;
-  @ApiProperty({ required: true, enum: Gender })
-  @IsEnum(Gender)
-  gender: Gender;
   @ApiProperty({ required: true })
   @IsNotEmpty()
   eventId: string;
