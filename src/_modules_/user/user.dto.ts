@@ -66,4 +66,6 @@ export class ManualCreateUserDto {
   @ApiProperty({ required: true })
   @IsNotEmpty()
   telegramId: string;
+  @OptionalProperty()
+  userId: string;
 }

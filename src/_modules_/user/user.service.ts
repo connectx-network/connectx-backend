@@ -216,16 +216,17 @@ export class UserService {
       linkedInUrl,
       telegramId,
       companyUrl,
+      userId,
     } = manualCreateUserDto;
+
+    const findUserCondition : Prisma.UserWhereUniqueInput = userId ? {id: userId} : {email}
 
     const [event, foundUser] = await Promise.all([
       this.prisma.event.findUnique({
         where: { id: eventId },
       }),
       this.prisma.user.findUnique({
-        where: {
-          email,
-        },
+        where: findUserCondition,
       }),
     ]);
 
