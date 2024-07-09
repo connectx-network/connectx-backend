@@ -53,10 +53,10 @@ export class UserController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiBody({ type: UpdateAvatarDto })
   async updateAvatar(
-    @User('id') userId: string,
+    @TmaUser('id') telegramId: number,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.userService.updateAvatar(userId, file);
+    return this.userService.updateAvatar(telegramId, file);
   }
 
   @Get('/:id')

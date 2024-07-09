@@ -4,16 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  ManualCreateUserDto,
-  UpdateUserDto,
-  UpdateUserInterestType,
-} from './user.dto';
+import { UpdateUserDto, UpdateUserInterestType } from './user.dto';
 import { Prisma } from '@prisma/client';
 import { FileService } from '../file/file.service';
 import { FileType } from '../file/file.dto';
-import { hash } from 'bcrypt';
-import { MailJob, Queues } from '../../types/queue.type';
+import { Queues } from '../../types/queue.type';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 
@@ -35,6 +30,7 @@ export class UserService {
       description,
       company,
       jobTitle,
+      shortId,
       gender,
       interests,
     } = updateUserDto;
@@ -51,6 +47,15 @@ export class UserService {
 
     if (fullName) {
       updateUserPayload.fullName = fullName;
+    }
+    if (shortId) {
+      const shortIdUserFind = await this.prisma.user.findUnique({
+        where: { shortId },
+      });
+      if (shortIdUserFind) {
+        throw new ConflictException('Short Id is already used!');
+      }
+      updateUserPayload.shortId = shortId;
     }
     if (country) {
       updateUserPayload.country = country;
@@ -83,13 +88,15 @@ export class UserService {
       );
 
       const connectIds = interests.filter(
-          (item) => item.type === UpdateUserInterestType.CONNECT,
+        (item) => item.type === UpdateUserInterestType.CONNECT,
       );
 
       updateUserPayload.userCategories.createMany = {
-        data: connectIds.map(item => ({categoryId: item.id}))
-      }
-      updateUserPayload.userCategories.deleteMany = deleteIds.map(item => ({categoryId: item.id}))
+        data: connectIds.map((item) => ({ categoryId: item.id })),
+      };
+      updateUserPayload.userCategories.deleteMany = deleteIds.map((item) => ({
+        categoryId: item.id,
+      }));
     }
 
     await this.prisma.user.update({
@@ -100,8 +107,10 @@ export class UserService {
     return { success: true };
   }
 
-  async updateAvatar(userId: string, file: Express.Multer.File) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+  async updateAvatar(telegramId: number, file: Express.Multer.File) {
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId: `${telegramId}` },
+    });
     if (!user) {
       throw new NotFoundException('Not found user!');
     }
@@ -111,13 +120,13 @@ export class UserService {
 
     await Promise.all([
       this.prisma.user.update({
-        where: { id: userId },
+        where: { id: user.id },
         data: { avatarUrl: url },
       }),
       this.prisma.userImage.create({
         data: {
           url,
-          userId,
+          userId: user.id,
         },
       }),
     ]);

@@ -22,6 +22,8 @@ export class UpdateUserDto {
   @OptionalProperty()
   nickname: string;
   @OptionalProperty()
+  shortId: string;
+  @OptionalProperty()
   phoneNumber: string;
   @OptionalProperty()
   country: string;

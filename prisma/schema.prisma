@@ -16,6 +16,7 @@ model User {
   password              String?
   telegramId            String                 @unique @map("telegram_id")
   fullName              String                 @map("full_name")
+  shortId               String?                @unique @map("short_id")
   nickname              String?
   tonRawAddress         String?                @map("ton_raw_address")
   description           String?
