@@ -678,6 +678,7 @@ export class AuthService {
         gender: true,
         company: true,
         jobTitle: true,
+        avatarUrl: true
       },
     });
 
