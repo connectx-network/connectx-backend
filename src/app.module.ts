@@ -8,13 +8,13 @@ import { FileModule } from './_modules_/file/file.module';
 import { AuthModule } from './_modules_/auth/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { MailModule } from './_modules_/mail/mail.module';
-import { EventCategoryModule } from './_modules_/event-category/event-category.module';
 import { EventModule } from './_modules_/event/event.module';
 import { UserModule } from './_modules_/user/user.module';
 import { UserConnectionModule } from './_modules_/user-connection/user-connection.module';
 import { NotificationModule } from './_modules_/notification/notification.module';
 import { BullModule } from '@nestjs/bull';
 import { QrCodeModule } from './_modules_/qr-code/qr-code.module';
+import { CategoryModule } from './_modules_/category/category.module';
 
 @Module({
   imports: [
@@ -36,7 +36,6 @@ import { QrCodeModule } from './_modules_/qr-code/qr-code.module';
       },
     }),
     MailModule,
-    EventCategoryModule,
     EventModule,
     UserModule,
     UserConnectionModule,
@@ -48,6 +47,7 @@ import { QrCodeModule } from './_modules_/qr-code/qr-code.module';
       },
     }),
     QrCodeModule,
+    CategoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

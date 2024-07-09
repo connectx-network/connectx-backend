@@ -454,71 +454,71 @@ export class EventService {
     return shortId;
   }
 
-  async manualImportEventUser(
-    manualImportEventUserDto: ManualImportEventUserDto,
-  ) {
-    const { eventId, emails } = manualImportEventUserDto;
-    const event = await this.prisma.event.findUnique({
-      where: { id: eventId },
-    });
-
-    if (!event) {
-      throw new NotFoundException('Not found event!');
-    }
-
-    const users = await this.userService.createMany(emails);
-    const joinUsers = await Promise.all(
-      users.map(async (user) => {
-        const joinedUser = await this.prisma.joinedEventUser.findUnique({
-          where: {
-            userId_eventId: {
-              userId: user.id,
-              eventId,
-            },
-          },
-          include: {
-            user: true,
-          },
-        });
-
-        if (joinedUser) {
-          return;
-        }
-
-        return this.prisma.joinedEventUser.create({
-          data: {
-            userId: user.id,
-            eventId,
-          },
-          include: {
-            user: true,
-          },
-        });
-      }),
-    );
-
-    const rawMailPayload: QrCodeDto[] = joinUsers.map((item) => {
-      if (!item) {
-        return;
-      }
-      const { user } = item;
-      const { fullName, email } = user;
-      return {
-        eventId,
-        subject: `Ticket for ${event.name}`,
-        eventName: event.name,
-        fullName,
-        to: email,
-        userId: user.id,
-        fromDate: event.eventDate,
-      };
-    });
-
-    const mailPayload = rawMailPayload.filter((item) => item);
-
-    await this.mailTaskQueue.add(MailJob.sendQrImported, mailPayload);
-    // await this.mailService.sendManyImportedUserEventMail(mailPayload);
-
-    return { success: true };
-  }
+  // async manualImportEventUser(
+  //   manualImportEventUserDto: ManualImportEventUserDto,
+  // ) {
+  //   const { eventId, emails } = manualImportEventUserDto;
+  //   const event = await this.prisma.event.findUnique({
+  //     where: { id: eventId },
+  //   });
+  //
+  //   if (!event) {
+  //     throw new NotFoundException('Not found event!');
+  //   }
+  //
+  //   const users = await this.userService.createMany(emails);
+  //   const joinUsers = await Promise.all(
+  //     users.map(async (user) => {
+  //       const joinedUser = await this.prisma.joinedEventUser.findUnique({
+  //         where: {
+  //           userId_eventId: {
+  //             userId: user.id,
+  //             eventId,
+  //           },
+  //         },
+  //         include: {
+  //           user: true,
+  //         },
+  //       });
+  //
+  //       if (joinedUser) {
+  //         return;
+  //       }
+  //
+  //       return this.prisma.joinedEventUser.create({
+  //         data: {
+  //           userId: user.id,
+  //           eventId,
+  //         },
+  //         include: {
+  //           user: true,
+  //         },
+  //       });
+  //     }),
+  //   );
+  //
+  //   const rawMailPayload: QrCodeDto[] = joinUsers.map((item) => {
+  //     if (!item) {
+  //       return;
+  //     }
+  //     const { user } = item;
+  //     const { fullName, email } = user;
+  //     return {
+  //       eventId,
+  //       subject: `Ticket for ${event.name}`,
+  //       eventName: event.name,
+  //       fullName,
+  //       to: email,
+  //       userId: user.id,
+  //       fromDate: event.eventDate,
+  //     };
+  //   });
+  //
+  //   const mailPayload = rawMailPayload.filter((item) => item);
+  //
+  //   await this.mailTaskQueue.add(MailJob.sendQrImported, mailPayload);
+  //   // await this.mailService.sendManyImportedUserEventMail(mailPayload);
+  //
+  //   return { success: true };
+  // }
 }

@@ -82,13 +82,13 @@ export class EventController {
     return this.eventService.invite(userId, createEventInvitationDto);
   }
 
-  @Post('/import-user')
-  @Roles(Role.ADMIN)
-  async importUserEvent(
-    @Body() manualImportEventUserDto: ManualImportEventUserDto,
-  ) {
-    return this.eventService.manualImportEventUser(manualImportEventUserDto);
-  }
+  // @Post('/import-user')
+  // @Roles(Role.ADMIN)
+  // async importUserEvent(
+  //   @Body() manualImportEventUserDto: ManualImportEventUserDto,
+  // ) {
+  //   return this.eventService.manualImportEventUser(manualImportEventUserDto);
+  // }
 
   @Patch('/check-in')
   @Roles(Role.ADMIN)

@@ -1,10 +1,8 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import {CanActivate, ExecutionContext, Injectable, UnauthorizedException} from '@nestjs/common';
 import { parse, validate } from '@telegram-apps/init-data-node';
-import { AuthService } from '../_modules_/auth/auth.service';
 
 @Injectable()
 export class TelegramMiniAppGuard implements CanActivate {
-  constructor(private authService: AuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -13,7 +11,7 @@ export class TelegramMiniAppGuard implements CanActivate {
     const [authType, initDataRaw = ''] = (authToken || '').split(' ');
 
     if (!initDataRaw) {
-      throw new Error('Missing initDataRaw in request body');
+      throw new UnauthorizedException('Missing initDataRaw in request body');
     }
 
     try {

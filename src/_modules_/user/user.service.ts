@@ -7,7 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   ManualCreateUserDto,
   UpdateUserDto,
-  UpdateUserInterestDto,
+  UpdateUserInterestType,
 } from './user.dto';
 import { Prisma } from '@prisma/client';
 import { FileService } from '../file/file.service';
@@ -25,7 +25,7 @@ export class UserService {
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
   ) {}
 
-  async update(userId: string, updateUserDto: UpdateUserDto) {
+  async update(telegramId: string, updateUserDto: UpdateUserDto) {
     const {
       fullName,
       country,
@@ -34,12 +34,13 @@ export class UserService {
       nickname,
       description,
       company,
+      jobTitle,
       gender,
       interests,
     } = updateUserDto;
 
     const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+      where: { telegramId: `${telegramId}` },
     });
 
     if (!user) {
@@ -69,57 +70,30 @@ export class UserService {
     if (company) {
       updateUserPayload.company = company;
     }
+    if (jobTitle) {
+      updateUserPayload.jobTitle = jobTitle;
+    }
     if (gender) {
       updateUserPayload.gender = gender;
     }
 
     if (interests && interests.length > 0) {
-      const [currentInterests, newInterests] = interests.reduce(
-        (
-          [withId, withoutId]: [
-            UpdateUserInterestDto[],
-            UpdateUserInterestDto[],
-          ],
-          obj: UpdateUserInterestDto,
-        ) => {
-          if (obj.id !== undefined) {
-            withId.push(obj);
-          } else {
-            withoutId.push(obj);
-          }
-          return [withId, withoutId];
-        },
-        [[], []],
+      const deleteIds = interests.filter(
+        (item) => item.type === UpdateUserInterestType.DELETE,
       );
 
-      updateUserPayload.userInterests = {
-        createMany: {
-          data: newInterests,
-        },
-      };
+      const connectIds = interests.filter(
+          (item) => item.type === UpdateUserInterestType.CONNECT,
+      );
 
-      await Promise.all([
-        this.prisma.userInterest.deleteMany({
-          where: {
-            userId: userId,
-            id: {
-              notIn: currentInterests.map((i) => i.id),
-            },
-          },
-        }),
-        Promise.all(
-          currentInterests.map((i) => {
-            return this.prisma.userInterest.update({
-              where: { id: i.id },
-              data: { name: i.name },
-            });
-          }),
-        ),
-      ]);
+      updateUserPayload.userCategories.createMany = {
+        data: connectIds.map(item => ({categoryId: item.id}))
+      }
+      updateUserPayload.userCategories.deleteMany = deleteIds.map(item => ({categoryId: item.id}))
     }
 
     await this.prisma.user.update({
-      where: { id: userId },
+      where: { id: user.id },
       data: updateUserPayload,
     });
 
@@ -154,10 +128,9 @@ export class UserService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
-        userInterests: {
+        userCategories: {
           select: {
-            id: true,
-            name: true,
+            category: true,
           },
         },
       },
@@ -180,200 +153,202 @@ export class UserService {
     return { ...user, following, followers };
   }
 
-  async createMany(emails: string[]) {
-    return Promise.all(
-      emails.map(async (email) => {
-        const createdUser = await this.prisma.user.findUnique({
-          where: { email },
-        });
+  // async createMany(emails: string[]) {
+  //   return Promise.all(
+  //     emails.map(async (email) => {
+  //       const createdUser = await this.prisma.user.findUnique({
+  //         where: { email },
+  //       });
+  //
+  //       if (createdUser) {
+  //         return createdUser;
+  //       }
+  //
+  //       const fullName = email.match(/^([^@]*)@/)[1];
+  //
+  //       return this.prisma.user.create({
+  //         data: {
+  //           email,
+  //           fullName,
+  //           activated: true,
+  //         },
+  //       });
+  //     }),
+  //   );
+  // }
 
-        if (createdUser) {
-          return createdUser;
-        }
-
-        const fullName = email.match(/^([^@]*)@/)[1];
-
-        return this.prisma.user.create({
-          data: {
-            email,
-            fullName,
-            activated: true,
-          },
-        });
-      }),
-    );
-  }
-
-  async manualCreate(manualCreateUserDto: ManualCreateUserDto) {
-    const {
-      company,
-      fullName,
-      email,
-      jobTitle,
-      phaseIds,
-      eventId,
-      knowEventBy,
-      linkedInUrl,
-      telegramId,
-      companyUrl,
-      userId,
-    } = manualCreateUserDto;
-
-    const findUserCondition : Prisma.UserWhereUniqueInput = userId ? {id: userId} : {email}
-
-    const [event, foundUser] = await Promise.all([
-      this.prisma.event.findUnique({
-        where: { id: eventId },
-      }),
-      this.prisma.user.findUnique({
-        where: findUserCondition,
-      }),
-    ]);
-
-    if (!event) {
-      throw new NotFoundException('Not found event!');
-    }
-
-    if (foundUser) {
-      const joinedEventUser = await this.prisma.joinedEventUser.findUnique({
-        where: {
-          userId_eventId: {
-            userId: foundUser.id,
-            eventId,
-          },
-        },
-      });
-
-      if (joinedEventUser) {
-        throw new ConflictException('User has joined this event!');
-      }
-
-      await this.prisma.eventUserTemp.create({
-        data: {
-          company,
-          fullName,
-          email,
-          jobTitle,
-          eventId,
-          knowEventBy,
-          linkedInUrl,
-          telegramId,
-          companyUrl,
-        },
-      });
-
-      const joinedEventPayload: Prisma.JoinedEventUserUncheckedCreateInput = {
-        userId: foundUser.id,
-        eventId,
-      };
-
-      if (knowEventBy) {
-        joinedEventPayload.knowEventBy = knowEventBy;
-      }
-
-      let joinedEventPhaseUsersPayload: Prisma.JoinedEventPhaseUserUncheckedCreateInput[] =
-        [];
-
-      if (phaseIds) {
-        joinedEventPhaseUsersPayload = phaseIds.map((item) => ({
-          userId: foundUser.id,
-          eventId,
-          eventPhaseId: item,
-        }));
-      }
-
-      await Promise.all([
-        this.prisma.joinedEventUser.create({
-          data: joinedEventPayload,
-        }),
-        this.prisma.joinedEventPhaseUser.createMany({
-          data: joinedEventPhaseUsersPayload,
-        }),
-      ]);
-
-      const payload = {
-        eventId,
-        subject: `Ticket for ${event.name}`,
-        eventName: event.name,
-        fullName,
-        to: email,
-        userId: foundUser.id,
-        fromDate: event.eventDate,
-      };
-
-      await this.mailTaskQueue.add(MailJob.sendQrMail, payload);
-
-      return { success: true };
-    } else {
-      const password = this.generatePassword();
-      const saltOrRounds = +process.env.USER_SALT;
-      const encryptedPassword = await hash(password, saltOrRounds);
-
-      const createUserInput: Prisma.UserUncheckedCreateInput = {
-        email,
-        fullName,
-        company,
-        password: encryptedPassword,
-        activated: true,
-      };
-      if (jobTitle) {
-        createUserInput.jobTitle = jobTitle;
-      }
-      if (linkedInUrl) {
-        createUserInput.linkedInUrl = linkedInUrl;
-      }
-      if (companyUrl) {
-        createUserInput.companyUrl = companyUrl;
-      }
-      if (telegramId) {
-        createUserInput.telegramId = telegramId;
-      }
-      if (knowEventBy) {
-        createUserInput.joinedEventUsers = {
-          create: {
-            eventId,
-            knowEventBy,
-          },
-        };
-      } else {
-        createUserInput.joinedEventUsers = {
-          create: {
-            eventId,
-          },
-        };
-      }
-
-      if (phaseIds) {
-        createUserInput.joinedEventPhaseUsers = {
-          createMany: {
-            data: phaseIds.map((item) => ({
-              eventId,
-              eventPhaseId: item,
-            })),
-          },
-        };
-      }
-
-      const user = await this.prisma.user.create({
-        data: createUserInput,
-      });
-
-      const payload = {
-        eventId,
-        subject: `Ticket for ${event.name}`,
-        eventName: event.name,
-        fullName,
-        password,
-        to: email,
-        userId: user.id,
-        fromDate: event.eventDate,
-      };
-
-      await this.mailTaskQueue.add(MailJob.sendSingleQrImported, payload);
-
-      return { success: true };
-    }
-  }
+  // async manualCreate(manualCreateUserDto: ManualCreateUserDto) {
+  //   const {
+  //     company,
+  //     fullName,
+  //     email,
+  //     jobTitle,
+  //     phaseIds,
+  //     eventId,
+  //     knowEventBy,
+  //     linkedInUrl,
+  //     telegramId,
+  //     companyUrl,
+  //     userId,
+  //   } = manualCreateUserDto;
+  //
+  //   const findUserCondition: Prisma.UserWhereUniqueInput = userId
+  //     ? { id: userId }
+  //     : { email };
+  //
+  //   const [event, foundUser] = await Promise.all([
+  //     this.prisma.event.findUnique({
+  //       where: { id: eventId },
+  //     }),
+  //     this.prisma.user.findUnique({
+  //       where: findUserCondition,
+  //     }),
+  //   ]);
+  //
+  //   if (!event) {
+  //     throw new NotFoundException('Not found event!');
+  //   }
+  //
+  //   if (foundUser) {
+  //     const joinedEventUser = await this.prisma.joinedEventUser.findUnique({
+  //       where: {
+  //         userId_eventId: {
+  //           userId: foundUser.id,
+  //           eventId,
+  //         },
+  //       },
+  //     });
+  //
+  //     if (joinedEventUser) {
+  //       throw new ConflictException('User has joined this event!');
+  //     }
+  //
+  //     await this.prisma.eventUserTemp.create({
+  //       data: {
+  //         company,
+  //         fullName,
+  //         email,
+  //         jobTitle,
+  //         eventId,
+  //         knowEventBy,
+  //         linkedInUrl,
+  //         telegramId,
+  //         companyUrl,
+  //       },
+  //     });
+  //
+  //     const joinedEventPayload: Prisma.JoinedEventUserUncheckedCreateInput = {
+  //       userId: foundUser.id,
+  //       eventId,
+  //     };
+  //
+  //     if (knowEventBy) {
+  //       joinedEventPayload.knowEventBy = knowEventBy;
+  //     }
+  //
+  //     let joinedEventPhaseUsersPayload: Prisma.JoinedEventPhaseUserUncheckedCreateInput[] =
+  //       [];
+  //
+  //     if (phaseIds) {
+  //       joinedEventPhaseUsersPayload = phaseIds.map((item) => ({
+  //         userId: foundUser.id,
+  //         eventId,
+  //         eventPhaseId: item,
+  //       }));
+  //     }
+  //
+  //     await Promise.all([
+  //       this.prisma.joinedEventUser.create({
+  //         data: joinedEventPayload,
+  //       }),
+  //       this.prisma.joinedEventPhaseUser.createMany({
+  //         data: joinedEventPhaseUsersPayload,
+  //       }),
+  //     ]);
+  //
+  //     const payload = {
+  //       eventId,
+  //       subject: `Ticket for ${event.name}`,
+  //       eventName: event.name,
+  //       fullName,
+  //       to: email,
+  //       userId: foundUser.id,
+  //       fromDate: event.eventDate,
+  //     };
+  //
+  //     await this.mailTaskQueue.add(MailJob.sendQrMail, payload);
+  //
+  //     return { success: true };
+  //   } else {
+  //     const password = this.generatePassword();
+  //     const saltOrRounds = +process.env.USER_SALT;
+  //     const encryptedPassword = await hash(password, saltOrRounds);
+  //
+  //     const createUserInput: Prisma.UserUncheckedCreateInput = {
+  //       email,
+  //       fullName,
+  //       company,
+  //       password: encryptedPassword,
+  //       activated: true,
+  //     };
+  //     if (jobTitle) {
+  //       createUserInput.jobTitle = jobTitle;
+  //     }
+  //     if (linkedInUrl) {
+  //       createUserInput.linkedInUrl = linkedInUrl;
+  //     }
+  //     if (companyUrl) {
+  //       createUserInput.companyUrl = companyUrl;
+  //     }
+  //     if (telegramId) {
+  //       createUserInput.telegramId = telegramId;
+  //     }
+  //     if (knowEventBy) {
+  //       createUserInput.joinedEventUsers = {
+  //         create: {
+  //           eventId,
+  //           knowEventBy,
+  //         },
+  //       };
+  //     } else {
+  //       createUserInput.joinedEventUsers = {
+  //         create: {
+  //           eventId,
+  //         },
+  //       };
+  //     }
+  //
+  //     if (phaseIds) {
+  //       createUserInput.joinedEventPhaseUsers = {
+  //         createMany: {
+  //           data: phaseIds.map((item) => ({
+  //             eventId,
+  //             eventPhaseId: item,
+  //           })),
+  //         },
+  //       };
+  //     }
+  //
+  //     const user = await this.prisma.user.create({
+  //       data: createUserInput,
+  //     });
+  //
+  //     const payload = {
+  //       eventId,
+  //       subject: `Ticket for ${event.name}`,
+  //       eventName: event.name,
+  //       fullName,
+  //       password,
+  //       to: email,
+  //       userId: user.id,
+  //       fromDate: event.eventDate,
+  //     };
+  //
+  //     await this.mailTaskQueue.add(MailJob.sendSingleQrImported, payload);
+  //
+  //     return { success: true };
+  //   }
+  // }
 
   private generatePassword(): string {
     const lowercase = 'abcdefghijklmnopqrstuvwxyz';

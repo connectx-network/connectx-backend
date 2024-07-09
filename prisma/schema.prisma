@@ -14,7 +14,7 @@ model User {
   id                    String                 @id @unique @default(uuid())
   email                 String?                @unique
   password              String?
-  telegramId            String?                @map("telegram_id")
+  telegramId            String                 @unique @map("telegram_id")
   fullName              String                 @map("full_name")
   nickname              String?
   tonRawAddress         String?                @map("ton_raw_address")
@@ -31,8 +31,8 @@ model User {
   isPrivate             Boolean                @default(false) @map("is_private")
   activated             Boolean                @default(false)
   userRole              UserRole               @default(USER)
+  userCategories        UserCategory[]
   userImages            UserImage[]
-  userInterests         UserInterest[]
   following             UserConnection[]       @relation("UserToFolower")
   followers             UserConnection[]       @relation("FolowerToUser")
   joinedEventUsers      JoinedEventUser[]
@@ -68,14 +68,15 @@ model UserVerification {
   @@map("user_verification ")
 }
 
-model UserInterest {
-  id     String @id @unique @default(uuid())
-  name   String
-  userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+model UserCategory {
+  id         String   @id @unique @default(uuid())
+  categoryId String   @map("interest_id")
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, name])
-  @@map("user_interest")
+  @@unique([userId, categoryId])
+  @@map("user_category")
 }
 
 model UserImage {
@@ -100,12 +101,13 @@ model UserConnection {
   @@map("user_connection")
 }
 
-model EventCategory {
-  id     String  @id @unique @default(uuid())
-  name   String
-  events Event[]
+model Category {
+  id           String         @id @unique @default(uuid())
+  name         String
+  events       Event[]
+  UserCategory UserCategory[]
 
-  @@map("event_category")
+  @@map("category")
 }
 
 model Event {
@@ -125,7 +127,7 @@ model Event {
   eventCategoryId       String                 @map("category_id")
   eventType             EventType              @default(NORMAL) @map("event_type")
   registUrl             String?                @map("regist_url")
-  eventCategory         EventCategory          @relation(fields: [eventCategoryId], references: [id], onDelete: Cascade)
+  eventCategory         Category               @relation(fields: [eventCategoryId], references: [id], onDelete: Cascade)
   joinedEventUsers      JoinedEventUser[]
   eventHosts            EventHost[]
   eventAssets           EventAsset[]

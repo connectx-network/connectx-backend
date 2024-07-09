@@ -3,12 +3,17 @@ import { OptionalProperty } from '../../decorators/validator.decorator';
 import { IsEmail, IsEnum, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
+export enum UpdateUserInterestType {
+  DELETE = 'DELETE',
+  CONNECT = 'CONNECT',
+}
+
 export class UpdateUserInterestDto {
   @OptionalProperty()
   id: string;
-  @ApiProperty({ required: true })
-  @IsNotEmpty()
-  name: string;
+  @ApiProperty({ required: true, enum: UpdateUserInterestType })
+  @IsEnum(UpdateUserInterestType)
+  type: UpdateUserInterestType;
 }
 
 export class UpdateUserDto {
@@ -24,6 +29,8 @@ export class UpdateUserDto {
   address: string;
   @OptionalProperty()
   company: string;
+  @OptionalProperty()
+  jobTitle: string;
   @OptionalProperty()
   description: string;
   @OptionalProperty({ enum: Gender })

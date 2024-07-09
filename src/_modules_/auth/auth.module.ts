@@ -12,6 +12,6 @@ import {TmaStrategy} from "../../strategies/tma.strategy";
 @Module({
   imports: [MailModule, JwtModule, UserModule, FirebaseModule],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy, TmaStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy],
 })
 export class AuthModule {}
