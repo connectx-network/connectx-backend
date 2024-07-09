@@ -7,10 +7,11 @@ import { JwtStrategy } from '../../strategies/jwt.strategy';
 import { LocalStrategy } from '../../strategies/local.strategy';
 import { UserModule } from '../user/user.module';
 import { FirebaseModule } from '../firebase/firebase.module';
+import {TmaStrategy} from "../../strategies/tma.strategy";
 
 @Module({
   imports: [MailModule, JwtModule, UserModule, FirebaseModule],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, TmaStrategy],
 })
 export class AuthModule {}

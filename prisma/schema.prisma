@@ -14,6 +14,7 @@ model User {
   id                    String                 @id @unique @default(uuid())
   email                 String?                @unique
   password              String?
+  telegramId            String?                @map("telegram_id")
   fullName              String                 @map("full_name")
   nickname              String?
   tonRawAddress         String?                @map("ton_raw_address")
@@ -26,7 +27,6 @@ model User {
   address               String?
   avatarUrl             String?                @map("avatar_url")
   linkedInUrl           String?                @map("link_in_url")
-  telegramId            String?                @map("telegram_id")
   companyUrl            String?                @map("company_url")
   isPrivate             Boolean                @default(false) @map("is_private")
   activated             Boolean                @default(false)

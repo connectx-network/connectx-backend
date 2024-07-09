@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { Address } from 'ton';
+// import { Address } from 'ton';
 
 interface Domain {
   LengthBytes: number; // uint32 `json:"lengthBytes"`
@@ -23,26 +23,26 @@ interface Wallet {
   };
 }
 
-export function ConvertTonProofMessage(
-  walletInfo: Wallet,
-  tp: any,
-): ParsedMessage {
-  const address = Address.parse(walletInfo.account.address);
-
-  const res: ParsedMessage = {
-    Workchain: address.workChain,
-    Address: address.hash,
-    Domain: {
-      LengthBytes: tp.proof.domain.lengthBytes,
-      Value: tp.proof.domain.value,
-    },
-    Signature: Buffer.from(tp.proof.signature, 'base64'),
-    Payload: tp.proof.payload,
-    StateInit: walletInfo.account.walletStateInit,
-    Timstamp: tp.proof.timestamp,
-  };
-  return res;
-}
+// export function ConvertTonProofMessage(
+//   walletInfo: Wallet,
+//   tp: any,
+// ): ParsedMessage {
+//   const address = Address.parse(walletInfo.account.address);
+//
+//   const res: ParsedMessage = {
+//     Workchain: address.workChain,
+//     Address: address.hash,
+//     Domain: {
+//       LengthBytes: tp.proof.domain.lengthBytes,
+//       Value: tp.proof.domain.value,
+//     },
+//     Signature: Buffer.from(tp.proof.signature, 'base64'),
+//     Payload: tp.proof.payload,
+//     StateInit: walletInfo.account.walletStateInit,
+//     Timstamp: tp.proof.timestamp,
+//   };
+//   return res;
+// }
 
 const tonProofPrefix = 'ton-proof-item-v2/';
 const tonConnectPrefix = 'ton-connect';

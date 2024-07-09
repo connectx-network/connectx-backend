@@ -4,7 +4,7 @@ import {
   Delete,
   Get,
   Param,
-  Post,
+  Post, UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -24,6 +24,9 @@ import { UserService } from '../user/user.service';
 import { Roles } from '../../decorators/role.decorator';
 import { Role } from '../../types/auth.type';
 import { UserTransformInterceptor } from '../../interceptors/user.interceptor';
+import {TelegramMiniAppGuard} from "../../guards/tma.guard";
+import {TmaUser} from "../../decorators/tmaUser.decorator";
+import * as InitDateNode from "@telegram-apps/init-data-node";
 
 @Controller('auth')
 @ApiTags('auth')
@@ -104,8 +107,20 @@ export class AuthController {
     return this.authService.generateTonProof();
   }
 
-  @Post('ton/check-ton-proof')
-  async checkTonProof(@Body() data: CheckTonProofDto) {
-    return this.authService.checkTonProof(data);
+  // @Post('ton/check-ton-proof')
+  // async checkTonProof(@Body() data: CheckTonProofDto) {
+  //   return this.authService.checkTonProof(data);
+  // }
+
+  @Get('/tma/self')
+  @UseGuards(TelegramMiniAppGuard)
+  async getSelfTma(@TmaUser('id') telegramId: number) {
+    return this.authService.verifyTelegramUser(telegramId);
+  }
+
+  @Post('/tma/signup')
+  @UseGuards(TelegramMiniAppGuard)
+  async signUpTma(@TmaUser() data: InitDateNode.User) {
+    return this.authService.signUpTma(data);
   }
 }

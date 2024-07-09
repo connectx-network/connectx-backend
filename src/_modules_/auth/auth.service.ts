@@ -1,14 +1,12 @@
 import {
   ConflictException,
   Injectable,
-  InternalServerErrorException,
   NotAcceptableException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
-  CheckTonProofDto,
   CreateUserDto,
   RequestNewOtpDto,
   ResetPasswordDto,
@@ -26,9 +24,7 @@ import * as process from 'process';
 import { JwtService } from '@nestjs/jwt';
 import { FirebaseService } from '../firebase/firebase.service';
 import * as crypto from 'crypto';
-import axios from 'axios';
-import { ConvertTonProofMessage, CreateMessage } from 'src/utils/ton.util';
-import * as nacl from 'tweetnacl';
+import * as InitDataNode from '@telegram-apps/init-data-node';
 
 @Injectable()
 export class AuthService {
@@ -527,88 +523,148 @@ export class AuthService {
     return { tonProof: payloadWithSignature.toString('hex') };
   }
 
-  async checkTonProof(tonProof: CheckTonProofDto) {
-    const payloadBuffer = Buffer.from(tonProof.proof.payload, 'hex');
-    const expirationBuffer = payloadBuffer.slice(8, 16);
-    const expirationTimeSeconds = Number(
-      expirationBuffer.readBigUInt64LE().toString(),
-    );
-    if (moment().unix() > expirationTimeSeconds) {
-      throw new NotAcceptableException('Ton proof is expired!');
-    }
+  // async checkTonProof(tonProof: CheckTonProofDto) {
+  //   const payloadBuffer = Buffer.from(tonProof.proof.payload, 'hex');
+  //   const expirationBuffer = payloadBuffer.slice(8, 16);
+  //   const expirationTimeSeconds = Number(
+  //     expirationBuffer.readBigUInt64LE().toString(),
+  //   );
+  //   if (moment().unix() > expirationTimeSeconds) {
+  //     throw new NotAcceptableException('Ton proof is expired!');
+  //   }
+  //
+  //   let tondata;
+  //   try {
+  //     tondata = await axios.post(
+  //       `https://${tonProof?.network === '-3' ? 'testnet.' : ''}tonapi.io/v2/tonconnect/stateinit`,
+  //       { state_init: tonProof.proof.state_init },
+  //       {
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //         },
+  //       },
+  //     );
+  //   } catch (error) {
+  //     throw new InternalServerErrorException(error.message);
+  //   }
+  //
+  //   if (!tondata) {
+  //     throw new Error('Could not get address state stateinit');
+  //   }
+  //
+  //   const { data } = tondata;
+  //
+  //   if (data.address !== tonProof.address) {
+  //     throw new NotAcceptableException('Ton address is not correct!');
+  //   }
+  //
+  //   const pubkey = Buffer.from(data.public_key, 'hex');
+  //
+  //   const parsedMessage = ConvertTonProofMessage(
+  //     {
+  //       account: {
+  //         address: tonProof.address,
+  //         walletStateInit: tonProof.proof.state_init,
+  //       },
+  //     },
+  //     tonProof,
+  //   );
+  //
+  //   const checkMessage = await CreateMessage(parsedMessage);
+  //
+  //   const isVerify = nacl.sign.detached.verify(
+  //     checkMessage,
+  //     parsedMessage.Signature,
+  //     pubkey,
+  //   );
+  //
+  //   if (!isVerify) {
+  //     throw new NotAcceptableException('Ton signature is not correct!');
+  //   }
+  //
+  //   let foundUser = await this.prisma.user.findFirst({
+  //     where: {
+  //       tonRawAddress: data.address,
+  //     },
+  //   });
+  //
+  //   if (!foundUser) {
+  //     foundUser = await this.prisma.user.create({
+  //       data: {
+  //         tonRawAddress: data.address,
+  //         fullName: data.address,
+  //       },
+  //     });
+  //   }
+  //
+  //   const { accessToken, refreshToken } = await this.generateTokens(
+  //     foundUser,
+  //     '',
+  //   );
+  //
+  //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //   const { password, ...rest } = foundUser;
+  //
+  //   return { accessToken, refreshToken, user: rest };
+  // }
 
-    let tondata;
-    try {
-      tondata = await axios.post(
-        `https://${tonProof?.network === '-3' ? 'testnet.' : ''}tonapi.io/v2/tonconnect/stateinit`,
-        { state_init: tonProof.proof.state_init },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-    } catch (error) {
-      throw new InternalServerErrorException(error.message);
-    }
-
-    if (!tondata) {
-      throw new Error('Could not get address state stateinit');
-    }
-
-    const { data } = tondata;
-
-    if (data.address !== tonProof.address) {
-      throw new NotAcceptableException('Ton address is not correct!');
-    }
-
-    const pubkey = Buffer.from(data.public_key, 'hex');
-
-    const parsedMessage = ConvertTonProofMessage(
-      {
-        account: {
-          address: tonProof.address,
-          walletStateInit: tonProof.proof.state_init,
-        },
-      },
-      tonProof,
-    );
-
-    const checkMessage = await CreateMessage(parsedMessage);
-
-    const isVerify = nacl.sign.detached.verify(
-      checkMessage,
-      parsedMessage.Signature,
-      pubkey,
-    );
-
-    if (!isVerify) {
-      throw new NotAcceptableException('Ton signature is not correct!');
-    }
-
-    let foundUser = await this.prisma.user.findFirst({
+  async verifyTelegramUser(telegramId: number) {
+    const foundUser = await this.prisma.user.findFirst({
       where: {
-        tonRawAddress: data.address,
+        telegramId: `${telegramId}`,
+      },
+      select: {
+        id: true,
+        telegramId: true,
+        fullName: true,
+        gender: true,
+        company: true,
+        jobTitle: true,
       },
     });
 
     if (!foundUser) {
-      foundUser = await this.prisma.user.create({
-        data: {
-          tonRawAddress: data.address,
-          fullName: data.address,
-        },
-      });
+      throw new NotFoundException('Not found user!');
     }
 
-    const { accessToken, refreshToken } = await this.generateTokens(
-      foundUser,
-      '',
-    );
+    return foundUser;
+  }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...rest } = foundUser;
+  async signUpTma(user: InitDataNode.User) {
+    const { id, firstName, lastName, photoUrl } = user;
 
-    return { accessToken, refreshToken, user: rest };
+    const foundUser = await this.prisma.user.findFirst({
+      where: {
+        telegramId: `${id}`,
+      },
+      select: {
+        id: true,
+        telegramId: true,
+        fullName: true,
+        gender: true,
+        company: true,
+        jobTitle: true,
+      },
+    });
+
+    if (foundUser) {
+      throw new ConflictException('Id has created!');
+    }
+
+    return this.prisma.user.create({
+      data: {
+        telegramId: `${id}`,
+        fullName: `${firstName} ${lastName}`,
+        avatarUrl: photoUrl,
+      },
+      select: {
+        id: true,
+        telegramId: true,
+        fullName: true,
+        gender: true,
+        company: true,
+        jobTitle: true,
+      }
+    });
   }
 }

@@ -110,3 +110,12 @@ export class CheckTonProofDto {
     signature: string;
   };
 }
+
+export class TelegramUserDto {
+  allowsWriteToPm: boolean;
+  firstName: string;
+  id: number;
+  languageCode: string;
+  lastName: string;
+  username: string;
+}
