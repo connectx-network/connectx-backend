@@ -76,6 +76,6 @@ export class UserController {
   @UseGuards(TelegramMiniAppGuard)
   @ApiBearerAuth()
   async hardDelete(@TmaUser('id') telegramId: number) {
-    return this.userService.delete(telegramId)
+    return this.userService.deleteHard(telegramId)
   }
 }
