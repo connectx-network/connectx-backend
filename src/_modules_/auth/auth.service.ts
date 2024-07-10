@@ -678,13 +678,20 @@ export class AuthService {
         gender: true,
         company: true,
         jobTitle: true,
-        avatarUrl: true
+        avatarUrl: true,
+        isDeleted: true
       },
     });
 
     if (!foundUser) {
       throw new NotFoundException('Not found user!');
     }
+
+    if (foundUser.isDeleted) {
+      throw new UnauthorizedException('Account is deleted!');
+    }
+
+    delete foundUser.isDeleted
 
     return foundUser;
   }

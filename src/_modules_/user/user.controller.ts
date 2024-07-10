@@ -1,6 +1,6 @@
 import {
   Body,
-  Controller,
+  Controller, Delete,
   Get,
   Param,
   Patch,
@@ -41,7 +41,7 @@ export class UserController {
   @ApiBody({ type: UpdateUserDto })
   @ApiBearerAuth()
   async update(
-    @TmaUser('id') telegramId: string,
+    @TmaUser('id') telegramId: number,
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.userService.update(telegramId, updateUserDto);
@@ -63,5 +63,19 @@ export class UserController {
   @UseInterceptors(UserTransformInterceptor)
   async findOne(@Param('id') userId: string) {
     return this.userService.findOne(userId);
+  }
+
+  @Delete()
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async delete(@TmaUser('id') telegramId: number) {
+    return this.userService.delete(telegramId)
+  }
+
+  @Delete('/hard')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async hardDelete(@TmaUser('id') telegramId: number) {
+    return this.userService.delete(telegramId)
   }
 }

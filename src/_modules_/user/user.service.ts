@@ -20,7 +20,7 @@ export class UserService {
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
   ) {}
 
-  async update(telegramId: string, updateUserDto: UpdateUserDto) {
+  async update(telegramId: number, updateUserDto: UpdateUserDto) {
     const {
       fullName,
       country,
@@ -131,6 +131,39 @@ export class UserService {
       }),
     ]);
     return { url };
+  }
+
+  async delete(telegramId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId: `${telegramId}` },
+    });
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isDeleted: true,
+      },
+    });
+
+    return { success: true };
+  }
+
+  async deleteHard(telegramId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId: `${telegramId}` },
+    });
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    await this.prisma.user.delete({
+      where: { id: user.id },
+    });
+
+    return { success: true };
   }
 
   async findOne(userId: string) {
