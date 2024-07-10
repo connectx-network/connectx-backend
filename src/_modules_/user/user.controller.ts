@@ -12,7 +12,7 @@ import {
 import { UserService } from './user.service';
 import {
   ManualCreateUserDto,
-  UpdateAvatarDto,
+  UpdateAvatarDto, UpdateSettingDto,
   UpdateUserDto,
 } from './user.dto';
 import { Roles } from '../../decorators/role.decorator';
@@ -77,5 +77,13 @@ export class UserController {
   @ApiBearerAuth()
   async hardDelete(@TmaUser('id') telegramId: number) {
     return this.userService.deleteHard(telegramId)
+  }
+
+  @Patch('/setting')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  @ApiBody({ type: UpdateSettingDto })
+  async updateSetting(@TmaUser('id') telegramId: number, @Body() updateSettingDto : UpdateSettingDto) {
+    return this.userService.updateSetting(telegramId, updateSettingDto)
   }
 }

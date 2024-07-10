@@ -1,6 +1,6 @@
 import { Gender } from '@prisma/client';
 import { OptionalProperty } from '../../decorators/validator.decorator';
-import { IsEmail, IsEnum, IsNotEmpty } from 'class-validator';
+import {IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsString} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum UpdateUserInterestType {
@@ -77,4 +77,9 @@ export class ManualCreateUserDto {
   telegramId: string;
   @OptionalProperty()
   userId: string;
+}
+
+export class UpdateSettingDto {
+  @OptionalProperty({description: 'Y | N'})
+  isPrivate: string;
 }

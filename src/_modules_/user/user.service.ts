@@ -4,7 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { UpdateUserDto, UpdateUserInterestType } from './user.dto';
+import {
+  UpdateSettingDto,
+  UpdateUserDto,
+  UpdateUserInterestType,
+} from './user.dto';
 import { Prisma } from '@prisma/client';
 import { FileService } from '../file/file.service';
 import { FileType } from '../file/file.dto';
@@ -193,6 +197,39 @@ export class UserService {
       }),
     ]);
     return { ...user, following, followers };
+  }
+
+  async updateSetting(telegramId: number, updateSettingDto: UpdateSettingDto) {
+    const { isPrivate } = updateSettingDto;
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId: `${telegramId}`,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    const updateSettingPayload: Prisma.UserUncheckedUpdateInput = {};
+
+    if (isPrivate) {
+      if (isPrivate === 'Y') {
+        updateSettingPayload.isPrivate = true;
+      } else if (isPrivate === 'N') {
+        updateSettingPayload.isPrivate = false;
+      }
+    }
+
+    await this.prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: updateSettingPayload,
+    });
+
+    return { success: true };
   }
 
   // async createMany(emails: string[]) {
