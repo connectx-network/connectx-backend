@@ -8,7 +8,7 @@ export enum UpdateUserInterestType {
   CONNECT = 'CONNECT',
 }
 
-export class UpdateUserInterestDto {
+export class UpdateUserCategoryDto {
   @OptionalProperty()
   id: string;
   @ApiProperty({ required: true, enum: UpdateUserInterestType })
@@ -38,8 +38,8 @@ export class UpdateUserDto {
   @OptionalProperty({ enum: Gender })
   @IsEnum(Gender)
   gender: Gender;
-  @OptionalProperty({ isArray: true, type: UpdateUserInterestDto })
-  interests: UpdateUserInterestDto[];
+  @OptionalProperty({ isArray: true, type: UpdateUserCategoryDto })
+  categories: UpdateUserCategoryDto[];
 }
 
 export class UpdateAvatarDto {

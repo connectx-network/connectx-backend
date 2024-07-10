@@ -32,7 +32,7 @@ export class UserService {
       jobTitle,
       shortId,
       gender,
-      interests,
+      categories,
     } = updateUserDto;
 
     const user = await this.prisma.user.findUnique({
@@ -82,12 +82,12 @@ export class UserService {
       updateUserPayload.gender = gender;
     }
 
-    if (interests && interests.length > 0) {
-      const deleteIds = interests.filter(
+    if (categories && categories.length > 0) {
+      const deleteIds = categories.filter(
         (item) => item.type === UpdateUserInterestType.DELETE,
       );
 
-      const connectIds = interests.filter(
+      const connectIds = categories.filter(
         (item) => item.type === UpdateUserInterestType.CONNECT,
       );
 
