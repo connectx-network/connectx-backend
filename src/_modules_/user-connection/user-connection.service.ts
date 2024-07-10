@@ -7,12 +7,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import {
   AcceptConnectionDto,
-  ConnectionStatus,
+  ConnectionStatus, FindListFollowDto,
   FindUserConnectionDto,
   FindUserConnectionResponse,
 } from './user-connection.dto';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
-import { NotificationMessage } from '../../types/notification.type';
 import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
@@ -22,7 +21,13 @@ export class UserConnectionService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  async create(userId: string, targetId: string) {
+  async create(telegramId: number, targetId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId: `${telegramId}`,
+      },
+    });
+
     const target = await this.prisma.user.findUnique({
       where: { id: targetId },
     });
@@ -34,7 +39,7 @@ export class UserConnectionService {
     const createdUserConnections = await this.prisma.userConnection.findUnique({
       where: {
         userId_followUserId: {
-          userId,
+          userId: user.id,
           followUserId: targetId,
         },
       },
@@ -42,34 +47,34 @@ export class UserConnectionService {
 
     if (createdUserConnections) {
       if (createdUserConnections.accepted) {
-        throw new ConflictException('You are connected to this user!');
+        throw new ConflictException('You are following this user!');
       } else {
         throw new ConflictException(
-          'You requested connection to is this user!',
+          'You have sent follow request to is this user!',
         );
       }
     }
 
     const createUserConnectionPayload: Prisma.UserConnectionUncheckedCreateInput =
       {
-        accepted: false,
+        accepted: !target.isPrivate,
         followUserId: targetId,
-        userId: userId,
+        userId: user.id,
       };
 
     await this.prisma.userConnection.create({
       data: createUserConnectionPayload,
     });
 
-    const { title, body } = NotificationMessage.NEW_FOLLOWER;
-    await this.notificationService.create({
-      title,
-      body,
-      senderId: userId,
-      receiverId: targetId,
-      notificationType: 'NEW_FOLLOWER',
-      objectId: userId,
-    });
+    // const { title, body } = NotificationMessage.NEW_FOLLOWER;
+    // await this.notificationService.create({
+    //   title,
+    //   body,
+    //   senderId: user.id,
+    //   receiverId: targetId,
+    //   notificationType: 'NEW_FOLLOWER',
+    //   objectId: user.id,
+    // });
 
     return { success: true };
   }
@@ -121,19 +126,46 @@ export class UserConnectionService {
     };
   }
 
-  async getRelationship(userId: string, targetId: string) {
-    const userConnectionWithTarget =
-      await this.prisma.userConnection.findUnique({
+  async getRelationship(telegramId: number, targetId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId: `${telegramId}`,
+      },
+    });
+
+    const [userToTarget, targetToUser] = await Promise.all([
+      this.prisma.userConnection.findUnique({
         where: {
           userId_followUserId: {
-            userId,
+            userId: user.id,
             followUserId: targetId,
           },
+          accepted: true,
         },
-      });
-    if (userConnectionWithTarget.accepted) {
-      return ConnectionStatus.CONNECTED;
+      }),
+      this.prisma.userConnection.findUnique({
+        where: {
+          userId_followUserId: {
+            userId: targetId,
+            followUserId: user.id,
+          },
+          accepted: true,
+        },
+      }),
+    ]);
+
+    if (userToTarget && targetToUser) {
+      return ConnectionStatus.FRIEND;
     }
+
+    if (userToTarget && !targetToUser) {
+      return ConnectionStatus.FOLLOWING;
+    }
+
+    if (!userToTarget && targetToUser) {
+      return ConnectionStatus.FOLLOWER;
+    }
+
     return ConnectionStatus.NOT_CONNECTED;
   }
 
@@ -196,5 +228,102 @@ export class UserConnectionService {
     }
 
     return { success: true };
+  }
+
+  async findListFollowing(
+    telegramId: number,
+    findListFollowDto: FindListFollowDto,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId: `${telegramId}`,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    const { size, page } = findListFollowDto;
+    const skip = (page - 1) * size;
+
+    const findListFollowingCondition: Prisma.UserWhereInput = {
+      following: {
+        some: {
+          userId: user.id,
+          accepted: true,
+        },
+      },
+    };
+
+    const [users, count] = await Promise.all([
+      this.prisma.user.findMany({
+        skip,
+        take: size,
+        where: findListFollowingCondition,
+        select: {
+          following: true,
+        },
+      }),
+      this.prisma.user.count({
+        where: findListFollowingCondition,
+      }),
+    ]);
+
+    return {
+      ...getDefaultPaginationReponse(findListFollowDto, count),
+      data: users,
+    };
+  }
+
+  async findListFollower(
+      telegramId: number,
+      findListFollowDto: FindListFollowDto,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId: `${telegramId}`,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    const { size, page } = findListFollowDto;
+    const skip = (page - 1) * size;
+
+    const findListFollowingCondition: Prisma.UserWhereInput = {
+      followers: {
+        some: {
+          userId: user.id,
+          accepted: true,
+        },
+      },
+    };
+
+    const [users, count] = await Promise.all([
+      this.prisma.user.findMany({
+        skip,
+        take: size,
+        where: findListFollowingCondition,
+        select: {
+          id: true,
+          telegramId: true,
+          fullName: true,
+          gender: true,
+          company: true,
+          jobTitle: true,
+        }
+      }),
+      this.prisma.user.count({
+        where: findListFollowingCondition,
+      }),
+    ]);
+
+    return {
+      ...getDefaultPaginationReponse(findListFollowDto, count),
+      data: users,
+    };
   }
 }

@@ -10,7 +10,9 @@ export enum FollowType {
 }
 
 export const ConnectionStatus = {
-  CONNECTED: 'CONNECTED',
+  FRIEND: 'FRIEND',
+  FOLLOWER: 'FOLLOWER',
+  FOLLOWING: 'FOLLOWING',
   NOT_CONNECTED: 'NOT_CONNECTED',
 } as const;
 
@@ -46,3 +48,6 @@ export class AcceptConnectionDto {
   @IsBoolean()
   isAccepted: boolean;
 }
+
+export class FindListFollowDto extends BasePagingDto{}
+

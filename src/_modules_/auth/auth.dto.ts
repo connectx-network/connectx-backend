@@ -2,6 +2,7 @@ import { IsEmail, IsNotEmpty, IsStrongPassword } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { OptionalProperty } from '../../decorators/validator.decorator';
 import { UserRole } from '@prisma/client';
+import {BasePagingDto} from "../../types/base.type";
 
 export class CreateUserDto {
   @ApiProperty({ required: true, description: 'This is required field' })

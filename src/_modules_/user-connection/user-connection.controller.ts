@@ -5,7 +5,7 @@ import {
   Get,
   Param,
   Post,
-  Query,
+  Query, UseGuards,
 } from '@nestjs/common';
 import { UserConnectionService } from './user-connection.service';
 import { User } from '../../decorators/user.decorator';
@@ -13,10 +13,12 @@ import { Roles } from '../../decorators/role.decorator';
 import { Role } from '../../types/auth.type';
 import {
   AcceptConnectionDto,
-  DeleteConnectionDto,
+  DeleteConnectionDto, FindListFollowDto,
   FindUserConnectionDto,
 } from './user-connection.dto';
-import { ApiTags } from '@nestjs/swagger';
+import {ApiBearerAuth, ApiTags} from '@nestjs/swagger';
+import {TelegramMiniAppGuard} from "../../guards/tma.guard";
+import {TmaUser} from "../../decorators/tmaUser.decorator";
 
 @Controller('user-connection')
 @ApiTags('user-connection')
@@ -35,18 +37,20 @@ export class UserConnectionController {
     );
   }
   @Post('/:id')
-  @Roles(Role.ALL)
-  async create(@Param('id') targetId: string, @User('id') userId: string) {
-    return this.userConnectionService.create(userId, targetId);
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async create(@TmaUser('id') telegramId: number, @Param('id') targetId: string) {
+    return this.userConnectionService.create(telegramId, targetId);
   }
 
   @Get('/relation/:targetId')
-  @Roles(Role.ALL)
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
   async getRelationship(
     @Param('targetId') targetId: string,
-    @User('id') userId: string,
+    @TmaUser('id') telegramId: number
   ) {
-    return this.userConnectionService.getRelationship(userId, targetId);
+    return this.userConnectionService.getRelationship(telegramId, targetId);
   }
 
   @Get()
@@ -54,11 +58,31 @@ export class UserConnectionController {
     return this.userConnectionService.find(findUserConnectionDto);
   }
 
+  @Get('/following')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async getListFollowing(
+      @TmaUser('id') telegramId: number,
+      @Query() findListFollowDto: FindListFollowDto
+  ) {
+    return this.userConnectionService.findListFollowing(telegramId, findListFollowDto);
+  }
+
+  @Get('/follower')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async getListFollower(
+      @TmaUser('id') telegramId: number,
+      @Query() findListFollowDto: FindListFollowDto
+  ) {
+    return this.userConnectionService.findListFollower(telegramId, findListFollowDto);
+  }
+
   @Delete()
   @Roles(Role.ALL)
   async delete(
-    @Body() deleteConnectionDto: DeleteConnectionDto,
-    @User('id') userId: string,
+      @Body() deleteConnectionDto: DeleteConnectionDto,
+      @User('id') userId: string,
   ) {
     const { targetId } = deleteConnectionDto;
     return this.userConnectionService.delete(userId, targetId);
