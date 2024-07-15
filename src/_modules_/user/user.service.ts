@@ -47,7 +47,9 @@ export class UserService {
       throw new NotFoundException('Not found user!');
     }
 
-    const updateUserPayload: Prisma.UserUpdateInput = {};
+    const updateUserPayload: Prisma.UserUpdateInput = {
+      userCategories: {}
+    };
 
     if (fullName) {
       updateUserPayload.fullName = fullName;

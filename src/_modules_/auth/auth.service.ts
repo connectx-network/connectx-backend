@@ -682,7 +682,7 @@ export class AuthService {
         isDeleted: true,
         description: true,
         userCategories: {
-          include: {
+          select: {
             category: true
           }
         }
