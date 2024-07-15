@@ -679,7 +679,8 @@ export class AuthService {
         company: true,
         jobTitle: true,
         avatarUrl: true,
-        isDeleted: true
+        isDeleted: true,
+        description: true
       },
     });
 
