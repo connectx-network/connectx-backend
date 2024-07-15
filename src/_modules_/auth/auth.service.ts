@@ -680,7 +680,12 @@ export class AuthService {
         jobTitle: true,
         avatarUrl: true,
         isDeleted: true,
-        description: true
+        description: true,
+        userCategories: {
+          include: {
+            category: true
+          }
+        }
       },
     });
 
