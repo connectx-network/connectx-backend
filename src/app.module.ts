@@ -15,6 +15,7 @@ import { NotificationModule } from './_modules_/notification/notification.module
 import { BullModule } from '@nestjs/bull';
 import { QrCodeModule } from './_modules_/qr-code/qr-code.module';
 import { CategoryModule } from './_modules_/category/category.module';
+import { OnboardingModule } from './_modules_/onboarding/onboarding.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { CategoryModule } from './_modules_/category/category.module';
     }),
     QrCodeModule,
     CategoryModule,
+    OnboardingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

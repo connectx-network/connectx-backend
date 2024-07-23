@@ -1,7 +1,7 @@
-import { Gender } from '@prisma/client';
-import { OptionalProperty } from '../../decorators/validator.decorator';
-import {IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsString} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Gender } from '@prisma/client';
+import { IsEmail, IsEnum, IsNotEmpty } from 'class-validator';
+import { OptionalProperty } from '../../decorators/validator.decorator';
 
 export enum UpdateUserInterestType {
   DELETE = 'DELETE',
@@ -80,6 +80,6 @@ export class ManualCreateUserDto {
 }
 
 export class UpdateSettingDto {
-  @OptionalProperty({description: 'Y | N'})
+  @OptionalProperty({ description: 'Y | N' })
   isPrivate: string;
 }

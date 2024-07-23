@@ -4,11 +4,18 @@ import {
   Delete,
   Get,
   Param,
-  Post, UseGuards,
+  Post,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import {ApiBasicAuth, ApiBody, ApiTags, ApiHeader, ApiBearerAuth} from '@nestjs/swagger';
+import {
+  ApiBasicAuth,
+  ApiBody,
+  ApiTags,
+  ApiHeader,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import {
   CheckTonProofDto,
   CreateUserDto,
@@ -24,9 +31,9 @@ import { UserService } from '../user/user.service';
 import { Roles } from '../../decorators/role.decorator';
 import { Role } from '../../types/auth.type';
 import { UserTransformInterceptor } from '../../interceptors/user.interceptor';
-import {TelegramMiniAppGuard} from "../../guards/tma.guard";
-import {TmaUser} from "../../decorators/tmaUser.decorator";
-import * as InitDateNode from "@telegram-apps/init-data-node";
+import { TelegramMiniAppGuard } from '../../guards/tma.guard';
+import { TmaUser } from '../../decorators/tmaUser.decorator';
+import * as InitDateNode from '@telegram-apps/init-data-node';
 
 @Controller('auth')
 @ApiTags('auth')
