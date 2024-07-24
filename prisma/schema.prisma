@@ -20,7 +20,6 @@ model User {
   nickname              String?
   tonRawAddress         String?                @map("ton_raw_address")
   description           String?
-  country               String?
   phoneNumber           String?                @map("phone_number")
   company               String?
   jobTitle              String?                @map("job_title")
@@ -43,8 +42,22 @@ model User {
   sentNotifications     Notification[]         @relation("SenderToReceiver")
   receivedNotifications Notification[]         @relation("ReceiverToSender")
   joinedEventPhaseUsers JoinedEventPhaseUser[]
+  city                  City?                  @relation(fields: [cityId], references: [id])
+  cityId                Int?
 
   @@map("user")
+}
+
+model City {
+  id         Int     @id @unique @default(autoincrement())
+  name       String  @unique
+  country    String
+  latitude   Float
+  longitude  Float
+  User       User[]
+  interested Boolean @default(false)
+
+  @@map("city")
 }
 
 model UserToken {

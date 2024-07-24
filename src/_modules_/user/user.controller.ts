@@ -1,29 +1,24 @@
 import {
   Body,
-  Controller, Delete,
+  Controller,
+  Delete,
   Get,
   Param,
   Patch,
-  Post,
   Put,
-  UploadedFile, UseGuards,
+  UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { UserService } from './user.service';
-import {
-  ManualCreateUserDto,
-  UpdateAvatarDto, UpdateSettingDto,
-  UpdateUserDto,
-} from './user.dto';
-import { Roles } from '../../decorators/role.decorator';
-import { Role } from '../../types/auth.type';
-import { User } from '../../decorators/user.decorator';
-import {ApiBearerAuth, ApiBody, ApiConsumes, ApiTags} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { SingleUploadDto } from '../file/file.dto';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { Roles } from '../../decorators/role.decorator';
+import { TmaUser } from '../../decorators/tmaUser.decorator';
+import { TelegramMiniAppGuard } from '../../guards/tma.guard';
 import { UserTransformInterceptor } from '../../interceptors/user.interceptor';
-import {TelegramMiniAppGuard} from "../../guards/tma.guard";
-import {TmaUser} from "../../decorators/tmaUser.decorator";
+import { Role } from '../../types/auth.type';
+import { UpdateAvatarDto, UpdateSettingDto, UpdateUserDto } from './user.dto';
+import { UserService } from './user.service';
 
 @Controller('user')
 @ApiTags('user')
@@ -69,21 +64,24 @@ export class UserController {
   @UseGuards(TelegramMiniAppGuard)
   @ApiBearerAuth()
   async delete(@TmaUser('id') telegramId: number) {
-    return this.userService.delete(telegramId)
+    return this.userService.delete(telegramId);
   }
 
   @Delete('/hard')
   @UseGuards(TelegramMiniAppGuard)
   @ApiBearerAuth()
   async hardDelete(@TmaUser('id') telegramId: number) {
-    return this.userService.deleteHard(telegramId)
+    return this.userService.deleteHard(telegramId);
   }
 
   @Patch('/setting')
   @UseGuards(TelegramMiniAppGuard)
   @ApiBearerAuth()
   @ApiBody({ type: UpdateSettingDto })
-  async updateSetting(@TmaUser('id') telegramId: number, @Body() updateSettingDto : UpdateSettingDto) {
-    return this.userService.updateSetting(telegramId, updateSettingDto)
+  async updateSetting(
+    @TmaUser('id') telegramId: number,
+    @Body() updateSettingDto: UpdateSettingDto,
+  ) {
+    return this.userService.updateSetting(telegramId, updateSettingDto);
   }
 }
