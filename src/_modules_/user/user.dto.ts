@@ -1,7 +1,7 @@
-import { Gender } from '@prisma/client';
-import { OptionalProperty } from '../../decorators/validator.decorator';
-import {IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsString} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Gender } from '@prisma/client';
+import { IsEmail, IsEnum, IsNotEmpty } from 'class-validator';
+import { OptionalProperty } from '../../decorators/validator.decorator';
 
 export enum UpdateUserInterestType {
   DELETE = 'DELETE',
@@ -16,6 +16,23 @@ export class UpdateUserCategoryDto {
   type: UpdateUserInterestType;
 }
 
+export class CityDto {
+  @ApiProperty({ required: true })
+  @IsNotEmpty()
+  name: string;
+
+  @ApiProperty({ required: true })
+  @IsNotEmpty()
+  country: string;
+
+  @ApiProperty({ required: true })
+  @IsNotEmpty()
+  latitude: number;
+
+  @ApiProperty({ required: true })
+  @IsNotEmpty()
+  longitude: number;
+}
 export class UpdateUserDto {
   @OptionalProperty()
   fullName: string;
@@ -40,6 +57,8 @@ export class UpdateUserDto {
   gender: Gender;
   @OptionalProperty({ isArray: true, type: UpdateUserCategoryDto })
   categories: UpdateUserCategoryDto[];
+  @OptionalProperty({ type: CityDto })
+  city: CityDto;
 }
 
 export class UpdateAvatarDto {
@@ -80,6 +99,6 @@ export class ManualCreateUserDto {
 }
 
 export class UpdateSettingDto {
-  @OptionalProperty({description: 'Y | N'})
+  @OptionalProperty({ description: 'Y | N' })
   isPrivate: string;
 }

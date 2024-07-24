@@ -27,7 +27,6 @@ export class UserService {
   async update(telegramId: number, updateUserDto: UpdateUserDto) {
     const {
       fullName,
-      country,
       address,
       phoneNumber,
       nickname,
@@ -37,6 +36,7 @@ export class UserService {
       shortId,
       gender,
       categories,
+      city,
     } = updateUserDto;
 
     const user = await this.prisma.user.findUnique({
@@ -48,12 +48,14 @@ export class UserService {
     }
 
     const updateUserPayload: Prisma.UserUpdateInput = {
-      userCategories: {}
+      userCategories: {},
+      city: {},
     };
 
     if (fullName) {
       updateUserPayload.fullName = fullName;
     }
+
     if (shortId) {
       const shortIdUserFind = await this.prisma.user.findUnique({
         where: { shortId },
@@ -63,9 +65,7 @@ export class UserService {
       }
       updateUserPayload.shortId = shortId;
     }
-    if (country) {
-      updateUserPayload.country = country;
-    }
+
     if (description) {
       updateUserPayload.description = description;
     }
@@ -103,6 +103,23 @@ export class UserService {
       updateUserPayload.userCategories.deleteMany = deleteIds.map((item) => ({
         categoryId: item.id,
       }));
+    }
+
+    if (city) {
+      updateUserPayload.city.connectOrCreate = {
+        where: {
+          country: city.country,
+          latitude: city.latitude,
+          longitude: city.longitude,
+          name: city.name,
+        },
+        create: {
+          country: city.country,
+          latitude: city.latitude,
+          longitude: city.longitude,
+          name: city.name,
+        },
+      };
     }
 
     await this.prisma.user.update({
