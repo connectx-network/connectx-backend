@@ -1,30 +1,15 @@
 import {
   ConflictException,
   Injectable,
-  NotAcceptableException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import {
-  CreateUserDto,
-  RequestNewOtpDto,
-  ResetPasswordDto,
-  SignInAppleDto,
-  SignInDto,
-  SignInGoogleDto,
-  VerifyAccountDto,
-} from './auth.dto';
-import { compare, hash } from 'bcrypt';
-import * as moment from 'moment-timezone';
-import { Prisma, User, UserCodeType } from '@prisma/client';
-import { MailService } from '../mail/mail.service';
-import { OtpEmailDto } from '../mail/mail.dto';
-import * as process from 'process';
 import { JwtService } from '@nestjs/jwt';
-import { FirebaseService } from '../firebase/firebase.service';
-import * as crypto from 'crypto';
 import * as InitDataNode from '@telegram-apps/init-data-node';
+import * as process from 'process';
+import { FirebaseService } from '../firebase/firebase.service';
+import { MailService } from '../mail/mail.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
@@ -683,9 +668,10 @@ export class AuthService {
         description: true,
         userCategories: {
           select: {
-            category: true
-          }
-        }
+            category: true,
+          },
+        },
+        city: true,
       },
     });
 
@@ -697,7 +683,7 @@ export class AuthService {
       throw new UnauthorizedException('Account is deleted!');
     }
 
-    delete foundUser.isDeleted
+    delete foundUser.isDeleted;
 
     return foundUser;
   }
@@ -736,7 +722,7 @@ export class AuthService {
         gender: true,
         company: true,
         jobTitle: true,
-      }
+      },
     });
   }
 }

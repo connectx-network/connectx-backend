@@ -4,15 +4,21 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateCityDto, FindCityDto, UpdateCityDto } from './city.dto';
+import {
+  CreateCityDto,
+  FindCityDto,
+  FindInterestedCityDto,
+  UpdateCityDto,
+} from './city.dto';
 
 @Injectable()
 export class CityService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findInterestedCity() {
+  async findInterestedCity({ page, size }: FindInterestedCityDto) {
     {
       const cities = await this.prisma.city.findMany({
+        skip: size * (page - 1),
         where: {
           interested: true,
         },
