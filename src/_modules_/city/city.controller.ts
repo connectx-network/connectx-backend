@@ -6,12 +6,19 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/decorators/role.decorator';
 import { Role } from 'src/types/auth.type';
-import { CreateCityDto, FindCityDto, UpdateCityDto } from './city.dto';
+import {
+  CreateCityDto,
+  FindCityDto,
+  FindInterestedCityDto,
+  UpdateCityDto,
+} from './city.dto';
 import { CityService } from './city.service';
+import { TelegramMiniAppGuard } from 'src/guards/tma.guard';
 
 @ApiTags('city')
 @Controller('city')
@@ -19,9 +26,10 @@ export class CityController {
   constructor(private city: CityService) {}
 
   @Get('/interested')
-  @Roles(Role.ALL)
-  async getInrerestedCity() {
-    return this.city.findInterestedCity();
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async getInrerestedCity(@Query() findInterestedDto: FindInterestedCityDto) {
+    return this.city.findInterestedCity(findInterestedDto);
   }
 
   @Get()
