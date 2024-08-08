@@ -47,6 +47,7 @@ export class EventService {
       cityId,
       content,
       ticketType,
+      tags,
       createEventAssetDto,
       createEventHostDto,
     } = createEventDto;
@@ -89,6 +90,14 @@ export class EventService {
     }
     if (ticketType) {
       createEventPayload.ticketType = ticketType;
+    }
+
+    if (tags) {
+      createEventPayload.eventTags = {
+        createMany: {
+          data: tags.map(item => ({title: item}))
+        }
+      }
     }
 
     if (createEventAssetDto) {
@@ -163,6 +172,10 @@ export class EventService {
               },
             },
           },
+          eventTags: true,
+          city: true,
+          user: true,
+          eventCategory: true
         },
         take: size,
       }),

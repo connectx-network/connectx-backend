@@ -36,32 +36,9 @@ export class EventController {
     return this.eventService.create(telegramId, createEventDto);
   }
 
-  @Get('/joined-user')
-  async findJoinedUser(
-    @Query() findJoinedEventUserDto: FindJoinedEventUserDto,
-  ) {
-    return this.eventService.findJoinedEventUser(findJoinedEventUserDto);
-  }
-
-  @Get('/user-event')
-  @Roles(Role.ADMIN)
-  async findUser(@Query() findUserEventDto: FindUserEventDto) {
-    const { userId, eventId } = findUserEventDto;
-    return this.eventService.findEventUser(userId, eventId);
-  }
-
   @Get('/:id')
   async findOne(@Param('id') id: string) {
     return this.eventService.findOne(id);
-  }
-
-  @Get('/check-join/:id')
-  @Roles(Role.ALL)
-  async checkJoinedEvent(
-    @Param('id') eventId: string,
-    @User('id') userId: string,
-  ) {
-    return this.eventService.checkJoinedEvent(eventId, userId);
   }
 
   @Get()
@@ -69,20 +46,47 @@ export class EventController {
     return this.eventService.find(findEventDto);
   }
 
-  @Post('/join/:id')
-  @Roles(Role.ALL)
-  async join(@Param('id') eventId: string, @User('id') userId: string) {
-    return this.eventService.joinEvent(userId, eventId);
-  }
-
-  @Post('/invite')
-  @Roles(Role.ALL)
-  async invite(
-    @User('id') userId: string,
-    @Body() createEventInvitationDto: CreateEventInvitationDto,
-  ) {
-    return this.eventService.invite(userId, createEventInvitationDto);
-  }
+  // @Get('/joined-user')
+  // async findJoinedUser(
+  //   @Query() findJoinedEventUserDto: FindJoinedEventUserDto,
+  // ) {
+  //   return this.eventService.findJoinedEventUser(findJoinedEventUserDto);
+  // }
+  //
+  // @Get('/user-event')
+  // @Roles(Role.ADMIN)
+  // async findUser(@Query() findUserEventDto: FindUserEventDto) {
+  //   const { userId, eventId } = findUserEventDto;
+  //   return this.eventService.findEventUser(userId, eventId);
+  // }
+  //
+  //
+  //
+  // @Get('/check-join/:id')
+  // @Roles(Role.ALL)
+  // async checkJoinedEvent(
+  //   @Param('id') eventId: string,
+  //   @User('id') userId: string,
+  // ) {
+  //   return this.eventService.checkJoinedEvent(eventId, userId);
+  // }
+  //
+  //
+  //
+  // @Post('/join/:id')
+  // @Roles(Role.ALL)
+  // async join(@Param('id') eventId: string, @User('id') userId: string) {
+  //   return this.eventService.joinEvent(userId, eventId);
+  // }
+  //
+  // @Post('/invite')
+  // @Roles(Role.ALL)
+  // async invite(
+  //   @User('id') userId: string,
+  //   @Body() createEventInvitationDto: CreateEventInvitationDto,
+  // ) {
+  //   return this.eventService.invite(userId, createEventInvitationDto);
+  // }
 
   // @Post('/import-user')
   // @Roles(Role.ADMIN)
@@ -92,10 +96,10 @@ export class EventController {
   //   return this.eventService.manualImportEventUser(manualImportEventUserDto);
   // }
 
-  @Patch('/check-in')
-  @Roles(Role.ADMIN)
-  async checkIn(@Body() findUserEventDto: FindUserEventDto) {
-    const { userId, eventId } = findUserEventDto;
-    return this.eventService.checkIn(userId, eventId);
-  }
+  // @Patch('/check-in')
+  // @Roles(Role.ADMIN)
+  // async checkIn(@Body() findUserEventDto: FindUserEventDto) {
+  //   const { userId, eventId } = findUserEventDto;
+  //   return this.eventService.checkIn(userId, eventId);
+  // }
 }

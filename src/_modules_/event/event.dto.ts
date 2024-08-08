@@ -64,6 +64,9 @@ export class CreateEventDto {
   @OptionalProperty({enum: TicketType})
   ticketType: TicketType;
 
+  @OptionalProperty({isArray: true})
+  tags: string[];
+
   @OptionalProperty({ isArray: true, type: CreateEventHostDto })
   createEventHostDto: CreateEventHostDto[];
 
