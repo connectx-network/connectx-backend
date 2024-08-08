@@ -26,6 +26,7 @@
     "pm2:destroy:app": "pm2 delete app.json"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.626.0",
     "@nestjs-modules/mailer": "^1.10.3",
     "@nestjs/bull": "^10.1.0",
     "@nestjs/common": "^10.0.0",

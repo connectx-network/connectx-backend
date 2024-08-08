@@ -1,13 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum } from 'class-validator';
-
-export enum FileType {
-  USER_AVATAR = 'USER_AVATAR',
-  EVENT_IMAGE = 'EVENT_IMAGE',
-  CATEGORY_IMAGE = 'CATEGORY_IMAGE',
-  APP_LOGO = 'APP_LOGO',
-  EVENT_BACKGROUND = 'EVENT_BACKGROUND',
-}
+import { IsEnum, IsNotEmpty } from 'class-validator';
+import { FileType } from '@prisma/client';
 
 export class BaseFileUploadDto {
   @ApiProperty({ enum: FileType, required: true })
@@ -20,7 +13,8 @@ export class SingleUploadDto extends BaseFileUploadDto {
   file: Express.Multer.File;
 }
 
-export class MultiFileUploadDto extends BaseFileUploadDto {
-  @ApiProperty({ format: 'binary', required: true })
-  files: Array<Express.Multer.File>;
+export class DeleteFileDto {
+  @ApiProperty({ required: true })
+  @IsNotEmpty()
+  url: string
 }

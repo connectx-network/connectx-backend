@@ -9,9 +9,8 @@ import {
   UpdateUserDto,
   UpdateUserInterestType,
 } from './user.dto';
-import { Prisma } from '@prisma/client';
+import {FileType, Prisma} from '@prisma/client';
 import { FileService } from '../file/file.service';
-import { FileType } from '../file/file.dto';
 import { Queues } from '../../types/queue.type';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';

@@ -17,6 +17,7 @@ import { QrCodeModule } from './_modules_/qr-code/qr-code.module';
 import { CategoryModule } from './_modules_/category/category.module';
 import { CityModule } from './_modules_/city/city.module';
 import { OnboardingModule } from './_modules_/onboarding/onboarding.module';
+import { S3Module } from './_modules_/s3/s3.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { OnboardingModule } from './_modules_/onboarding/onboarding.module';
     }),
     QrCodeModule,
     CategoryModule,
+    S3Module,
   ],
   controllers: [AppController],
   providers: [AppService],

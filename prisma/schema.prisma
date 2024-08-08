@@ -283,6 +283,15 @@ model Notification {
   @@map("notification")
 }
 
+model ImageBucket {
+  id       Int      @id @unique @default(autoincrement())
+  key      String   @unique
+  url      String   @unique
+  fileType FileType
+
+  @@map("image_bucket")
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -327,4 +336,12 @@ enum TicketType {
   FREE
   APPROVAL
   PAYMENT
+}
+
+enum FileType {
+  THUMBNAIL
+  BACKGROUND
+  IMAGE
+  VIDEO
+  USER_AVATAR
 }

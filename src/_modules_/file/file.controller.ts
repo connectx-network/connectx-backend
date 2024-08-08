@@ -1,14 +1,13 @@
 import {
   Body,
-  Controller,
+  Controller, Delete,
   Post,
   UploadedFile,
-  UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { MultiFileUploadDto, SingleUploadDto } from './file.dto';
+import {DeleteFileDto, SingleUploadDto} from './file.dto';
 import { FileService } from './file.service';
 
 @Controller('file')
@@ -21,20 +20,17 @@ export class FileController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiBody({ type: SingleUploadDto })
   async uploadFile(
-    @UploadedFile() file: Express.Multer.File,
-    @Body() fileUploadDto: SingleUploadDto,
+      @UploadedFile() file: Express.Multer.File,
+      @Body() fileUploadDto: SingleUploadDto,
   ) {
     return await this.fileService.uploadFile(file, fileUploadDto);
   }
 
-  @Post('multiple-upload')
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FilesInterceptor('files'))
-  @ApiBody({ type: MultiFileUploadDto })
-  async uploadMultipleFile(
-    @UploadedFiles() files: Array<Express.Multer.File>,
-    @Body() fileUploadDto: MultiFileUploadDto,
+  @Delete('')
+  @ApiBody({ type: DeleteFileDto })
+  async delete(
+      @Body() deleteFileDto: DeleteFileDto,
   ) {
-    return this.fileService.uploadMultipleFile(files, fileUploadDto);
+    return await this.fileService.delete(deleteFileDto);
   }
 }
