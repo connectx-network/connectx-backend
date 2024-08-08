@@ -223,6 +223,9 @@ export class EventService {
             },
           },
         },
+        eventTags: true,
+        city: true,
+        user: true,
       },
     });
 

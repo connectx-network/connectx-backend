@@ -37,7 +37,7 @@ export class EventController {
   }
 
   @Get('/:id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('shortId') id: string) {
     return this.eventService.findOne(id);
   }
 

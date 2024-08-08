@@ -33,19 +33,17 @@ export class CityController {
   }
 
   @Get()
-  @Roles(Role.ADMIN)
   async find(@Query() findCityDto: FindCityDto) {
     return this.city.find(findCityDto);
   }
 
   @Post()
-  @Roles(Role.ADMIN)
   async create(@Body() createCityDto: CreateCityDto) {
     return this.city.create(createCityDto);
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @UseGuards(TelegramMiniAppGuard)
   async update(@Param('id') id: number, @Body() updateCityDto: UpdateCityDto) {
     return this.city.update(id, updateCityDto);
   }
