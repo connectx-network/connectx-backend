@@ -68,10 +68,10 @@ export class CreateEventDto {
   tags: string[];
 
   @OptionalProperty({ isArray: true, type: CreateEventHostDto })
-  createEventHostDto: CreateEventHostDto[];
+  hosts: CreateEventHostDto[];
 
   @OptionalProperty({ isArray: true, type: CreateEventAssetDto })
-  createEventAssetDto: CreateEventAssetDto[];
+  assets: CreateEventAssetDto[];
 }
 
 export class FindEventDto extends BasePagingDto {

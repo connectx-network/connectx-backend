@@ -48,8 +48,8 @@ export class EventService {
       content,
       ticketType,
       tags,
-      createEventAssetDto,
-      createEventHostDto,
+      assets,
+      hosts,
     } = createEventDto;
 
     const shortId = await this.generateUniqueCode();
@@ -100,10 +100,10 @@ export class EventService {
       }
     }
 
-    if (createEventAssetDto) {
+    if (assets) {
       createEventPayload.eventAssets = {
         createMany: {
-          data: createEventAssetDto.map((item) => ({
+          data: assets.map((item) => ({
             url: item.url,
             type: item.type,
           })),
@@ -111,10 +111,10 @@ export class EventService {
       };
     }
 
-    if (createEventHostDto) {
+    if (hosts) {
       createEventPayload.eventHosts = {
         createMany: {
-          data: createEventHostDto.map((item) => ({
+          data: hosts.map((item) => ({
             userId: item.userId,
           })),
         },

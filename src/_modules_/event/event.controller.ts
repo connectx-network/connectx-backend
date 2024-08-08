@@ -36,7 +36,7 @@ export class EventController {
     return this.eventService.create(telegramId, createEventDto);
   }
 
-  @Get('/:id')
+  @Get('/:shortId')
   async findOne(@Param('shortId') id: string) {
     return this.eventService.findOne(id);
   }
