@@ -5,7 +5,7 @@ import {
   Param,
   Patch,
   Post,
-  Query,
+  Query, UseGuards,
 } from '@nestjs/common';
 import { EventService } from './event.service';
 import {
@@ -17,10 +17,12 @@ import {
   FindUserEventDto,
   ManualImportEventUserDto,
 } from './event.dto';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import {ApiBearerAuth, ApiBody, ApiTags} from '@nestjs/swagger';
 import { Roles } from '../../decorators/role.decorator';
 import { Role } from '../../types/auth.type';
 import { User } from '../../decorators/user.decorator';
+import {TelegramMiniAppGuard} from "../../guards/tma.guard";
+import {TmaUser} from "../../decorators/tmaUser.decorator";
 
 @Controller('event')
 @ApiTags('event')
@@ -28,10 +30,10 @@ export class EventController {
   constructor(private readonly eventService: EventService) {}
 
   @Post()
-  @Roles(Role.ADMIN)
-  @ApiBody({ type: CreateEventDto })
-  async create(@Body() createEventDto: CreateEventDto) {
-    return this.eventService.create(createEventDto);
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async create(@TmaUser('id') telegramId: number, @Body() createEventDto: CreateEventDto) {
+    return this.eventService.create(telegramId, createEventDto);
   }
 
   @Get('/joined-user')

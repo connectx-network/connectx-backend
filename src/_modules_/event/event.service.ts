@@ -10,7 +10,6 @@ import {
   FindEventDto,
   FindEventResponse,
   FindJoinedEventUserDto,
-  ManualImportEventUserDto,
 } from './event.dto';
 import { Prisma } from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
@@ -36,49 +35,60 @@ export class EventService {
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
   ) {}
 
-  async create(createEventDto: CreateEventDto) {
+  async create(telegramId: number, createEventDto: CreateEventDto) {
     const {
       eventCategoryId,
       eventDate,
       description,
       location,
-      speakers,
-      sponsors,
       eventEndDate,
-      tiketPrice,
-      agenda,
-      name,
+      ticketPrice,
+      title,
+      cityId,
+      content,
+      ticketType,
       createEventAssetDto,
       createEventHostDto,
     } = createEventDto;
 
     const shortId = await this.generateUniqueCode();
 
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId: `${telegramId}`
+      }
+    })
+
+    if (!user) {
+      throw new NotFoundException("Not found user")
+    }
+
     const createEventPayload: Prisma.EventUncheckedCreateInput = {
+      userId: user.id,
       eventCategoryId,
       eventDate,
       eventEndDate,
       shortId,
-      name,
+      title,
     };
 
     if (description) {
       createEventPayload.description = description;
     }
+    if (cityId) {
+      createEventPayload.cityId = cityId;
+    }
+    if (content) {
+      createEventPayload.content = content;
+    }
     if (location) {
       createEventPayload.location = location;
     }
-    if (sponsors) {
-      createEventPayload.sponsors = sponsors;
+    if (ticketPrice) {
+      createEventPayload.ticketPrice = ticketPrice;
     }
-    if (speakers) {
-      createEventPayload.speakers = speakers;
-    }
-    if (tiketPrice) {
-      createEventPayload.tiketPrice = tiketPrice;
-    }
-    if (agenda) {
-      createEventPayload.agenda = agenda;
+    if (ticketType) {
+      createEventPayload.ticketType = ticketType;
     }
 
     if (createEventAssetDto) {
@@ -96,8 +106,7 @@ export class EventService {
       createEventPayload.eventHosts = {
         createMany: {
           data: createEventHostDto.map((item) => ({
-            url: item.url,
-            title: item.title,
+            userId: item.userId,
           })),
         },
       };
@@ -132,8 +141,8 @@ export class EventService {
           _count: true,
           eventAssets: {
             orderBy: {
-              type: 'asc'
-            }
+              type: 'asc',
+            },
           },
           eventHosts: true,
           eventLocationDetail: true,
@@ -174,8 +183,8 @@ export class EventService {
         eventCategory: true,
         eventAssets: {
           orderBy: {
-            type: 'asc'
-          }
+            type: 'asc',
+          },
         },
         eventHosts: true,
         eventLocationDetail: true,
@@ -338,10 +347,10 @@ export class EventService {
 
     const payload: QrCodeDto = {
       eventId,
-      eventName: event.name,
+      eventName: event.title,
       userId,
       to: user.email,
-      subject: `Ticket for ${event.name}`,
+      subject: `Ticket for ${event.title}`,
       fullName: user.fullName,
       fromDate: event.eventDate,
     };

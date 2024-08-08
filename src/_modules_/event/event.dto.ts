@@ -2,13 +2,14 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsNotEmpty } from 'class-validator';
 import { OptionalProperty } from '../../decorators/validator.decorator';
 import { BasePagingDto, BasePagingResponse } from '../../types/base.type';
-import { Event, EventAssetType } from '@prisma/client';
+import {Event, EventAssetType, TicketType} from '@prisma/client';
 
 export class CreateEventHostDto {
-  @OptionalProperty()
-  title: string;
-  @OptionalProperty()
-  url: string;
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  userId: string;
 }
 
 export class CreateEventAssetDto {
@@ -24,7 +25,7 @@ export class CreateEventDto {
     required: true,
   })
   @IsNotEmpty()
-  name: string;
+  title: string;
 
   @ApiProperty({
     required: true,
@@ -33,7 +34,7 @@ export class CreateEventDto {
   eventCategoryId: string;
 
   @OptionalProperty()
-  tiketPrice?: number;
+  ticketPrice?: number;
 
   @ApiProperty({
     required: true,
@@ -49,19 +50,19 @@ export class CreateEventDto {
   eventEndDate: Date;
 
   @OptionalProperty()
+  cityId: number;
+
+  @OptionalProperty()
   location: string;
 
   @OptionalProperty()
   description: string;
 
   @OptionalProperty()
-  sponsors: string;
+  content: string;
 
-  @OptionalProperty()
-  agenda: string;
-
-  @OptionalProperty()
-  speakers: string;
+  @OptionalProperty({enum: TicketType})
+  ticketType: TicketType;
 
   @OptionalProperty({ isArray: true, type: CreateEventHostDto })
   createEventHostDto: CreateEventHostDto[];

@@ -44,6 +44,8 @@ model User {
   joinedEventPhaseUsers JoinedEventPhaseUser[]
   city                  City?                  @relation(fields: [cityId], references: [id])
   cityId                Int?
+  events                Event[]
+  eventHosts            EventHost[]
 
   @@map("user")
 }
@@ -56,6 +58,7 @@ model City {
   longitude  Float
   User       User[]
   interested Boolean @default(false)
+  events     Event[]
 
   @@map("city")
 }
@@ -127,22 +130,25 @@ model Category {
 
 model Event {
   id                    String                 @id @unique @default(uuid())
-  name                  String
+  title                 String
+  description           String?
+  content               String?
   shortId               String                 @unique
-  tiketPrice            Float?                 @map("tiket_price")
+  ticketPrice           Float?                 @map("tiket_price")
+  ticketType            TicketType             @default(FREE) @map("ticket_type")
   createdAt             DateTime               @default(now()) @map("created_at")
   eventDate             DateTime               @map("event_date")
   eventEndDate          DateTime               @map("event_end_date")
   location              String?                @map("location")
-  description           String?
-  sponsors              String?
-  agenda                String?
-  speakers              String?
-  isDeleted             Boolean                @default(false) @map("is_deleted")
-  eventCategoryId       String                 @map("category_id")
   eventType             EventType              @default(NORMAL) @map("event_type")
   registUrl             String?                @map("regist_url")
+  isDeleted             Boolean                @default(false) @map("is_deleted")
+  userId                String                 @map("user_id")
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventCategoryId       String                 @map("category_id")
   eventCategory         Category               @relation(fields: [eventCategoryId], references: [id], onDelete: Cascade)
+  cityId                Int?                   @map("city_id")
+  city                  City?                  @relation(fields: [cityId], references: [id], onDelete: Cascade)
   joinedEventUsers      JoinedEventUser[]
   eventHosts            EventHost[]
   eventAssets           EventAsset[]
@@ -151,6 +157,7 @@ model Event {
   joinedEventPhaseUsers JoinedEventPhaseUser[]
   eventLinks            EventLink[]
   eventUserTemps        EventUserTemp[]
+  eventTags             EventTags[]
 
   @@map("event")
 }
@@ -178,11 +185,11 @@ model EventLocationDetail {
 }
 
 model EventHost {
-  id      String  @id @unique @default(uuid())
-  title   String?
-  url     String?
-  eventId String  @map("event_id")
-  event   Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  id      String @id @unique @default(uuid())
+  userId  String @map("user_id")
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId String @map("event_id")
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@map("event_host")
 }
@@ -205,6 +212,13 @@ model EventLink {
   event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@map("event_link")
+}
+
+model EventTags {
+  id      String @id @unique @default(uuid())
+  title   String
+  eventId String @map("event_id")
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model JoinedEventUser {
@@ -293,6 +307,7 @@ enum UserRole {
 }
 
 enum EventAssetType {
+  THUMBNAIL
   BACKGROUND
   IMAGE
   VIDEO
@@ -306,4 +321,10 @@ enum NotificationStatus {
 enum EventType {
   NORMAL
   READONLY
+}
+
+enum TicketType {
+  FREE
+  APPROVAL
+  PAYMENT
 }
