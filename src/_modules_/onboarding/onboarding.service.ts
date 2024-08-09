@@ -19,22 +19,6 @@ export class OnboardingService {
         telegramId: `${telegramId}`,
       },
       data: {
-        city: {
-          connectOrCreate: {
-            where: {
-              country: onboardingDto.country,
-              latitude: onboardingDto.latitude,
-              longitude: onboardingDto.longitude,
-              name: onboardingDto.name,
-            },
-            create: {
-              country: onboardingDto.country,
-              latitude: onboardingDto.latitude,
-              longitude: onboardingDto.longitude,
-              name: onboardingDto.name,
-            },
-          },
-        },
       },
     });
     return { success: true };

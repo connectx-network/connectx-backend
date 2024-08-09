@@ -48,7 +48,7 @@ export class UserService {
 
     const updateUserPayload: Prisma.UserUpdateInput = {
       userCategories: {},
-      city: {},
+      userCities: {},
     };
 
     if (fullName) {
@@ -105,20 +105,20 @@ export class UserService {
     }
 
     if (city) {
-      updateUserPayload.city.connectOrCreate = {
-        where: {
-          country: city.country,
-          latitude: city.latitude,
-          longitude: city.longitude,
-          name: city.name,
-        },
-        create: {
-          country: city.country,
-          latitude: city.latitude,
-          longitude: city.longitude,
-          name: city.name,
-        },
-      };
+      // updateUserPayload.city.connectOrCreate = {
+      //   where: {
+      //     country: city.country,
+      //     latitude: city.latitude,
+      //     longitude: city.longitude,
+      //     name: city.name,
+      //   },
+      //   create: {
+      //     country: city.country,
+      //     latitude: city.latitude,
+      //     longitude: city.longitude,
+      //     name: city.name,
+      //   },
+      // };
     }
 
     await this.prisma.user.update({

@@ -76,9 +76,9 @@ export class EventService {
     if (description) {
       createEventPayload.description = description;
     }
-    if (cityId) {
-      createEventPayload.cityId = cityId;
-    }
+    // if (cityId) {
+    //   createEventPayload.cityId = cityId;
+    // }
     if (content) {
       createEventPayload.content = content;
     }
@@ -179,7 +179,7 @@ export class EventService {
             },
           },
           eventTags: true,
-          city: true,
+          eventCities: true,
           user: true,
           eventCategory: true
         },
@@ -230,7 +230,7 @@ export class EventService {
           },
         },
         eventTags: true,
-        city: true,
+        eventCities: true,
         user: true,
       },
     });

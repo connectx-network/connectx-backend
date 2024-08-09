@@ -25,26 +25,26 @@ import { TelegramMiniAppGuard } from 'src/guards/tma.guard';
 export class CityController {
   constructor(private city: CityService) {}
 
-  @Get('/interested')
-  @UseGuards(TelegramMiniAppGuard)
-  @ApiBearerAuth()
-  async getInrerestedCity(@Query() findInterestedDto: FindInterestedCityDto) {
-    return this.city.findInterestedCity(findInterestedDto);
-  }
-
-  @Get()
-  async find(@Query() findCityDto: FindCityDto) {
-    return this.city.find(findCityDto);
-  }
-
-  @Post()
-  async create(@Body() createCityDto: CreateCityDto) {
-    return this.city.create(createCityDto);
-  }
-
-  @Patch(':id')
-  @UseGuards(TelegramMiniAppGuard)
-  async update(@Param('id') id: number, @Body() updateCityDto: UpdateCityDto) {
-    return this.city.update(id, updateCityDto);
-  }
+  // @Get('/interested')
+  // @UseGuards(TelegramMiniAppGuard)
+  // @ApiBearerAuth()
+  // async getInrerestedCity(@Query() findInterestedDto: FindInterestedCityDto) {
+  //   return this.city.findInterestedCity(findInterestedDto);
+  // }
+  //
+  // @Get()
+  // async find(@Query() findCityDto: FindCityDto) {
+  //   return this.city.find(findCityDto);
+  // }
+  //
+  // @Post()
+  // async create(@Body() createCityDto: CreateCityDto) {
+  //   return this.city.create(createCityDto);
+  // }
+  //
+  // @Patch(':id')
+  // @UseGuards(TelegramMiniAppGuard)
+  // async update(@Param('id') id: number, @Body() updateCityDto: UpdateCityDto) {
+  //   return this.city.update(id, updateCityDto);
+  // }
 }

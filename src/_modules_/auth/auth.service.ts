@@ -671,7 +671,7 @@ export class AuthService {
             category: true,
           },
         },
-        city: true,
+        userCities: true,
       },
     });
 
