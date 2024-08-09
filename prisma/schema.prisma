@@ -42,25 +42,43 @@ model User {
   sentNotifications     Notification[]         @relation("SenderToReceiver")
   receivedNotifications Notification[]         @relation("ReceiverToSender")
   joinedEventPhaseUsers JoinedEventPhaseUser[]
-  city                  City?                  @relation(fields: [cityId], references: [id])
-  cityId                Int?
   events                Event[]
   eventHosts            EventHost[]
+  userCities            UserCity[]
 
   @@map("user")
 }
 
 model City {
-  id         Int     @id @unique @default(autoincrement())
-  name       String  @unique
-  country    String
-  latitude   Float
-  longitude  Float
-  User       User[]
-  interested Boolean @default(false)
-  events     Event[]
+  id          String      @id @unique @default(uuid())
+  name        String      @unique
+  country     String
+  latitude    Float
+  longitude   Float
+  userCities  UserCity[]
+  eventCities EventCity[]
 
   @@map("city")
+}
+
+model UserCity {
+  id     String @id @unique @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cityId String @map("city_id")
+  city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@map("user_city")
+}
+
+model EventCity {
+  id      String @id @unique @default(uuid())
+  eventId String @map("event_id")
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  cityId  String @map("city_id")
+  city    City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@map("event_city")
 }
 
 model UserToken {
@@ -147,8 +165,6 @@ model Event {
   user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   eventCategoryId       String                 @map("category_id")
   eventCategory         Category               @relation(fields: [eventCategoryId], references: [id], onDelete: Cascade)
-  cityId                Int?                   @map("city_id")
-  city                  City?                  @relation(fields: [cityId], references: [id], onDelete: Cascade)
   joinedEventUsers      JoinedEventUser[]
   eventHosts            EventHost[]
   eventAssets           EventAsset[]
@@ -158,6 +174,7 @@ model Event {
   eventLinks            EventLink[]
   eventUserTemps        EventUserTemp[]
   eventTags             EventTags[]
+  eventCities           EventCity[]
 
   @@map("event")
 }
