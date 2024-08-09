@@ -127,7 +127,7 @@ export class EventService {
   }
 
   async find(findEventDto: FindEventDto): Promise<FindEventResponse> {
-    const { size, page, userId } = findEventDto;
+    const { size, page, userId, categoryIds } = findEventDto;
     const skip = (page - 1) * size;
 
     const findEventCondition: Prisma.EventWhereInput = { isDeleted: false };
@@ -137,6 +137,12 @@ export class EventService {
           userId,
         },
       };
+    }
+
+    if (categoryIds) {
+      findEventCondition.eventCategoryId = {
+        in: categoryIds
+      }
     }
 
     const [events, count] = await Promise.all([

@@ -3,6 +3,7 @@ import { IsDateString, IsEnum, IsNotEmpty } from 'class-validator';
 import { OptionalProperty } from '../../decorators/validator.decorator';
 import { BasePagingDto, BasePagingResponse } from '../../types/base.type';
 import {Event, EventAssetType, TicketType} from '@prisma/client';
+import {Transform} from "class-transformer";
 
 export class CreateEventHostDto {
   @ApiProperty({
@@ -77,6 +78,16 @@ export class CreateEventDto {
 export class FindEventDto extends BasePagingDto {
   @OptionalProperty()
   userId: string;
+  @OptionalProperty({
+    required: false,
+    type: 'string',
+    description: 'id1,id2,...',
+  })
+  @Transform((param) => {
+    const idStrs : string[] = param.value.split(',');
+    return idStrs.map(item => item.trim())
+  })
+  categoryIds: string[];
 }
 
 export class FindOneEventDto {
