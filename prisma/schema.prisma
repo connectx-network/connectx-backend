@@ -152,7 +152,7 @@ model Event {
   description           String?
   content               String?
   shortId               String                 @unique
-  ticketPrice           Float?                 @map("tiket_price")
+  ticketPrice           Float?                 @default(0) @map("tiket_price")
   ticketType            TicketType             @default(FREE) @map("ticket_type")
   createdAt             DateTime               @default(now()) @map("created_at")
   eventDate             DateTime               @map("event_date")
