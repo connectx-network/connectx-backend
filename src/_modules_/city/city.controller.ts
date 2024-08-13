@@ -1,50 +1,23 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Roles } from 'src/decorators/role.decorator';
-import { Role } from 'src/types/auth.type';
-import {
-  CreateCityDto,
-  FindCityDto,
-  FindInterestedCityDto,
-  UpdateCityDto,
-} from './city.dto';
+import {Body, Controller, Get, Post, Query} from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+
 import { CityService } from './city.service';
-import { TelegramMiniAppGuard } from 'src/guards/tma.guard';
+import {CreateCityDto, FindCityDto} from './city.dto';
+import {Roles} from "../../decorators/role.decorator";
+import {Role} from "../../types/auth.type";
 
 @ApiTags('city')
 @Controller('city')
 export class CityController {
-  constructor(private city: CityService) {}
+  constructor(private cityService: CityService) {}
 
-  // @Get('/interested')
-  // @UseGuards(TelegramMiniAppGuard)
-  // @ApiBearerAuth()
-  // async getInrerestedCity(@Query() findInterestedDto: FindInterestedCityDto) {
-  //   return this.city.findInterestedCity(findInterestedDto);
-  // }
-  //
-  // @Get()
-  // async find(@Query() findCityDto: FindCityDto) {
-  //   return this.city.find(findCityDto);
-  // }
-  //
-  // @Post()
-  // async create(@Body() createCityDto: CreateCityDto) {
-  //   return this.city.create(createCityDto);
-  // }
-  //
-  // @Patch(':id')
-  // @UseGuards(TelegramMiniAppGuard)
-  // async update(@Param('id') id: number, @Body() updateCityDto: UpdateCityDto) {
-  //   return this.city.update(id, updateCityDto);
-  // }
+  @Get()
+  async find(@Query() findCityDto: FindCityDto) {
+    return this.cityService.find(findCityDto);
+  }
+
+  @Post()
+  async create(@Body() createCityDto: CreateCityDto) {
+    return this.cityService.create(createCityDto);
+  }
 }

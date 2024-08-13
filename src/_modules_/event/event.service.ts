@@ -76,9 +76,9 @@ export class EventService {
     if (description) {
       createEventPayload.description = description;
     }
-    // if (cityId) {
-    //   createEventPayload.cityId = cityId;
-    // }
+    if (cityId) {
+      createEventPayload.cityId = cityId;
+    }
     if (content) {
       createEventPayload.content = content;
     }
@@ -154,6 +154,7 @@ export class EventService {
         },
         include: {
           _count: true,
+          city: true,
           eventAssets: {
             orderBy: {
               type: 'asc',
@@ -199,6 +200,7 @@ export class EventService {
       where: { shortId },
       include: {
         _count: true,
+        city: true,
         eventCategory: true,
         eventAssets: {
           orderBy: {

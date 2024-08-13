@@ -1,70 +1,47 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  CreateCityDto,
-  FindCityDto,
-  FindInterestedCityDto,
-  UpdateCityDto,
-} from './city.dto';
+import { CreateCityDto, FindCityDto } from './city.dto';
+import { Prisma } from '@prisma/client';
+import {getDefaultPaginationReponse} from "../../utils/pagination.util";
 
 @Injectable()
 export class CityService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // async findInterestedCity({ page, size }: FindInterestedCityDto) {
-  //   {
-  //     const cities = await this.prisma.city.findMany({
-  //       skip: size * (page - 1),
-  //       where: {
-  //         interested: true,
-  //       },
-  //     });
-  //     return cities;
-  //   }
-  // }
-  // async find({ page, size }: FindCityDto) {
-  //   {
-  //     const cities = await this.prisma.city.findMany({
-  //       skip: size * (page - 1),
-  //     });
-  //     return cities;
-  //   }
-  // }
-  //
-  // async create(createCityDto: CreateCityDto) {
-  //   {
-  //     const cityExist = await this.prisma.city.findUnique({
-  //       where: { name: createCityDto.name },
-  //     });
-  //
-  //     if (cityExist) {
-  //       throw new ConflictException('City has created!');
-  //     }
-  //
-  //     const city = await this.prisma.city.create({
-  //       data: createCityDto,
-  //     });
-  //     return city;
-  //   }
-  // }
-  //
-  // async update(cityId: number, createCityDto: UpdateCityDto) {
-  //   {
-  //     const city = await this.prisma.city.findUnique({
-  //       where: { id: cityId },
-  //     });
-  //
-  //     if (!city) {
-  //       throw new NotFoundException('Not found city!');
-  //     }
-  //     return this.prisma.city.update({
-  //       where: { id: cityId },
-  //       data: createCityDto,
-  //     });
-  //   }
-  // }
+  async create(createCityDto: CreateCityDto) {
+    const { name, country, latitude, longitude } = createCityDto;
+
+    return this.prisma.city.create({
+      data: { name, country, latitude, longitude },
+    });
+  }
+
+  async find(findCityDto: FindCityDto) {
+    const { query, size, page } = findCityDto;
+    const skip = (page - 1) * size;
+    const filter: Prisma.CityWhereInput = {};
+
+    if (query) {
+      filter.name = {
+        contains: query,
+        mode: 'insensitive',
+      };
+    }
+
+    const [cities, count] = await Promise.all([
+      this.prisma.city.findMany({
+        skip,
+        take: size,
+        where: filter,
+      }),
+      this.prisma.city.count({
+        where: filter,
+      }),
+    ]);
+
+    return {
+      ...getDefaultPaginationReponse(findCityDto, count),
+      data: cities
+    }
+  }
 }

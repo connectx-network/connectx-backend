@@ -57,6 +57,7 @@ model City {
   longitude   Float
   userCities  UserCity[]
   eventCities EventCity[]
+  event       Event[]
 
   @@map("city")
 }
@@ -161,6 +162,8 @@ model Event {
   eventType             EventType              @default(NORMAL) @map("event_type")
   registUrl             String?                @map("regist_url")
   isDeleted             Boolean                @default(false) @map("is_deleted")
+  cityId                String?                @map("city_id")
+  city                  City?                  @relation(fields: [cityId], references: [id], onDelete: Cascade)
   userId                String                 @map("user_id")
   user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   eventCategoryId       String                 @map("category_id")

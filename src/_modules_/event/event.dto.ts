@@ -51,7 +51,7 @@ export class CreateEventDto {
   eventEndDate: Date;
 
   @OptionalProperty()
-  cityId: number;
+  cityId: string;
 
   @OptionalProperty()
   location: string;
