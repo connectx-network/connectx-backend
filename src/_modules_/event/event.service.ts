@@ -9,7 +9,7 @@ import {
   CreateEventInvitationDto,
   FindEventDto,
   FindEventResponse,
-  FindJoinedEventUserDto,
+  FindJoinedEventUserDto, UpdateHighlightEventDto,
 } from './event.dto';
 import { Prisma } from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
@@ -127,7 +127,7 @@ export class EventService {
   }
 
   async find(findEventDto: FindEventDto): Promise<FindEventResponse> {
-    const { size, page, userId, categoryIds } = findEventDto;
+    const { size, page, userId, categoryIds, isHighlighted } = findEventDto;
     const skip = (page - 1) * size;
 
     const findEventCondition: Prisma.EventWhereInput = { isDeleted: false };
@@ -137,6 +137,10 @@ export class EventService {
           userId,
         },
       };
+    }
+
+    if (isHighlighted) {
+      findEventCondition.isHighlighted = isHighlighted
     }
 
     if (categoryIds) {
@@ -485,6 +489,42 @@ export class EventService {
     }
 
     return shortId;
+  }
+
+  async updateHighlight(telegramId: number, updateHighlightEventDto: UpdateHighlightEventDto) {
+    const {eventId, isHighlighted} = updateHighlightEventDto
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId: `${telegramId}`
+      }
+    })
+
+    if (!user) {
+      throw new NotFoundException('Not found user')
+    }
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id: eventId,
+        userId: user.id
+      }
+    })
+
+    if (!event) {
+      throw new NotFoundException('Not found event')
+    }
+
+    await this.prisma.event.update({
+      where: {
+        id: eventId,
+      },
+      data: {
+        isHighlighted
+      }
+    })
+
+    return {success: true}
   }
 
   // async manualImportEventUser(

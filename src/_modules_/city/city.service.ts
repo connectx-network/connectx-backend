@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import {Injectable, NotFoundException} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateCityDto, FindCityDto } from './city.dto';
+import {CreateCityDto, FindCityDto, UpdateCityHighlight} from './city.dto';
 import { Prisma } from '@prisma/client';
 import {getDefaultPaginationReponse} from "../../utils/pagination.util";
 
@@ -17,7 +17,7 @@ export class CityService {
   }
 
   async find(findCityDto: FindCityDto) {
-    const { query, size, page } = findCityDto;
+    const { query, size, page, isHighlighted } = findCityDto;
     const skip = (page - 1) * size;
     const filter: Prisma.CityWhereInput = {};
 
@@ -26,6 +26,10 @@ export class CityService {
         contains: query,
         mode: 'insensitive',
       };
+    }
+    
+    if (isHighlighted) {
+      filter.isHighlighted = isHighlighted
     }
 
     const [cities, count] = await Promise.all([
@@ -43,5 +47,30 @@ export class CityService {
       ...getDefaultPaginationReponse(findCityDto, count),
       data: cities
     }
+  }
+
+  async updateCityHighlight(updateCityHighlight: UpdateCityHighlight) {
+    const {cityId, isHighlighted} = updateCityHighlight
+
+    const city = await this.prisma.city.findUnique({
+      where: {
+        id: cityId,
+      }
+    })
+
+    if (!city) {
+      throw new NotFoundException('Not found city')
+    }
+
+    await this.prisma.city.update({
+      where: {
+        id: cityId,
+      },
+      data: {
+        isHighlighted
+      }
+    })
+
+    return {success: true}
   }
 }

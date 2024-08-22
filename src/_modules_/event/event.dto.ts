@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsNotEmpty } from 'class-validator';
+import {IsBoolean, IsDateString, IsEnum, IsNotEmpty} from 'class-validator';
 import { OptionalProperty } from '../../decorators/validator.decorator';
 import { BasePagingDto, BasePagingResponse } from '../../types/base.type';
 import {Event, EventAssetType, TicketType} from '@prisma/client';
@@ -78,6 +78,8 @@ export class CreateEventDto {
 export class FindEventDto extends BasePagingDto {
   @OptionalProperty()
   userId: string;
+  @OptionalProperty()
+  isHighlighted: boolean;
   @OptionalProperty({
     required: false,
     type: 'string',
@@ -130,4 +132,13 @@ export class ManualImportEventUserDto {
   @ApiProperty({ required: true })
   @IsNotEmpty()
   eventId: string;
+}
+
+export class UpdateHighlightEventDto {
+  @ApiProperty({ required: true })
+  @IsNotEmpty()
+  eventId: string;
+  @ApiProperty({ required: true })
+  @IsBoolean()
+  isHighlighted: boolean
 }

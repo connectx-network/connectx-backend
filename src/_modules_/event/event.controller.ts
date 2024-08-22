@@ -10,17 +10,9 @@ import {
 import { EventService } from './event.service';
 import {
   CreateEventDto,
-  CreateEventInvitationDto,
-  FindEventDto,
-  FindJoinedEventUserDto,
-  FindOneEventDto,
-  FindUserEventDto,
-  ManualImportEventUserDto,
+  FindEventDto, UpdateHighlightEventDto,
 } from './event.dto';
-import {ApiBearerAuth, ApiBody, ApiTags} from '@nestjs/swagger';
-import { Roles } from '../../decorators/role.decorator';
-import { Role } from '../../types/auth.type';
-import { User } from '../../decorators/user.decorator';
+import {ApiBearerAuth, ApiTags} from '@nestjs/swagger';
 import {TelegramMiniAppGuard} from "../../guards/tma.guard";
 import {TmaUser} from "../../decorators/tmaUser.decorator";
 
@@ -44,6 +36,13 @@ export class EventController {
   @Get()
   async find(@Query() findEventDto: FindEventDto) {
     return this.eventService.find(findEventDto);
+  }
+
+  @Patch('/highlight')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async updateHighlight(@TmaUser('id') telegramId: number, @Body() updateHighlightEventDto: UpdateHighlightEventDto) {
+    return this.eventService.updateHighlight(telegramId, updateHighlightEventDto);
   }
 
   // @Get('/joined-user')

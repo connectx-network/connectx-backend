@@ -50,14 +50,15 @@ model User {
 }
 
 model City {
-  id          String      @id @unique @default(uuid())
-  name        String      @unique
-  country     String
-  latitude    Float
-  longitude   Float
-  userCities  UserCity[]
-  eventCities EventCity[]
-  event       Event[]
+  id            String      @id @unique @default(uuid())
+  name          String      @unique
+  country       String
+  latitude      Float
+  longitude     Float
+  isHighlighted Boolean     @default(false) @map("is_highlighted")
+  userCities    UserCity[]
+  eventCities   EventCity[]
+  event         Event[]
 
   @@map("city")
 }
@@ -161,6 +162,7 @@ model Event {
   location              String?                @map("location")
   eventType             EventType              @default(NORMAL) @map("event_type")
   registUrl             String?                @map("regist_url")
+  isHighlighted         Boolean                @default(false) @map("is_highlighted")
   isDeleted             Boolean                @default(false) @map("is_deleted")
   cityId                String?                @map("city_id")
   city                  City?                  @relation(fields: [cityId], references: [id], onDelete: Cascade)

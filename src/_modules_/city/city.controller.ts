@@ -1,10 +1,8 @@
-import {Body, Controller, Get, Post, Query} from '@nestjs/common';
+import {Body, Controller, Get, Patch, Post, Query} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { CityService } from './city.service';
-import {CreateCityDto, FindCityDto} from './city.dto';
-import {Roles} from "../../decorators/role.decorator";
-import {Role} from "../../types/auth.type";
+import {CreateCityDto, FindCityDto, UpdateCityHighlight} from './city.dto';
 
 @ApiTags('city')
 @Controller('city')
@@ -19,5 +17,10 @@ export class CityController {
   @Post()
   async create(@Body() createCityDto: CreateCityDto) {
     return this.cityService.create(createCityDto);
+  }
+
+  @Patch('highlight')
+  async updateHighlight(@Body() updateCityHighlight: UpdateCityHighlight) {
+    return this.cityService.updateCityHighlight(updateCityHighlight);
   }
 }
