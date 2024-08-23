@@ -27,7 +27,7 @@ export class CityService {
         mode: 'insensitive',
       };
     }
-    
+
     if (isHighlighted) {
       filter.isHighlighted = isHighlighted
     }

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {IsBoolean, IsDateString, IsEnum, IsNotEmpty} from 'class-validator';
-import { OptionalProperty } from '../../decorators/validator.decorator';
+import {IsBool, OptionalProperty} from '../../decorators/validator.decorator';
 import { BasePagingDto, BasePagingResponse } from '../../types/base.type';
 import {Event, EventAssetType, TicketType} from '@prisma/client';
 import {Transform} from "class-transformer";
@@ -79,6 +79,7 @@ export class FindEventDto extends BasePagingDto {
   @OptionalProperty()
   userId: string;
   @OptionalProperty()
+  @IsBool
   isHighlighted: boolean;
   @OptionalProperty({
     required: false,

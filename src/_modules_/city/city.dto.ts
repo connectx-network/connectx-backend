@@ -1,12 +1,13 @@
 import {ApiProperty, PartialType} from '@nestjs/swagger';
 import { BasePagingDto } from 'src/types/base.type';
 import {IsBoolean, IsNotEmpty} from "class-validator";
-import {OptionalProperty} from "../../decorators/validator.decorator";
+import {IsBool, OptionalProperty} from "../../decorators/validator.decorator";
 
 export class FindCityDto extends BasePagingDto {
   @OptionalProperty()
   query: string
   @OptionalProperty()
+  @IsBool
   isHighlighted: boolean
 }
 

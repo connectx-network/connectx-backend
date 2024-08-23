@@ -140,7 +140,7 @@ export class EventService {
     }
 
     if (isHighlighted) {
-      findEventCondition.isHighlighted = isHighlighted
+      findEventCondition.isHighlighted = isHighlighted;
     }
 
     if (categoryIds) {
@@ -148,6 +148,8 @@ export class EventService {
         in: categoryIds
       }
     }
+
+    console.log(findEventCondition);
 
     const [events, count] = await Promise.all([
       this.prisma.event.findMany({
