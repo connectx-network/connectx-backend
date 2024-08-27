@@ -70,6 +70,7 @@ model UserCity {
   cityId String @map("city_id")
   city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, cityId])
   @@map("user_city")
 }
 

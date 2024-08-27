@@ -57,8 +57,8 @@ export class UpdateUserDto {
   gender: Gender;
   @OptionalProperty({ isArray: true, type: UpdateUserCategoryDto })
   categories: UpdateUserCategoryDto[];
-  @OptionalProperty({ type: CityDto })
-  city: CityDto;
+  @OptionalProperty()
+  cityId: string
 }
 
 export class UpdateAvatarDto {

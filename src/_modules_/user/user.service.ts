@@ -35,7 +35,7 @@ export class UserService {
       shortId,
       gender,
       categories,
-      city,
+      cityId
     } = updateUserDto;
 
     const user = await this.prisma.user.findUnique({
@@ -104,21 +104,18 @@ export class UserService {
       }));
     }
 
-    if (city) {
-      // updateUserPayload.city.connectOrCreate = {
-      //   where: {
-      //     country: city.country,
-      //     latitude: city.latitude,
-      //     longitude: city.longitude,
-      //     name: city.name,
-      //   },
-      //   create: {
-      //     country: city.country,
-      //     latitude: city.latitude,
-      //     longitude: city.longitude,
-      //     name: city.name,
-      //   },
-      // };
+    if (cityId) {
+      updateUserPayload.userCities.connectOrCreate = {
+        where: {
+          userId_cityId: {
+            userId: user.id,
+            cityId
+          }
+        },
+        create: {
+          cityId
+        }
+      }
     }
 
     await this.prisma.user.update({
