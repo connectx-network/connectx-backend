@@ -21,6 +21,19 @@ export class CreateEventAssetDto {
   type: EventAssetType;
 }
 
+export class SponsorDto {
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  name: string;
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  description: string;
+}
+
 export class CreateEventDto {
   @ApiProperty({
     required: true,
@@ -73,6 +86,9 @@ export class CreateEventDto {
 
   @OptionalProperty({ isArray: true, type: CreateEventAssetDto })
   assets: CreateEventAssetDto[];
+
+  @OptionalProperty({ isArray: true, type: SponsorDto })
+  sponsors: SponsorDto[]
 }
 
 export class FindEventDto extends BasePagingDto {

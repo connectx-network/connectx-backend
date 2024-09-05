@@ -262,8 +262,14 @@ export class UserConnectionService {
         take: size,
         where: findListFollowingCondition,
         select: {
+          id: true,
+          telegramId: true,
+          fullName: true,
+          gender: true,
+          company: true,
+          jobTitle: true,
           following: true,
-        },
+        }
       }),
       this.prisma.user.count({
         where: findListFollowingCondition,

@@ -55,6 +55,7 @@ model City {
   country       String
   latitude      Float
   longitude     Float
+  image         String?
   isHighlighted Boolean     @default(false) @map("is_highlighted")
   userCities    UserCity[]
   eventCities   EventCity[]
@@ -181,8 +182,17 @@ model Event {
   eventUserTemps        EventUserTemp[]
   eventTags             EventTags[]
   eventCities           EventCity[]
+  eventSponsors         EventSponsor[]
 
   @@map("event")
+}
+
+model EventSponsor {
+  id          String  @id @unique @default(uuid())
+  name        String
+  description String?
+  eventId     String  @map("event_id")
+  event       Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model EventPhase {

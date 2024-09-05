@@ -50,6 +50,7 @@ export class EventService {
       tags,
       assets,
       hosts,
+      sponsors
     } = createEventDto;
 
     const shortId = await this.generateUniqueCode();
@@ -96,6 +97,14 @@ export class EventService {
       createEventPayload.eventTags = {
         createMany: {
           data: tags.map(item => ({title: item}))
+        }
+      }
+    }
+
+    if (sponsors) {
+      createEventPayload.eventSponsors = {
+        createMany: {
+          data: sponsors.map(item => ({...item}))
         }
       }
     }
