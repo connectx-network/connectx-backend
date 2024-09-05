@@ -45,6 +45,7 @@ model User {
   events                Event[]
   eventHosts            EventHost[]
   userCities            UserCity[]
+  userEventFavorites    UserEventFavorite[]
 
   @@map("user")
 }
@@ -184,6 +185,7 @@ model Event {
   eventCities           EventCity[]
   eventSponsors         EventSponsor[]
   eventSocials          EventSocial[]
+  userEventFavorites    UserEventFavorite[]
 
   @@map("event")
 }
@@ -261,6 +263,16 @@ model EventTags {
   title   String
   eventId String @map("event_id")
   event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model UserEventFavorite {
+  id      String @id @unique @default(uuid())
+  eventId String @map("event_id")
+  userId  String @map("user_id")
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
 }
 
 model JoinedEventUser {

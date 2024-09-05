@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  AddFavoriteDto,
   CreateEventDto,
   CreateEventInvitationDto,
   FindEventDto,
@@ -348,6 +349,57 @@ export class EventService {
     }
 
     await this.prisma.joinedEventUser.create({
+      data: {
+        userId: user.id,
+        eventId
+      }
+    })
+
+    return {success: true}
+  }
+
+  async addFavorite(telegramId: string, addFavoriteDto: AddFavoriteDto) {
+    const {eventId} = addFavoriteDto
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId: `${telegramId}`,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id: eventId
+      }
+    })
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
+    const likedEvent = await this.prisma.userEventFavorite.findUnique({
+      where: {
+        userId_eventId: {
+          userId: user.id, eventId
+        }
+      }
+    })
+
+    if (likedEvent) {
+      await this.prisma.userEventFavorite.delete({
+        where: {
+          userId_eventId: {
+            userId: user.id, eventId
+          }
+        }
+      })
+    }
+
+    await this.prisma.userEventFavorite.create({
       data: {
         userId: user.id,
         eventId

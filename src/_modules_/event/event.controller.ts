@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { EventService } from './event.service';
 import {
+  AddFavoriteDto,
   CreateEventDto,
   FindEventDto, JoinEventDto, UpdateHighlightEventDto,
 } from './event.dto';
@@ -50,6 +51,13 @@ export class EventController {
   @ApiBearerAuth()
   async join(@TmaUser('id') telegramId: number, @Body() joinEventDto: JoinEventDto) {
     return this.eventService.join(`${telegramId}`, joinEventDto);
+  }
+
+  @Post('/favorite')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async addFavorite(@TmaUser('id') telegramId: number, @Body() addFavoriteDto: AddFavoriteDto) {
+    return this.eventService.addFavorite(`${telegramId}`, addFavoriteDto);
   }
 
   // @Get('/joined-user')

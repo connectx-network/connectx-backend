@@ -177,17 +177,18 @@ export class ManualImportEventUserDto {
   eventId: string;
 }
 
-export class UpdateHighlightEventDto {
+export class BaseInteractEventDto {
   @ApiProperty({ required: true })
   @IsNotEmpty()
   eventId: string;
+}
+
+export class UpdateHighlightEventDto extends BaseInteractEventDto{
   @ApiProperty({ required: true })
   @IsBoolean()
   isHighlighted: boolean;
 }
 
-export class JoinEventDto {
-  @ApiProperty({ required: true })
-  @IsNotEmpty()
-  eventId: string;
-}
+export class JoinEventDto extends BaseInteractEventDto{}
+
+export class AddFavoriteDto extends BaseInteractEventDto{}
