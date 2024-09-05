@@ -5,6 +5,11 @@ import { BasePagingDto, BasePagingResponse } from '../../types/base.type';
 import { Event, EventAssetType, TicketType } from '@prisma/client';
 import { Transform } from 'class-transformer';
 
+export enum EventStatus {
+  ON_GOING="ON_GOING",
+  FINISHED="FINISHED"
+}
+
 export class CreateEventHostDto {
   @ApiProperty({
     required: true,
@@ -133,6 +138,8 @@ export class FindEventDto extends BasePagingDto {
     return idStrs.map((item) => item.trim());
   })
   cityIds: string[];
+  @OptionalProperty({enum: EventStatus})
+  status: EventStatus
 }
 
 export class FindOneEventDto {

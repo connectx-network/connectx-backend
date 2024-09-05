@@ -146,7 +146,7 @@ export class EventService {
   }
 
   async find(findEventDto: FindEventDto): Promise<FindEventResponse> {
-    const { size, page, userId, categoryIds, isHighlighted } = findEventDto;
+    const { size, page, userId, categoryIds, isHighlighted, cityIds, status } = findEventDto;
     const skip = (page - 1) * size;
 
     const findEventCondition: Prisma.EventWhereInput = { isDeleted: false };
@@ -166,6 +166,28 @@ export class EventService {
       findEventCondition.eventCategoryId = {
         in: categoryIds,
       };
+    }
+
+    if (cityIds) {
+      findEventCondition.eventCities = {
+        some: {
+          cityId: {
+            in: cityIds
+          }
+        }
+      };
+    }
+
+    if (status) {
+      if (status === 'ON_GOING') {
+        findEventCondition.eventEndDate = {
+          gte: new Date()
+        }
+      } else if (status === 'FINISHED') {
+        findEventCondition.eventEndDate = {
+          lte: new Date()
+        }
+      }
     }
 
     const [events, count] = await Promise.all([
