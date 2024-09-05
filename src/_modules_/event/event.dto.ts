@@ -192,3 +192,7 @@ export class UpdateHighlightEventDto extends BaseInteractEventDto{
 export class JoinEventDto extends BaseInteractEventDto{}
 
 export class AddFavoriteDto extends BaseInteractEventDto{}
+
+export class FindCreatedEventDto extends BasePagingDto{}
+
+export class FindFavoriteEventDto extends BasePagingDto{}

@@ -10,7 +10,7 @@ import {
 import { EventService } from './event.service';
 import {
   AddFavoriteDto,
-  CreateEventDto,
+  CreateEventDto, FindCreatedEventDto,
   FindEventDto, JoinEventDto, UpdateHighlightEventDto,
 } from './event.dto';
 import {ApiBearerAuth, ApiTags} from '@nestjs/swagger';
@@ -27,6 +27,20 @@ export class EventController {
   @ApiBearerAuth()
   async create(@TmaUser('id') telegramId: number, @Body() createEventDto: CreateEventDto) {
     return this.eventService.create(telegramId, createEventDto);
+  }
+
+  @Get('/created')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async findCreated(@TmaUser('id') telegramId: number,@Query() findCreatedEventDto: FindCreatedEventDto) {
+    return this.eventService.findCreated(`${telegramId}`, findCreatedEventDto);
+  }
+
+  @Get('/favorite')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async findFavorite(@TmaUser('id') telegramId: number,@Query() findCreatedEventDto: FindCreatedEventDto) {
+    return this.eventService.findFavorite(`${telegramId}`, findCreatedEventDto);
   }
 
   @Get('/:shortId')
