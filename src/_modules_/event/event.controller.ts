@@ -10,7 +10,7 @@ import {
 import { EventService } from './event.service';
 import {
   CreateEventDto,
-  FindEventDto, UpdateHighlightEventDto,
+  FindEventDto, JoinEventDto, UpdateHighlightEventDto,
 } from './event.dto';
 import {ApiBearerAuth, ApiTags} from '@nestjs/swagger';
 import {TelegramMiniAppGuard} from "../../guards/tma.guard";
@@ -43,6 +43,13 @@ export class EventController {
   @ApiBearerAuth()
   async updateHighlight(@TmaUser('id') telegramId: number, @Body() updateHighlightEventDto: UpdateHighlightEventDto) {
     return this.eventService.updateHighlight(telegramId, updateHighlightEventDto);
+  }
+
+  @Post('/join')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async join(@TmaUser('id') telegramId: number, @Body() joinEventDto: JoinEventDto) {
+    return this.eventService.join(`${telegramId}`, joinEventDto);
   }
 
   // @Get('/joined-user')

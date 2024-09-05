@@ -9,7 +9,7 @@ import {
   CreateEventInvitationDto,
   FindEventDto,
   FindEventResponse,
-  FindJoinedEventUserDto,
+  FindJoinedEventUserDto, JoinEventDto,
   UpdateHighlightEventDto,
 } from './event.dto';
 import { Prisma } from '@prisma/client';
@@ -184,7 +184,11 @@ export class EventService {
               type: 'asc',
             },
           },
-          eventHosts: true,
+          eventHosts: {
+            include: {
+              user: true
+            }
+          },
           eventSponsors: true,
           eventSocials: true,
           eventLocationDetail: true,
@@ -233,7 +237,11 @@ export class EventService {
             type: 'asc',
           },
         },
-        eventHosts: true,
+        eventHosts: {
+          include: {
+            user: true
+          }
+        },
         eventSponsors: true,
         eventSocials: true,
         eventLocationDetail: true,
@@ -302,6 +310,51 @@ export class EventService {
     }
 
     return { joined: false };
+  }
+
+  async join(telegramId: string, joinEventDto: JoinEventDto) {
+    const {eventId} = joinEventDto
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId: `${telegramId}`,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id: eventId
+      }
+    })
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
+    const joinedUser = await this.prisma.joinedEventUser.findUnique({
+      where: {
+        userId_eventId: {
+          userId: user.id, eventId
+        }
+      }
+    })
+
+    if (joinedUser) {
+      throw new ConflictException('You have joined this event!');
+    }
+
+    await this.prisma.joinedEventUser.create({
+      data: {
+        userId: user.id,
+        eventId
+      }
+    })
+
+    return {success: true}
   }
 
   async findJoinedEventUser(findJoinedEventUserDto: FindJoinedEventUserDto) {

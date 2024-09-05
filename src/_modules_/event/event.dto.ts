@@ -123,6 +123,16 @@ export class FindEventDto extends BasePagingDto {
     return idStrs.map((item) => item.trim());
   })
   categoryIds: string[];
+  @OptionalProperty({
+    required: false,
+    type: 'string',
+    description: 'id1,id2,...',
+  })
+  @Transform((param) => {
+    const idStrs: string[] = param.value.split(',');
+    return idStrs.map((item) => item.trim());
+  })
+  cityIds: string[];
 }
 
 export class FindOneEventDto {
@@ -174,4 +184,10 @@ export class UpdateHighlightEventDto {
   @ApiProperty({ required: true })
   @IsBoolean()
   isHighlighted: boolean;
+}
+
+export class JoinEventDto {
+  @ApiProperty({ required: true })
+  @IsNotEmpty()
+  eventId: string;
 }
