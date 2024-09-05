@@ -176,6 +176,7 @@ export class EventService {
             },
           },
           eventHosts: true,
+          eventSponsors: true,
           eventLocationDetail: true,
           joinedEventUsers: {
             take: 3,
@@ -223,6 +224,7 @@ export class EventService {
           },
         },
         eventHosts: true,
+        eventSponsors: true,
         eventLocationDetail: true,
         eventLinks: true,
         eventPhases: {
