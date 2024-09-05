@@ -183,6 +183,7 @@ model Event {
   eventTags             EventTags[]
   eventCities           EventCity[]
   eventSponsors         EventSponsor[]
+  eventSocials          EventSocial[]
 
   @@map("event")
 }
@@ -193,6 +194,14 @@ model EventSponsor {
   description String?
   eventId     String  @map("event_id")
   event       Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model EventSocial {
+  id          String @id @unique @default(uuid())
+  channelName String @map("channel_name")
+  url         String
+  eventId     String @map("event_id")
+  event       Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model EventPhase {

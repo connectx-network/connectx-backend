@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {IsBoolean, IsDateString, IsEnum, IsNotEmpty} from 'class-validator';
-import {IsBool, OptionalProperty} from '../../decorators/validator.decorator';
+import { IsBoolean, IsDateString, IsEnum, IsNotEmpty } from 'class-validator';
+import { IsBool, OptionalProperty } from '../../decorators/validator.decorator';
 import { BasePagingDto, BasePagingResponse } from '../../types/base.type';
-import {Event, EventAssetType, TicketType} from '@prisma/client';
-import {Transform} from "class-transformer";
+import { Event, EventAssetType, TicketType } from '@prisma/client';
+import { Transform } from 'class-transformer';
 
 export class CreateEventHostDto {
   @ApiProperty({
@@ -32,6 +32,19 @@ export class SponsorDto {
   })
   @IsNotEmpty()
   description: string;
+}
+
+export class SocialDto {
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  channelName: string;
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  url: string;
 }
 
 export class CreateEventDto {
@@ -75,10 +88,10 @@ export class CreateEventDto {
   @OptionalProperty()
   content: string;
 
-  @OptionalProperty({enum: TicketType})
+  @OptionalProperty({ enum: TicketType })
   ticketType: TicketType;
 
-  @OptionalProperty({isArray: true})
+  @OptionalProperty({ isArray: true })
   tags: string[];
 
   @OptionalProperty({ isArray: true, type: CreateEventHostDto })
@@ -88,7 +101,10 @@ export class CreateEventDto {
   assets: CreateEventAssetDto[];
 
   @OptionalProperty({ isArray: true, type: SponsorDto })
-  sponsors: SponsorDto[]
+  sponsors: SponsorDto[];
+
+  @OptionalProperty({ isArray: true, type: SocialDto })
+  socials: SocialDto[];
 }
 
 export class FindEventDto extends BasePagingDto {
@@ -103,8 +119,8 @@ export class FindEventDto extends BasePagingDto {
     description: 'id1,id2,...',
   })
   @Transform((param) => {
-    const idStrs : string[] = param.value.split(',');
-    return idStrs.map(item => item.trim())
+    const idStrs: string[] = param.value.split(',');
+    return idStrs.map((item) => item.trim());
   })
   categoryIds: string[];
 }
@@ -157,5 +173,5 @@ export class UpdateHighlightEventDto {
   eventId: string;
   @ApiProperty({ required: true })
   @IsBoolean()
-  isHighlighted: boolean
+  isHighlighted: boolean;
 }
