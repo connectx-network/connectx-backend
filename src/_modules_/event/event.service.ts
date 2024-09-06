@@ -368,7 +368,7 @@ export class EventService {
       const {joinedEventUsers, userEventFavorites} = item
       const hasUser = joinedEventUsers.find(i => i.id === user.id )
       const isFavorite = userEventFavorites.find(i => i.id === user.id )
-      return {...item, isJoined: hasUser, isFavorite}
+      return {...item, isJoined: !!hasUser, isFavorite: !!isFavorite}
     })
 
     return {
