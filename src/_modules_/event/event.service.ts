@@ -37,7 +37,8 @@ export class EventService {
     private readonly userService: UserService,
     private readonly mailService: MailService,
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
-  ) {}
+  ) {
+  }
 
   async create(telegramId: number, createEventDto: CreateEventDto) {
     const {
@@ -659,23 +660,22 @@ export class EventService {
       },
     });
 
+    console.log('like', likedEvent?.id)
+
     if (likedEvent) {
       await this.prisma.userEventFavorite.delete({
         where: {
-          userId_eventId: {
-            userId: user.id,
-            eventId,
-          },
+          id: likedEvent.id,
+        },
+      });
+    } else {
+      await this.prisma.userEventFavorite.create({
+        data: {
+          userId: user.id,
+          eventId,
         },
       });
     }
-
-    await this.prisma.userEventFavorite.create({
-      data: {
-        userId: user.id,
-        eventId,
-      },
-    });
 
     return { success: true };
   }
