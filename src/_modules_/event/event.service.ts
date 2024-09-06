@@ -26,6 +26,7 @@ import { Queue } from 'bull';
 import { MailJob, Queues } from '../../types/queue.type';
 import { UserService } from '../user/user.service';
 import { MailService } from '../mail/mail.service';
+import { use } from 'passport';
 
 @Injectable()
 export class EventService {
@@ -247,6 +248,132 @@ export class EventService {
     return {
       ...getDefaultPaginationReponse(findEventDto, count),
       data: events,
+    };
+  }
+
+  async findForTelegram(telegramId: string, findEventDto: FindEventDto): Promise<FindEventResponse> {
+    const { size, page, userId, categoryIds, isHighlighted, cityIds, status } =
+      findEventDto;
+    const skip = (page - 1) * size;
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId: `${telegramId}`,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    const findEventCondition: Prisma.EventWhereInput = { isDeleted: false };
+    if (userId) {
+      findEventCondition.joinedEventUsers = {
+        some: {
+          userId,
+        },
+      };
+    }
+
+    if (isHighlighted) {
+      findEventCondition.isHighlighted = isHighlighted;
+    }
+
+    if (categoryIds) {
+      findEventCondition.eventCategoryId = {
+        in: categoryIds,
+      };
+    }
+
+    if (cityIds) {
+      findEventCondition.eventCities = {
+        some: {
+          cityId: {
+            in: cityIds,
+          },
+        },
+      };
+    }
+
+    if (status) {
+      if (status === 'ON_GOING') {
+        findEventCondition.eventEndDate = {
+          gte: new Date(),
+        };
+      } else if (status === 'FINISHED') {
+        findEventCondition.eventEndDate = {
+          lte: new Date(),
+        };
+      }
+    }
+
+    const [events, count] = await Promise.all([
+      this.prisma.event.findMany({
+        where: findEventCondition,
+        skip,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          _count: true,
+          city: true,
+          eventAssets: {
+            orderBy: {
+              type: 'asc',
+            },
+          },
+          eventHosts: {
+            include: {
+              user: true,
+            },
+          },
+          eventSponsors: true,
+          eventSocials: true,
+          eventLocationDetail: true,
+          joinedEventUsers: {
+            take: 3,
+            orderBy: [
+              {
+                userId: user.id ? 'asc' : 'desc'
+              }
+            ],
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  nickname: true,
+                  avatarUrl: true,
+                  // _count: true
+                },
+              },
+            },
+          },
+          userEventFavorites: {
+            where: {
+              userId: user.id
+            }
+          },
+          eventTags: true,
+          eventCities: true,
+          user: true,
+          eventCategory: true,
+        },
+        take: size,
+      }),
+      this.prisma.event.count({ where: findEventCondition }),
+    ]);
+
+    const newData = events.map(item => {
+      const {joinedEventUsers, userEventFavorites} = item
+      const hasUser = joinedEventUsers.find(i => i.id === user.id )
+      const isFavorite = userEventFavorites.find(i => i.id === user.id )
+      return {...item, isJoined: hasUser, isFavorite}
+    })
+
+    return {
+      ...getDefaultPaginationReponse(findEventDto, count),
+      data: newData,
     };
   }
 

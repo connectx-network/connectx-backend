@@ -43,10 +43,17 @@ export class EventController {
     return this.eventService.findFavorite(`${telegramId}`, findCreatedEventDto);
   }
 
+  @Get('/tma')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async findForTelegram(@TmaUser('id') telegramId: number, @Query() findEventDto: FindEventDto) {
+    return this.eventService.findForTelegram(`${telegramId}`, findEventDto);
+  }
+
   @Get('tma/:shortId')
   @UseGuards(TelegramMiniAppGuard)
   @ApiBearerAuth()
-  async findOneForTelegram(@TmaUser('id') telegramId: number,@Param('shortId') id: string) {
+  async findOneForTelegram(@TmaUser('id') telegramId: number, @Param('shortId') id: string) {
     return this.eventService.findOneForTelegram(`${telegramId}`, id);
   }
 
