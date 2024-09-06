@@ -366,8 +366,8 @@ export class EventService {
 
     const newData = events.map(item => {
       const {joinedEventUsers, userEventFavorites} = item
-      const hasUser = joinedEventUsers.find(i => i.id === user.id )
-      const isFavorite = userEventFavorites.find(i => i.id === user.id )
+      const hasUser = joinedEventUsers.find(i => i.userId === user.id )
+      const isFavorite = userEventFavorites.find(i => i.userId === user.id )
       return {...item, isJoined: !!hasUser, isFavorite: !!isFavorite}
     })
 
