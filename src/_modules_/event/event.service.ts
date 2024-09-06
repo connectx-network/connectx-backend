@@ -7,10 +7,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   AddFavoriteDto,
   CreateEventDto,
-  CreateEventInvitationDto, FindCreatedEventDto,
+  CreateEventInvitationDto,
+  FindCreatedEventDto,
   FindEventDto,
   FindEventResponse,
-  FindJoinedEventUserDto, JoinEventDto,
+  FindJoinedEventUserDto,
+  JoinEventDto,
   UpdateHighlightEventDto,
 } from './event.dto';
 import { Prisma } from '@prisma/client';
@@ -146,7 +148,8 @@ export class EventService {
   }
 
   async find(findEventDto: FindEventDto): Promise<FindEventResponse> {
-    const { size, page, userId, categoryIds, isHighlighted, cityIds, status } = findEventDto;
+    const { size, page, userId, categoryIds, isHighlighted, cityIds, status } =
+      findEventDto;
     const skip = (page - 1) * size;
 
     const findEventCondition: Prisma.EventWhereInput = { isDeleted: false };
@@ -172,21 +175,21 @@ export class EventService {
       findEventCondition.eventCities = {
         some: {
           cityId: {
-            in: cityIds
-          }
-        }
+            in: cityIds,
+          },
+        },
       };
     }
 
     if (status) {
       if (status === 'ON_GOING') {
         findEventCondition.eventEndDate = {
-          gte: new Date()
-        }
+          gte: new Date(),
+        };
       } else if (status === 'FINISHED') {
         findEventCondition.eventEndDate = {
-          lte: new Date()
-        }
+          lte: new Date(),
+        };
       }
     }
 
@@ -207,8 +210,8 @@ export class EventService {
           },
           eventHosts: {
             include: {
-              user: true
-            }
+              user: true,
+            },
           },
           eventSponsors: true,
           eventSocials: true,
@@ -260,8 +263,8 @@ export class EventService {
         },
         eventHosts: {
           include: {
-            user: true
-          }
+            user: true,
+          },
         },
         eventSponsors: true,
         eventSocials: true,
@@ -301,7 +304,97 @@ export class EventService {
     return event;
   }
 
-  async findCreated(telegramId: string, findCreatedEventDto: FindCreatedEventDto): Promise<FindEventResponse> {
+  async findOneForTelegram(telegramId: string, shortId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId: `${telegramId}`,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    const event = await this.prisma.event.findUnique({
+      where: { shortId },
+      include: {
+        _count: true,
+        city: true,
+        eventCategory: true,
+        eventAssets: {
+          orderBy: {
+            type: 'asc',
+          },
+        },
+        eventHosts: {
+          include: {
+            user: true,
+          },
+        },
+        eventSponsors: true,
+        eventSocials: true,
+        eventLocationDetail: true,
+        eventLinks: true,
+        eventPhases: {
+          orderBy: {
+            order: 'asc',
+          },
+        },
+        joinedEventUsers: {
+          take: 3,
+          orderBy: {
+            joinDate: 'desc',
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                nickname: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+        eventTags: true,
+        eventCities: true,
+        user: true,
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
+    const joinedEvent = await this.prisma.joinedEventUser.findUnique({
+      where: {
+        userId_eventId: {
+          userId: user.id,
+          eventId: event.id,
+        },
+      },
+    });
+
+    const isJoined = !!joinedEvent;
+
+    const favoriteEvent = await this.prisma.userEventFavorite.findUnique({
+      where: {
+        userId_eventId: {
+          userId: user.id,
+          eventId: event.id,
+        },
+      },
+    });
+
+    const isFavorite = !!favoriteEvent;
+
+    return { ...event, isJoined, isFavorite };
+  }
+
+  async findCreated(
+    telegramId: string,
+    findCreatedEventDto: FindCreatedEventDto,
+  ): Promise<FindEventResponse> {
     const { size, page } = findCreatedEventDto;
     const skip = (page - 1) * size;
 
@@ -314,10 +407,10 @@ export class EventService {
     });
 
     if (!user) {
-      throw new NotFoundException('Not found user!')
+      throw new NotFoundException('Not found user!');
     }
 
-    findEventCondition.userId = user.id
+    findEventCondition.userId = user.id;
 
     const [events, count] = await Promise.all([
       this.prisma.event.findMany({
@@ -336,8 +429,8 @@ export class EventService {
           },
           eventHosts: {
             include: {
-              user: true
-            }
+              user: true,
+            },
           },
           eventSponsors: true,
           eventSocials: true,
@@ -375,7 +468,10 @@ export class EventService {
     };
   }
 
-  async findFavorite(telegramId: string, findCreatedEventDto: FindCreatedEventDto): Promise<FindEventResponse> {
+  async findFavorite(
+    telegramId: string,
+    findCreatedEventDto: FindCreatedEventDto,
+  ): Promise<FindEventResponse> {
     const { size, page } = findCreatedEventDto;
     const skip = (page - 1) * size;
 
@@ -388,14 +484,14 @@ export class EventService {
     });
 
     if (!user) {
-      throw new NotFoundException('Not found user!')
+      throw new NotFoundException('Not found user!');
     }
 
     findEventCondition.userEventFavorites = {
       some: {
-        userId: user.id
-      }
-    }
+        userId: user.id,
+      },
+    };
 
     const [events, count] = await Promise.all([
       this.prisma.event.findMany({
@@ -414,8 +510,8 @@ export class EventService {
           },
           eventHosts: {
             include: {
-              user: true
-            }
+              user: true,
+            },
           },
           eventSponsors: true,
           eventSocials: true,
@@ -486,7 +582,7 @@ export class EventService {
   }
 
   async join(telegramId: string, joinEventDto: JoinEventDto) {
-    const {eventId} = joinEventDto
+    const { eventId } = joinEventDto;
 
     const user = await this.prisma.user.findUnique({
       where: {
@@ -500,9 +596,9 @@ export class EventService {
 
     const event = await this.prisma.event.findUnique({
       where: {
-        id: eventId
-      }
-    })
+        id: eventId,
+      },
+    });
 
     if (!event) {
       throw new NotFoundException('Not found event!');
@@ -511,10 +607,11 @@ export class EventService {
     const joinedUser = await this.prisma.joinedEventUser.findUnique({
       where: {
         userId_eventId: {
-          userId: user.id, eventId
-        }
-      }
-    })
+          userId: user.id,
+          eventId,
+        },
+      },
+    });
 
     if (joinedUser) {
       throw new ConflictException('You have joined this event!');
@@ -523,15 +620,15 @@ export class EventService {
     await this.prisma.joinedEventUser.create({
       data: {
         userId: user.id,
-        eventId
-      }
-    })
+        eventId,
+      },
+    });
 
-    return {success: true}
+    return { success: true };
   }
 
   async addFavorite(telegramId: string, addFavoriteDto: AddFavoriteDto) {
-    const {eventId} = addFavoriteDto
+    const { eventId } = addFavoriteDto;
 
     const user = await this.prisma.user.findUnique({
       where: {
@@ -545,9 +642,9 @@ export class EventService {
 
     const event = await this.prisma.event.findUnique({
       where: {
-        id: eventId
-      }
-    })
+        id: eventId,
+      },
+    });
 
     if (!event) {
       throw new NotFoundException('Not found event!');
@@ -556,29 +653,31 @@ export class EventService {
     const likedEvent = await this.prisma.userEventFavorite.findUnique({
       where: {
         userId_eventId: {
-          userId: user.id, eventId
-        }
-      }
-    })
+          userId: user.id,
+          eventId,
+        },
+      },
+    });
 
     if (likedEvent) {
       await this.prisma.userEventFavorite.delete({
         where: {
           userId_eventId: {
-            userId: user.id, eventId
-          }
-        }
-      })
+            userId: user.id,
+            eventId,
+          },
+        },
+      });
     }
 
     await this.prisma.userEventFavorite.create({
       data: {
         userId: user.id,
-        eventId
-      }
-    })
+        eventId,
+      },
+    });
 
-    return {success: true}
+    return { success: true };
   }
 
   async findJoinedEventUser(findJoinedEventUserDto: FindJoinedEventUserDto) {
