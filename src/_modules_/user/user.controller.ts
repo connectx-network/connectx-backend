@@ -43,7 +43,7 @@ export class UserController {
   }
 
   @Patch('/avatar')
-  @Roles(Role.ALL)
+  @UseGuards(TelegramMiniAppGuard)
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))
   @ApiBody({ type: UpdateAvatarDto })
