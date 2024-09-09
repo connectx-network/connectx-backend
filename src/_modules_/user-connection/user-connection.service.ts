@@ -47,7 +47,12 @@ export class UserConnectionService {
 
     if (createdUserConnections) {
       if (createdUserConnections.accepted) {
-        throw new ConflictException('You are following this user!');
+        await this.prisma.userConnection.delete({
+          where: {
+            id: createdUserConnections.id
+          },
+        });
+        return {success: true}
       } else {
         throw new ConflictException(
           'You have sent follow request to is this user!',
