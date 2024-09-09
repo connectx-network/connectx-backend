@@ -47,6 +47,7 @@ export class UserController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))
   @ApiBody({ type: UpdateAvatarDto })
+  @ApiBearerAuth()
   async updateAvatar(
     @TmaUser('id') telegramId: number,
     @UploadedFile() file: Express.Multer.File,
