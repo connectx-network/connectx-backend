@@ -286,12 +286,8 @@ export class EventService {
     }
 
     if (cityIds) {
-      findEventCondition.eventCities = {
-        some: {
-          cityId: {
-            in: cityIds,
-          },
-        },
+      findEventCondition.cityId = {
+        in: cityIds
       };
     }
 
