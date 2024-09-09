@@ -40,6 +40,9 @@ export class UserService {
 
     const user = await this.prisma.user.findUnique({
       where: { telegramId: `${telegramId}` },
+      include: {
+        userCategories: true
+      }
     });
 
     if (!user) {
@@ -88,16 +91,11 @@ export class UserService {
     }
 
     if (categories && categories.length > 0) {
-      const deleteIds = categories.filter(
-        (item) => item.type === UpdateUserInterestType.DELETE,
-      );
-
-      const connectIds = categories.filter(
-        (item) => item.type === UpdateUserInterestType.CONNECT,
-      );
-
+      const {userCategories} = user
+      const connectIds = categories.filter(item => !userCategories.find(i => i.id === item))
+      const deleteIds = userCategories.filter(item => !categories.find(i => i === item.id))
       updateUserPayload.userCategories.createMany = {
-        data: connectIds.map((item) => ({ categoryId: item.id })),
+        data: connectIds.map((item) => ({ categoryId: item })),
       };
       updateUserPayload.userCategories.deleteMany = deleteIds.map((item) => ({
         categoryId: item.id,
