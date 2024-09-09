@@ -60,6 +60,13 @@ export class UserController {
   async findOne(@Param('id') userId: string) {
     return this.userService.findOne(userId);
   }
+  @Get('/tma/:id')
+  @UseInterceptors(UserTransformInterceptor)
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async findOneForTelegram(@TmaUser('id') telegramId: number,@Param('id') userId: string) {
+    return this.userService.findOneForTelegram(`${telegramId}`, userId);
+  }
 
   @Delete()
   @UseGuards(TelegramMiniAppGuard)

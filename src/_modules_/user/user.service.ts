@@ -212,6 +212,57 @@ export class UserService {
     return { ...user, following, followers };
   }
 
+  async findOneForTelegram(telegramId: string,userId: string) {
+    const currentUser = await this.prisma.user.findUnique({
+      where: {
+        telegramId
+      }
+    })
+
+    if (!currentUser) {
+      throw new NotFoundException('Not found current user!');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        userCategories: {
+          select: {
+            category: true,
+          },
+        },
+        followers: {
+          where: {
+            userId: currentUser.id
+          }
+        },
+        following: {
+          where: {
+            userId: currentUser.id
+          }
+        }
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+    const [following, followers] = await Promise.all([
+      this.prisma.userConnection.count({
+        where: {
+          userId,
+        },
+      }),
+      this.prisma.userConnection.count({
+        where: {
+          followUserId: userId,
+        },
+      }),
+    ]);
+    const isFollowing = !!user.following
+    const isFollower = !!user.followers
+    return { ...user, following, followers, isFollowing, isFollower};
+  }
+
   async updateSetting(telegramId: number, updateSettingDto: UpdateSettingDto) {
     const { isPrivate } = updateSettingDto;
 
