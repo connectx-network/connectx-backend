@@ -1,6 +1,6 @@
 import {
   ConflictException,
-  Injectable,
+  Injectable, NotAcceptableException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -34,6 +34,10 @@ export class UserConnectionService {
 
     if (!target) {
       throw new NotFoundException('Not found user!');
+    }
+
+    if (!target.isPrivate) {
+      throw new NotAcceptableException('This is private account!');
     }
 
     const createdUserConnections = await this.prisma.userConnection.findUnique({
