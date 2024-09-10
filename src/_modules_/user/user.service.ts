@@ -35,7 +35,8 @@ export class UserService {
       shortId,
       gender,
       categories,
-      cityId
+      cityId,
+      isPrivate
     } = updateUserDto;
 
     const user = await this.prisma.user.findUnique({
@@ -56,6 +57,10 @@ export class UserService {
 
     if (fullName) {
       updateUserPayload.fullName = fullName;
+    }
+
+    if (isPrivate) {
+      updateUserPayload.isPrivate = isPrivate;
     }
 
     if (shortId) {

@@ -51,6 +51,8 @@ export class UpdateUserDto {
   categories: string[];
   @OptionalProperty()
   cityId: string
+  @OptionalProperty()
+  isPrivate: boolean
 }
 
 export class UpdateAvatarDto {
