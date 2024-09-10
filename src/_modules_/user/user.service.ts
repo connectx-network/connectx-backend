@@ -36,7 +36,8 @@ export class UserService {
       gender,
       categories,
       cityId,
-      isPrivate
+      isPrivate,
+      isPrivateFeeds
     } = updateUserDto;
 
     const user = await this.prisma.user.findUnique({
@@ -61,6 +62,10 @@ export class UserService {
 
     if (isPrivate) {
       updateUserPayload.isPrivate = isPrivate;
+    }
+
+    if (isPrivateFeeds) {
+      updateUserPayload.isPrivateFeeds = isPrivateFeeds;
     }
 
     if (shortId) {

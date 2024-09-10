@@ -29,6 +29,7 @@ model User {
   linkedInUrl           String?                @map("link_in_url")
   companyUrl            String?                @map("company_url")
   isPrivate             Boolean                @default(false) @map("is_private")
+  isPrivateFeeds        Boolean                @default(false) @map("is_private_feeds")
   isDeleted             Boolean                @default(false) @map("is_deleted")
   activated             Boolean                @default(false)
   userRole              UserRole               @default(USER)
