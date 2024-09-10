@@ -60,15 +60,19 @@ export class UserService {
       updateUserPayload.fullName = fullName;
     }
 
-    if (isPrivate) {
-      updateUserPayload.isPrivate = isPrivate;
+    if (isPrivate === true) {
+      updateUserPayload.isPrivate = true;
+    } else if (isPrivate === false) {
+      updateUserPayload.isPrivate = false
     }
 
-    if (isPrivateFeeds) {
-      updateUserPayload.isPrivateFeeds = isPrivateFeeds;
+    if (isPrivateFeeds === true) {
+      updateUserPayload.isPrivateFeeds = true;
+    } else if (isPrivateFeeds === false) {
+      updateUserPayload.isPrivateFeeds = false
     }
 
-    if (shortId) {
+      if (shortId) {
       const shortIdUserFind = await this.prisma.user.findUnique({
         where: { shortId },
       });
