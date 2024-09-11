@@ -278,6 +278,7 @@ export class UserConnectionService {
           company: true,
           jobTitle: true,
           following: true,
+          avatarUrl: true,
         }
       }),
       this.prisma.user.count({
@@ -329,6 +330,7 @@ export class UserConnectionService {
           gender: true,
           company: true,
           jobTitle: true,
+          avatarUrl: true,
         }
       }),
       this.prisma.user.count({
