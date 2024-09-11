@@ -11,7 +11,7 @@ import { EventService } from './event.service';
 import {
   AddFavoriteDto,
   CreateEventDto, FindCreatedEventDto,
-  FindEventDto, JoinEventDto, UpdateHighlightEventDto,
+  FindEventDto, FindFeedDto, JoinEventDto, UpdateHighlightEventDto,
 } from './event.dto';
 import {ApiBearerAuth, ApiTags} from '@nestjs/swagger';
 import {TelegramMiniAppGuard} from "../../guards/tma.guard";
@@ -48,6 +48,13 @@ export class EventController {
   @ApiBearerAuth()
   async findForTelegram(@TmaUser('id') telegramId: number, @Query() findEventDto: FindEventDto) {
     return this.eventService.findForTelegram(`${telegramId}`, findEventDto);
+  }
+
+  @Get('/tma/feeds')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async findFeed(@TmaUser('id') telegramId: number, @Query() findFeedDto: FindFeedDto) {
+    return this.eventService.findFeedForTelegram(`${telegramId}`, findFeedDto);
   }
 
   @Get('tma/:shortId')

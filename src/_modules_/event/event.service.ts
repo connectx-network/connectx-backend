@@ -10,7 +10,7 @@ import {
   CreateEventInvitationDto,
   FindCreatedEventDto,
   FindEventDto,
-  FindEventResponse,
+  FindEventResponse, FindFeedDto,
   FindJoinedEventUserDto,
   JoinEventDto,
   UpdateHighlightEventDto,
@@ -248,6 +248,93 @@ export class EventService {
     return {
       ...getDefaultPaginationReponse(findEventDto, count),
       data: events,
+    };
+  }
+
+  async findFeedForTelegram(telegramId: string, findFeedDto: FindFeedDto) {
+    const { size, page } =
+      findFeedDto;
+    const skip = (page - 1) * size;
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId: `${telegramId}`,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    const findEventCondition: Prisma.EventWhereInput = { isDeleted: false };
+
+    const [events, count] = await Promise.all([
+      this.prisma.event.findMany({
+        where: findEventCondition,
+        skip,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          _count: true,
+          city: true,
+          eventAssets: {
+            orderBy: {
+              type: 'asc',
+            },
+          },
+          eventHosts: {
+            include: {
+              user: true,
+            },
+          },
+          eventSponsors: true,
+          eventSocials: true,
+          eventLocationDetail: true,
+          joinedEventUsers: {
+            take: 3,
+            orderBy: [
+              {
+                userId: user.id ? 'asc' : 'desc'
+              }
+            ],
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  nickname: true,
+                  avatarUrl: true,
+                  // _count: true
+                },
+              },
+            },
+          },
+          userEventFavorites: {
+            where: {
+              userId: user.id
+            }
+          },
+          eventTags: true,
+          eventCities: true,
+          user: true,
+          eventCategory: true,
+        },
+        take: size,
+      }),
+      this.prisma.event.count({ where: findEventCondition }),
+    ]);
+
+    const newData = events.map(item => {
+      const {joinedEventUsers, userEventFavorites} = item
+      const hasUser = joinedEventUsers.find(i => i.userId === user.id )
+      const isFavorite = userEventFavorites.find(i => i.userId === user.id )
+      return {...item, isJoined: !!hasUser, isFavorite: !!isFavorite}
+    })
+
+    return {
+      ...getDefaultPaginationReponse(findFeedDto, count),
+      data: newData,
     };
   }
 

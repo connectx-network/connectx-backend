@@ -142,6 +142,8 @@ export class FindEventDto extends BasePagingDto {
   status: EventStatus
 }
 
+export class FindFeedDto extends BasePagingDto {}
+
 export class FindOneEventDto {
   @OptionalProperty()
   userId: string;
