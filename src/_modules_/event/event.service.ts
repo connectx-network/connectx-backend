@@ -339,7 +339,7 @@ export class EventService {
   }
 
   async findForTelegram(telegramId: string, findEventDto: FindEventDto): Promise<FindEventResponse> {
-    const { size, page, userId, categoryIds, isHighlighted, cityIds, status } =
+    const { size, page, userId, categoryIds, isHighlighted, cityIds, status, query } =
       findEventDto;
     const skip = (page - 1) * size;
 
@@ -364,6 +364,13 @@ export class EventService {
 
     if (isHighlighted) {
       findEventCondition.isHighlighted = isHighlighted;
+    }
+
+    if (query) {
+      findEventCondition.title = {
+        contains: query,
+        mode: 'insensitive'
+      };
     }
 
     if (categoryIds) {

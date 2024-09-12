@@ -5,7 +5,7 @@ import {
   Get,
   Param,
   Patch,
-  Put,
+  Put, Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -17,7 +17,7 @@ import { TmaUser } from '../../decorators/tmaUser.decorator';
 import { TelegramMiniAppGuard } from '../../guards/tma.guard';
 import { UserTransformInterceptor } from '../../interceptors/user.interceptor';
 import { Role } from '../../types/auth.type';
-import { UpdateAvatarDto, UpdateSettingDto, UpdateUserDto } from './user.dto';
+import { FindUserDto, UpdateAvatarDto, UpdateSettingDto, UpdateUserDto } from './user.dto';
 import { UserService } from './user.service';
 
 @Controller('user')
@@ -55,11 +55,19 @@ export class UserController {
     return this.userService.updateAvatar(telegramId, file);
   }
 
+  @Get('/tma')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async findForTelegram(@TmaUser('id') telegramId: number, @Query() findUserDto: FindUserDto) {
+    return this.userService.findForTelegram(`${telegramId}`, findUserDto);
+  }
+
   @Get('/:id')
   @UseInterceptors(UserTransformInterceptor)
   async findOne(@Param('id') userId: string) {
     return this.userService.findOne(userId);
   }
+
   @Get('/tma/:id')
   @UseInterceptors(UserTransformInterceptor)
   @UseGuards(TelegramMiniAppGuard)

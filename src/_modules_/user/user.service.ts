@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  FindUserDto,
   UpdateSettingDto,
   UpdateUserDto,
   UpdateUserInterestType,
@@ -14,6 +15,7 @@ import { FileService } from '../file/file.service';
 import { Queues } from '../../types/queue.type';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 
 @Injectable()
 export class UserService {
@@ -224,6 +226,82 @@ export class UserService {
       }),
     ]);
     return { ...user, following, followers };
+  }
+
+  async findForTelegram(telegramId: string, findUserDto: FindUserDto) {
+    const currentUser = await this.prisma.user.findUnique({
+      where: {
+        telegramId
+      }
+    })
+
+    if (!currentUser) {
+      throw new NotFoundException('Not found current user!');
+    }
+
+    const {query, size, page} = findUserDto
+
+    const skip = (page - 1) * size;
+
+    const filter : Prisma.UserWhereInput = {
+      isDeleted: false
+    }
+
+    if (query) {
+      filter.OR = [
+        {
+          fullName: {
+            contains: query,
+            mode: 'insensitive'
+          }
+        },
+        {
+          telegramUsername: {
+            contains: query,
+            mode: 'insensitive'
+          }
+        }
+      ]
+    }
+
+    const [users, count] = await  Promise.all([
+      this.prisma.user.findMany({
+        where: filter,
+        take: size,
+        skip,
+        include: {
+          following: {
+            where: {
+              userId: currentUser.id
+            }
+          },
+          followers: {
+            where: {
+              userId: currentUser.id
+            }
+          }
+        }
+      }),
+      this.prisma.user.count({
+        where: filter
+      })
+    ])
+
+    const data = users.map(item => {
+      const newItem = {...item}
+      const isFollowing = !!newItem.following
+      const isFollower = !!newItem.followers
+
+      delete newItem.following
+      delete newItem.followers
+
+      return {...newItem, isFollowing, isFollower}
+    })
+
+    return {
+      ...getDefaultPaginationReponse(findUserDto, count),
+      data
+    }
   }
 
   async findOneForTelegram(telegramId: string,userId: string) {

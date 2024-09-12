@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Gender } from '@prisma/client';
 import { IsEmail, IsEnum, IsNotEmpty } from 'class-validator';
 import { OptionalProperty } from '../../decorators/validator.decorator';
+import { BasePagingDto } from '../../types/base.type';
 
 export enum UpdateUserInterestType {
   DELETE = 'DELETE',
@@ -97,4 +98,10 @@ export class ManualCreateUserDto {
 export class UpdateSettingDto {
   @OptionalProperty({ description: 'Y | N' })
   isPrivate: string;
+}
+
+export class FindUserDto extends BasePagingDto{
+  @ApiProperty({required: true})
+  @IsNotEmpty()
+  query: string;
 }

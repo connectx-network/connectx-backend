@@ -140,6 +140,8 @@ export class FindEventDto extends BasePagingDto {
   cityIds: string[];
   @OptionalProperty({enum: EventStatus})
   status: EventStatus
+  @OptionalProperty()
+  query: string
 }
 
 export class FindFeedDto extends BasePagingDto {}

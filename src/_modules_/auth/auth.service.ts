@@ -689,7 +689,7 @@ export class AuthService {
   }
 
   async signUpTma(user: InitDataNode.User) {
-    const { id, firstName, lastName, photoUrl } = user;
+    const { id, firstName, lastName, photoUrl, username } = user;
 
     const foundUser = await this.prisma.user.findFirst({
       where: {
@@ -714,6 +714,7 @@ export class AuthService {
         telegramId: `${id}`,
         fullName: `${firstName} ${lastName}`,
         avatarUrl: photoUrl,
+        telegramUsername: username,
       },
       select: {
         id: true,
