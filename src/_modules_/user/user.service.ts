@@ -289,8 +289,8 @@ export class UserService {
 
     const data = users.map(item => {
       const newItem = {...item}
-      const isFollowing = !!newItem.following
-      const isFollower = !!newItem.followers
+      const isFollowing = !!newItem.following.find(i => i.userId === currentUser.id)
+      const isFollower = !!newItem.followers.find(i => i.userId === currentUser.id)
 
       delete newItem.following
       delete newItem.followers
