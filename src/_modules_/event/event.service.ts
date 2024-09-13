@@ -307,6 +307,9 @@ export class EventService {
       where: {
         telegramId: `${telegramId}`,
       },
+      include: {
+        following: true
+      }
     });
 
     if (!user) {
@@ -350,6 +353,11 @@ export class EventService {
             orderBy: [
               {
                 userId: user.id ? 'asc' : 'desc'
+              },
+              {
+                userId: {
+                  in: user.following.map(u => u.id)
+                }  ? 'asc' : 'desc'
               }
             ],
             include: {
