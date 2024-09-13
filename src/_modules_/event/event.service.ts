@@ -250,6 +250,53 @@ export class EventService {
       data: events,
     };
   }
+  
+  async findFeedEventIds(userId: string, findFeedDto: FindFeedDto){
+    const { size, page } =
+        findFeedDto;
+    const skip = (page - 1) * size;
+    const query = `WITH U AS (
+      SELECT id
+      FROM public.user
+      WHERE id = '${userId}'
+      ),
+      FRIEND_EVENTS AS (
+        SELECT DISTINCT(event_id) as id
+        FROM public.joined_event_user
+        WHERE user_id IN (
+          SELECT follow_user_id 
+          FROM public.user_connection
+          WHERE user_id = (
+          SELECT id FROM U
+          )
+        ) 
+      ),
+      CITY_EVENTS AS (
+          SELECT id
+          FROM public.event
+          WHERE city_id in (
+          SELECT city_id 
+          FROM user_city
+          WHERE user_id = (
+          SELECT id FROM U
+          )
+        )
+      ),
+      COMBINED_EVENTS AS (
+        SELECT id FROM FRIEND_EVENTS
+        UNION
+        SELECT id FROM CITY_EVENTS
+      )
+      
+      SELECT id
+      FROM public.event
+      WHERE id IN (
+        SELECT id FROM COMBINED_EVENTS
+      ) AND is_deleted = false
+      ORDER BY event_date DESC LIMIT ${size} OFFSET ${skip}
+    `
+    return this.prisma.$queryRawUnsafe<{id: string}[]>(query)
+  }
 
   async findFeedForTelegram(telegramId: string, findFeedDto: FindFeedDto) {
     const { size, page } =
@@ -266,7 +313,14 @@ export class EventService {
       throw new NotFoundException('Not found user!');
     }
 
-    const findEventCondition: Prisma.EventWhereInput = { isDeleted: false };
+    const res = await this.findFeedEventIds(user.id, findFeedDto)
+
+    const ids = res.map(item => item.id)
+
+    const findEventCondition: Prisma.EventWhereInput = { id: {
+        in: ids
+      }
+    };
 
     const [events, count] = await Promise.all([
       this.prisma.event.findMany({

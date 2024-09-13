@@ -20,7 +20,6 @@ export class TelegramMiniAppGuard implements CanActivate {
       const res = parse(initDataRaw);
       const { user } = res;
       request.tmaUser = user
-      console.log(res)
       return true;
     } catch (error) {
       console.error('Error verifying initDataRaw:', error);
