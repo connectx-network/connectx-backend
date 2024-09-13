@@ -36,7 +36,7 @@ export class UserConnectionService {
       throw new NotFoundException('Not found user!');
     }
 
-    if (!target.isPrivate) {
+    if (target.isPrivate) {
       throw new NotAcceptableException('This is private account!');
     }
 
