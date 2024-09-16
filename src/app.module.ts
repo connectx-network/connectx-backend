@@ -6,7 +6,7 @@ import { PrismaModule } from './_modules_/prisma/prisma.module';
 import { FirebaseModule } from './_modules_/firebase/firebase.module';
 import { FileModule } from './_modules_/file/file.module';
 import { AuthModule } from './_modules_/auth/auth.module';
-import { MailerModule } from '@nestjs-modules/mailer';
+  import { MailerModule } from '@nestjs-modules/mailer';
 import { MailModule } from './_modules_/mail/mail.module';
 import { EventModule } from './_modules_/event/event.module';
 import { UserModule } from './_modules_/user/user.module';

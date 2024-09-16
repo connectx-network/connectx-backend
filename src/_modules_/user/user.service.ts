@@ -350,8 +350,8 @@ export class UserService {
         },
       }),
     ]);
-    const isFollowing = !!user.following
-    const isFollower = !!user.followers
+    const isFollowing = !!user.following.find(i => i.userId === currentUser.id);
+    const isFollower = !!user.followers.find(i => i.userId === currentUser.id);
     return { ...user, following, followers, isFollowing, isFollower};
   }
 
