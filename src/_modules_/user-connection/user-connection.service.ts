@@ -257,7 +257,7 @@ export class UserConnectionService {
     const skip = (page - 1) * size;
 
     const findListFollowingCondition: Prisma.UserWhereInput = {
-      followers: {
+      following: {
         some: {
           userId: user.id,
           accepted: true,
@@ -310,7 +310,7 @@ export class UserConnectionService {
     const skip = (page - 1) * size;
 
     const findListFollowingCondition: Prisma.UserWhereInput = {
-      following: {
+      followers: {
         some: {
           userId: user.id,
           accepted: true,
