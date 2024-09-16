@@ -279,6 +279,12 @@ export class UserService {
             where: {
               userId: currentUser.id
             }
+          },
+          _count: {
+            select: {
+              followers: true,
+              following: true
+            }
           }
         }
       }),
