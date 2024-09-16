@@ -290,7 +290,7 @@ export class UserService {
     const data = users.map(item => {
       const newItem = {...item}
       const isFollowing = !!newItem.following.find(i => i.userId === currentUser.id)
-      const isFollower = !!newItem.followers.find(i => i.userId === currentUser.id)
+      const isFollower = !!newItem.followers.find(i => i.followUserId === currentUser.id)
 
       delete newItem.following
       delete newItem.followers
@@ -351,7 +351,7 @@ export class UserService {
       }),
     ]);
     const isFollowing = !!user.following.find(i => i.userId === currentUser.id);
-    const isFollower = !!user.followers.find(i => i.userId === currentUser.id);
+    const isFollower = !!user.followers.find(i => i.followUserId === currentUser.id);
     return { ...user, following, followers, isFollowing, isFollower};
   }
 

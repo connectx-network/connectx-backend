@@ -36,8 +36,8 @@ model User {
   userRole              UserRole               @default(USER)
   userCategories        UserCategory[]
   userImages            UserImage[]
-  following             UserConnection[]       @relation("UserToFolower")
-  followers             UserConnection[]       @relation("FolowerToUser")
+  following             UserConnection[]       @relation("FolowerToUser")
+  followers             UserConnection[]       @relation("UserToFolower")
   joinedEventUsers      JoinedEventUser[]
   userVerification      UserVerification?
   userTokens            UserToken[]
@@ -137,8 +137,8 @@ model UserConnection {
   followUserId String   @map("follow_user_id")
   accepted     Boolean  @default(false)
   followDate   DateTime @default(now()) @map("follow_date")
-  follower     User     @relation("UserToFolower", fields: [userId], references: [id], onDelete: Cascade)
-  following    User     @relation("FolowerToUser", fields: [followUserId], references: [id], onDelete: Cascade)
+  follower     User     @relation("UserToFolower", fields: [followUserId], references: [id], onDelete: Cascade)
+  following    User     @relation("FolowerToUser", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, followUserId])
   @@map("user_connection")
