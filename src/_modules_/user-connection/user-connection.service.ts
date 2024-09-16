@@ -42,9 +42,9 @@ export class UserConnectionService {
 
     const createdUserConnections = await this.prisma.userConnection.findUnique({
       where: {
-        userId_followUserId: {
+        userId_targetId: {
           userId: user.id,
-          followUserId: targetId,
+          targetId: targetId,
         },
       },
     });
@@ -67,7 +67,7 @@ export class UserConnectionService {
     const createUserConnectionPayload: Prisma.UserConnectionUncheckedCreateInput =
       {
         accepted: !target.isPrivate,
-        followUserId: targetId,
+        targetId: targetId,
         userId: user.id,
       };
 
@@ -108,7 +108,7 @@ export class UserConnectionService {
         },
       };
     } else if (followType === 'FOLLOWER') {
-      findUserCondtion.followUserId = userId;
+      findUserCondtion.targetId = userId;
       findConnectionInclude.follower = {
         select: {
           id: true,
@@ -145,18 +145,18 @@ export class UserConnectionService {
     const [userToTarget, targetToUser] = await Promise.all([
       this.prisma.userConnection.findUnique({
         where: {
-          userId_followUserId: {
+          userId_targetId: {
             userId: user.id,
-            followUserId: targetId,
+            targetId: targetId,
           },
           accepted: true,
         },
       }),
       this.prisma.userConnection.findUnique({
         where: {
-          userId_followUserId: {
+          userId_targetId: {
             userId: targetId,
-            followUserId: user.id,
+            targetId: user.id,
           },
           accepted: true,
         },
@@ -181,9 +181,9 @@ export class UserConnectionService {
   async delete(userId: string, targetId: string) {
     const createdUserConnection = await this.prisma.userConnection.findUnique({
       where: {
-        userId_followUserId: {
+        userId_targetId: {
           userId,
-          followUserId: targetId,
+          targetId: targetId,
         },
       },
     });
@@ -208,9 +208,9 @@ export class UserConnectionService {
     const { isAccepted, targetId } = acceptConnectionDto;
     const createdUserConnection = await this.prisma.userConnection.findUnique({
       where: {
-        userId_followUserId: {
+        userId_targetId: {
           userId: targetId,
-          followUserId: userId,
+          targetId: userId,
         },
       },
     });

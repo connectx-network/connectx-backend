@@ -221,7 +221,7 @@ export class UserService {
       }),
       this.prisma.userConnection.count({
         where: {
-          followUserId: userId,
+          targetId: userId,
         },
       }),
     ]);
@@ -277,7 +277,7 @@ export class UserService {
           },
           followers: {
             where: {
-              userId: currentUser.id
+              targetId: currentUser.id
             }
           },
           _count: {
@@ -296,7 +296,7 @@ export class UserService {
     const data = users.map(item => {
       const newItem = {...item}
       const isFollowing = !!newItem.following.find(i => i.userId === currentUser.id)
-      const isFollower = !!newItem.followers.find(i => i.followUserId === currentUser.id)
+      const isFollower = !!newItem.followers.find(i => i.targetId === currentUser.id)
 
       delete newItem.following
       delete newItem.followers
@@ -331,7 +331,7 @@ export class UserService {
         },
         followers: {
           where: {
-            userId: currentUser.id
+            targetId: currentUser.id
           }
         },
         following: {
@@ -352,12 +352,12 @@ export class UserService {
       }),
       this.prisma.userConnection.count({
         where: {
-          followUserId: userId,
+          targetId: userId,
         },
       }),
     ]);
     const isFollowing = !!user.following.find(i => i.userId === currentUser.id);
-    const isFollower = !!user.followers.find(i => i.followUserId === currentUser.id);
+    const isFollower = !!user.followers.find(i => i.targetId === currentUser.id);
     return { ...user, following, followers, isFollowing, isFollower};
   }
 

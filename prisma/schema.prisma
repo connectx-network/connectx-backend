@@ -132,15 +132,15 @@ model UserImage {
 }
 
 model UserConnection {
-  id           String   @id @unique @default(uuid())
-  userId       String   @map("user_id")
-  followUserId String   @map("follow_user_id")
-  accepted     Boolean  @default(false)
-  followDate   DateTime @default(now()) @map("follow_date")
-  follower     User     @relation("target-to-user", fields: [followUserId], references: [id], onDelete: Cascade)
-  following    User     @relation("user-to-target", fields: [userId], references: [id], onDelete: Cascade)
+  id         String   @id @unique @default(uuid())
+  userId     String   @map("user_id")
+  targetId   String   @map("target_id")
+  accepted   Boolean  @default(false)
+  followDate DateTime @default(now()) @map("follow_date")
+  following  User     @relation("user-to-target", fields: [userId], references: [id], onDelete: Cascade)
+  follower   User     @relation("target-to-user", fields: [targetId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, followUserId])
+  @@unique([userId, targetId])
   @@map("user_connection")
 }
 
