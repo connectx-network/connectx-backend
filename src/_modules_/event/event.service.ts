@@ -349,7 +349,7 @@ export class EventService {
           eventSocials: true,
           eventLocationDetail: true,
           joinedEventUsers: {
-            take: 3,
+            take: 4,
             orderBy: [
               {
                 userId: user.id ? 'asc' : 'desc'
@@ -391,6 +391,7 @@ export class EventService {
       const {joinedEventUsers, userEventFavorites} = item
       const hasUser = joinedEventUsers.find(i => i.userId === user.id )
       const isFavorite = userEventFavorites.find(i => i.userId === user.id )
+      item.joinedEventUsers = item.joinedEventUsers.filter(item => item.userId !== user.id)
       return {...item, isJoined: !!hasUser, isFavorite: !!isFavorite}
     })
 
