@@ -347,17 +347,17 @@ export class UserService {
     const [following, followers] = await Promise.all([
       this.prisma.userConnection.count({
         where: {
-          userId,
+          targetId: userId
         },
       }),
       this.prisma.userConnection.count({
         where: {
-          targetId: userId,
+          userId,
         },
       }),
     ]);
-    const isFollowing = !!user.following.find(i => i.userId === currentUser.id);
-    const isFollower = !!user.followers.find(i => i.targetId === currentUser.id);
+    const isFollowing = !!user.following.find(i => i.targetId === currentUser.id);
+    const isFollower = !!user.followers.find(i => i.userId === currentUser.id);
     return { ...user, following, followers, isFollowing, isFollower};
   }
 
