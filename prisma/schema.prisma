@@ -198,6 +198,8 @@ model EventSponsor {
   description String?
   eventId     String  @map("event_id")
   event       Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_sponsor")
 }
 
 model EventSocial {
@@ -206,6 +208,8 @@ model EventSocial {
   url         String
   eventId     String @map("event_id")
   event       Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_social")
 }
 
 model EventPhase {
@@ -265,6 +269,8 @@ model EventTags {
   title   String
   eventId String @map("event_id")
   event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_tags")
 }
 
 model UserEventFavorite {
@@ -275,6 +281,7 @@ model UserEventFavorite {
   user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventId])
+  @@map("user_event_favorite")
 }
 
 model JoinedEventUser {
