@@ -137,8 +137,8 @@ model UserConnection {
   followUserId String   @map("follow_user_id")
   accepted     Boolean  @default(false)
   followDate   DateTime @default(now()) @map("follow_date")
-  follower     User     @relation("UserToFolower", fields: [userId], references: [id])
-  following    User     @relation("FolowerToUser", fields: [followUserId], references: [id])
+  follower     User     @relation("UserToFolower", fields: [userId], references: [id], onDelete: Cascade)
+  following    User     @relation("FolowerToUser", fields: [followUserId], references: [id], onDelete: Cascade)
 
   @@unique([userId, followUserId])
   @@map("user_connection")
