@@ -264,7 +264,7 @@ export class EventService {
         SELECT DISTINCT(event_id) as id
         FROM public.joined_event_user
         WHERE user_id IN (
-          SELECT follow_user_id 
+          SELECT target_id 
           FROM public.user_connection
           WHERE user_id = (
           SELECT id FROM U
