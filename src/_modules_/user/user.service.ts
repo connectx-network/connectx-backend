@@ -108,8 +108,9 @@ export class UserService {
 
     if (categories && categories.length > 0) {
       const {userCategories} = user
-      const connectIds = categories.filter(item => !userCategories.find(i => i.id === item))
-      const deleteIds = userCategories.filter(item => !categories.find(i => i === item.id))
+      const connectIds = categories.filter(item => !userCategories.find(i => i.categoryId === item))
+      const deleteIds = userCategories.filter(item => !categories.find(i => i === item.categoryId))
+
       updateUserPayload.userCategories.createMany = {
         data: connectIds.map((item) => ({ categoryId: item })),
       };
