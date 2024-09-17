@@ -335,12 +335,12 @@ export class UserService {
         },
         followers: {
           where: {
-            targetId: currentUser.id
+            userId: currentUser.id
           }
         },
         following: {
           where: {
-            userId: currentUser.id
+            targetId: currentUser.id
           }
         }
       },
@@ -348,7 +348,8 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('Not found user!');
     }
-    const [following, followers] = await Promise.all([
+
+    const [followers, following] = await Promise.all([
       this.prisma.userConnection.count({
         where: {
           targetId: userId
@@ -360,8 +361,8 @@ export class UserService {
         },
       }),
     ]);
-    const isFollowing = !!user.following.find(i => i.targetId === currentUser.id);
-    const isFollower = !!user.followers.find(i => i.userId === currentUser.id);
+    const isFollowing = !!user.followers.find(i => i.userId === currentUser.id);
+    const isFollower = !!user.following.find(i => i.targetId === currentUser.id);
     return { ...user, following, followers, isFollowing, isFollower};
   }
 
