@@ -142,6 +142,12 @@ export class EventService {
           })),
         },
       };
+    } else {
+      createEventPayload.eventHosts = {
+        create: {
+          userId: user.id
+        }
+      };
     }
 
     return this.prisma.event.create({
