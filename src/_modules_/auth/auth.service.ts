@@ -666,6 +666,7 @@ export class AuthService {
         avatarUrl: true,
         isDeleted: true,
         description: true,
+        address: true,
         userCategories: {
           select: {
             category: true,
