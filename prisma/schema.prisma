@@ -160,12 +160,14 @@ model Event {
   content               String?
   shortId               String                 @unique
   ticketPrice           Float                  @default(0) @map("tiket_price")
+  numberOfTicket        Int?                   @map("number_of_tickets")
   ticketType            TicketType             @default(FREE) @map("ticket_type")
   createdAt             DateTime               @default(now()) @map("created_at")
   eventDate             DateTime               @map("event_date")
   eventEndDate          DateTime               @map("event_end_date")
   location              String?                @map("location")
   eventType             EventType              @default(NORMAL) @map("event_type")
+  eventScope            EventScope             @default(PUBLIC) @map("event_scope")
   registUrl             String?                @map("regist_url")
   isHighlighted         Boolean                @default(false) @map("is_highlighted")
   isDeleted             Boolean                @default(false) @map("is_deleted")
@@ -393,6 +395,11 @@ enum NotificationStatus {
 enum EventType {
   NORMAL
   READONLY
+}
+
+enum EventScope {
+  PUBLIC
+  PRIVATE
 }
 
 enum TicketType {

@@ -58,6 +58,8 @@ export class EventService {
       hosts,
       sponsors,
       socials,
+      eventScope,
+      numberOfTicket
     } = createEventDto;
 
     const shortId = await this.generateUniqueCode();
@@ -79,6 +81,7 @@ export class EventService {
       eventEndDate,
       shortId,
       title,
+      eventScope
     };
 
     if (description) {
@@ -98,6 +101,9 @@ export class EventService {
     }
     if (ticketType) {
       createEventPayload.ticketType = ticketType;
+    }
+    if (numberOfTicket) {
+      createEventPayload.numberOfTicket = numberOfTicket;
     }
 
     if (tags) {
