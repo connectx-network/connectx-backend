@@ -134,21 +134,16 @@ export class EventService {
       };
     }
 
-    if (hosts) {
-      createEventPayload.eventHosts = {
-        createMany: {
-          data: hosts.map((item) => ({
-            userId: item.userId,
-          })),
-        },
-      };
-    } else {
-      createEventPayload.eventHosts = {
-        create: {
-          userId: user.id
-        }
-      };
-    }
+    const hostIds = hosts ? hosts.map((host) => ({
+      userId: host.userId,
+    })) : []
+
+    const addHostIds = [...hostIds, ...[{userId: user.id}]]
+    createEventPayload.eventHosts = {
+      createMany: {
+        data: addHostIds,
+      },
+    };
 
     return this.prisma.event.create({
       data: createEventPayload,
