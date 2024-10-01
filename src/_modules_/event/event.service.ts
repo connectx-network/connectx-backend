@@ -1175,7 +1175,7 @@ export class EventService {
   //     data: {
   //       checkedIn: true,
   //     },
-  //   });  
+  //   });
   //   return { success: true };
   // }
   //
@@ -1467,7 +1467,7 @@ export class EventService {
       data: {
         eventId,
         userId,
-        status: JoinedEventUserStatus.REJECTED,
+        status: JoinedEventUserStatus.INVITED,
       },
     });
 
