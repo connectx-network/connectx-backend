@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  NotAcceptableException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,9 +11,11 @@ import {
   CreateEventInvitationDto,
   FindCreatedEventDto,
   FindEventDto,
-  FindEventResponse, FindFeedDto,
+  FindEventResponse,
+  FindFeedDto,
   FindJoinedEventUserDto,
   JoinEventDto,
+  UpdateEventDto,
   UpdateHighlightEventDto,
 } from './event.dto';
 import { Prisma } from '@prisma/client';
@@ -26,7 +29,6 @@ import { Queue } from 'bull';
 import { MailJob, Queues } from '../../types/queue.type';
 import { UserService } from '../user/user.service';
 import { MailService } from '../mail/mail.service';
-import { use } from 'passport';
 
 @Injectable()
 export class EventService {
@@ -38,8 +40,7 @@ export class EventService {
     private readonly userService: UserService,
     private readonly mailService: MailService,
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
-  ) {
-  }
+  ) {}
 
   async create(telegramId: number, createEventDto: CreateEventDto) {
     const {
@@ -59,7 +60,7 @@ export class EventService {
       sponsors,
       socials,
       eventScope,
-      numberOfTicket
+      numberOfTicket,
     } = createEventDto;
 
     const shortId = await this.generateUniqueCode();
@@ -81,7 +82,7 @@ export class EventService {
       eventEndDate,
       shortId,
       title,
-      eventScope
+      eventScope,
     };
 
     if (description) {
@@ -140,11 +141,13 @@ export class EventService {
       };
     }
 
-    const hostIds = hosts ? hosts.map((host) => ({
-      userId: host.userId,
-    })) : []
+    const hostIds = hosts
+      ? hosts.map((host) => ({
+          userId: host.userId,
+        }))
+      : [];
 
-    const addHostIds = [...hostIds, ...[{userId: user.id}]]
+    const addHostIds = [...hostIds, ...[{ userId: user.id }]];
     createEventPayload.eventHosts = {
       createMany: {
         data: addHostIds,
@@ -257,10 +260,9 @@ export class EventService {
       data: events,
     };
   }
-  
-  async findFeedEventIds(userId: string, findFeedDto: FindFeedDto){
-    const { size, page } =
-        findFeedDto;
+
+  async findFeedEventIds(userId: string, findFeedDto: FindFeedDto) {
+    const { size, page } = findFeedDto;
     const skip = (page - 1) * size;
     const query = `WITH U AS (
       SELECT id
@@ -301,13 +303,12 @@ export class EventService {
         SELECT id FROM COMBINED_EVENTS
       ) AND is_deleted = false
       ORDER BY event_date DESC LIMIT ${size} OFFSET ${skip}
-    `
-    return this.prisma.$queryRawUnsafe<{id: string}[]>(query)
+    `;
+    return this.prisma.$queryRawUnsafe<{ id: string }[]>(query);
   }
 
   async findFeedForTelegram(telegramId: string, findFeedDto: FindFeedDto) {
-    const { size, page } =
-      findFeedDto;
+    const { size, page } = findFeedDto;
     const skip = (page - 1) * size;
 
     const user = await this.prisma.user.findUnique({
@@ -315,21 +316,22 @@ export class EventService {
         telegramId: `${telegramId}`,
       },
       include: {
-        following: true
-      }
+        following: true,
+      },
     });
 
     if (!user) {
       throw new NotFoundException('Not found user!');
     }
 
-    const res = await this.findFeedEventIds(user.id, findFeedDto)
+    const res = await this.findFeedEventIds(user.id, findFeedDto);
 
-    const ids = res.map(item => item.id)
+    const ids = res.map((item) => item.id);
 
-    const findEventCondition: Prisma.EventWhereInput = { id: {
-        in: ids
-      }
+    const findEventCondition: Prisma.EventWhereInput = {
+      id: {
+        in: ids,
+      },
     };
 
     const [events, count] = await Promise.all([
@@ -359,13 +361,15 @@ export class EventService {
             take: 4,
             orderBy: [
               {
-                userId: user.id ? 'asc' : 'desc'
+                userId: user.id ? 'asc' : 'desc',
               },
               {
                 userId: {
-                  in: user.following.map(u => u.id)
-                }  ? 'asc' : 'desc'
-              }
+                  in: user.following.map((u) => u.id),
+                }
+                  ? 'asc'
+                  : 'desc',
+              },
             ],
             include: {
               user: {
@@ -381,8 +385,8 @@ export class EventService {
           },
           userEventFavorites: {
             where: {
-              userId: user.id
-            }
+              userId: user.id,
+            },
           },
           eventTags: true,
           eventCities: true,
@@ -394,13 +398,15 @@ export class EventService {
       this.prisma.event.count({ where: findEventCondition }),
     ]);
 
-    const newData = events.map(item => {
-      const {joinedEventUsers, userEventFavorites} = item
-      const hasUser = joinedEventUsers.find(i => i.userId === user.id )
-      const isFavorite = userEventFavorites.find(i => i.userId === user.id )
-      item.joinedEventUsers = item.joinedEventUsers.filter(item => item.userId !== user.id)
-      return {...item, isJoined: !!hasUser, isFavorite: !!isFavorite}
-    })
+    const newData = events.map((item) => {
+      const { joinedEventUsers, userEventFavorites } = item;
+      const hasUser = joinedEventUsers.find((i) => i.userId === user.id);
+      const isFavorite = userEventFavorites.find((i) => i.userId === user.id);
+      item.joinedEventUsers = item.joinedEventUsers.filter(
+        (item) => item.userId !== user.id,
+      );
+      return { ...item, isJoined: !!hasUser, isFavorite: !!isFavorite };
+    });
 
     return {
       ...getDefaultPaginationReponse(findFeedDto, count),
@@ -408,9 +414,20 @@ export class EventService {
     };
   }
 
-  async findForTelegram(telegramId: string, findEventDto: FindEventDto): Promise<FindEventResponse> {
-    const { size, page, userId, categoryIds, isHighlighted, cityIds, status, query } =
-      findEventDto;
+  async findForTelegram(
+    telegramId: string,
+    findEventDto: FindEventDto,
+  ): Promise<FindEventResponse> {
+    const {
+      size,
+      page,
+      userId,
+      categoryIds,
+      isHighlighted,
+      cityIds,
+      status,
+      query,
+    } = findEventDto;
     const skip = (page - 1) * size;
 
     const user = await this.prisma.user.findUnique({
@@ -439,7 +456,7 @@ export class EventService {
     if (query) {
       findEventCondition.title = {
         contains: query,
-        mode: 'insensitive'
+        mode: 'insensitive',
       };
     }
 
@@ -451,7 +468,7 @@ export class EventService {
 
     if (cityIds) {
       findEventCondition.cityId = {
-        in: cityIds
+        in: cityIds,
       };
     }
 
@@ -494,8 +511,8 @@ export class EventService {
             take: 3,
             orderBy: [
               {
-                userId: user.id ? 'asc' : 'desc'
-              }
+                userId: user.id ? 'asc' : 'desc',
+              },
             ],
             include: {
               user: {
@@ -511,8 +528,8 @@ export class EventService {
           },
           userEventFavorites: {
             where: {
-              userId: user.id
-            }
+              userId: user.id,
+            },
           },
           eventTags: true,
           eventCities: true,
@@ -524,12 +541,12 @@ export class EventService {
       this.prisma.event.count({ where: findEventCondition }),
     ]);
 
-    const newData = events.map(item => {
-      const {joinedEventUsers, userEventFavorites} = item
-      const hasUser = joinedEventUsers.find(i => i.userId === user.id )
-      const isFavorite = userEventFavorites.find(i => i.userId === user.id )
-      return {...item, isJoined: !!hasUser, isFavorite: !!isFavorite}
-    })
+    const newData = events.map((item) => {
+      const { joinedEventUsers, userEventFavorites } = item;
+      const hasUser = joinedEventUsers.find((i) => i.userId === user.id);
+      const isFavorite = userEventFavorites.find((i) => i.userId === user.id);
+      return { ...item, isJoined: !!hasUser, isFavorite: !!isFavorite };
+    });
 
     return {
       ...getDefaultPaginationReponse(findEventDto, count),
@@ -947,7 +964,7 @@ export class EventService {
       },
     });
 
-    console.log('like', likedEvent?.id)
+    console.log('like', likedEvent?.id);
 
     if (likedEvent) {
       await this.prisma.userEventFavorite.delete({
@@ -1284,4 +1301,77 @@ export class EventService {
   //
   //   return { success: true };
   // }
+
+  async update(telegramId: string, updateEventDto: UpdateEventDto) {
+    const { id } = updateEventDto;
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    if (event.userId !== user.id) {
+      throw new NotAcceptableException(`Only event's owner can update event`);
+    }
+
+    const {
+      title,
+      content,
+      eventDate,
+      eventEndDate,
+      eventScope,
+      numberOfTicket,
+      description,
+      location,
+      locationDetail,
+    } = updateEventDto;
+
+    const updateEventPayload : Prisma.EventUpdateInput = {}
+    const updateLocationDetailPayload : Prisma.EventLocationDetailUpdateInput = {}
+
+    if (title) {
+      updateEventPayload.title = title;
+    }
+    if (content) {
+      updateEventPayload.content = content;
+    }
+    if (description) {
+      updateEventPayload.description = description;
+    }
+    if (eventDate) {
+      updateEventPayload.eventDate = eventDate;
+    }
+    if (eventEndDate) {
+      updateEventPayload.eventEndDate = eventEndDate;
+    }
+    if (eventScope) {
+      updateEventPayload.eventScope = eventScope;
+    }
+    if (numberOfTicket) {
+      updateEventPayload.numberOfTicket = numberOfTicket;
+    }
+    if (location) {
+      updateEventPayload.location = location;
+    }
+    if (locationDetail) {
+      const {longitude, latitude} = locationDetail
+      updateLocationDetailPayload.longitude = longitude
+      updateLocationDetailPayload.latitude = latitude
+    }
+  }
 }

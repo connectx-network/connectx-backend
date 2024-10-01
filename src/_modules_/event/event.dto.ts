@@ -2,12 +2,12 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsDateString, IsEnum, IsNotEmpty } from 'class-validator';
 import { IsBool, OptionalProperty } from '../../decorators/validator.decorator';
 import { BasePagingDto, BasePagingResponse } from '../../types/base.type';
-import {Event, EventAssetType, EventScope, TicketType} from '@prisma/client';
+import { Event, EventAssetType, EventScope, TicketType } from '@prisma/client';
 import { Transform } from 'class-transformer';
 
 export enum EventStatus {
-  ON_GOING="ON_GOING",
-  FINISHED="FINISHED"
+  ON_GOING = 'ON_GOING',
+  FINISHED = 'FINISHED',
 }
 
 export class CreateEventHostDto {
@@ -96,7 +96,7 @@ export class CreateEventDto {
   @OptionalProperty()
   numberOfTicket: number;
 
-  @ApiProperty({required: true, enum: EventScope})
+  @ApiProperty({ required: true, enum: EventScope })
   @IsEnum(EventScope)
   eventScope: EventScope;
 
@@ -145,10 +145,10 @@ export class FindEventDto extends BasePagingDto {
     return idStrs.map((item) => item.trim());
   })
   cityIds: string[];
-  @OptionalProperty({enum: EventStatus})
-  status: EventStatus
+  @OptionalProperty({ enum: EventStatus })
+  status: EventStatus;
   @OptionalProperty()
-  query: string
+  query: string;
 }
 
 export class FindFeedDto extends BasePagingDto {}
@@ -201,16 +201,63 @@ export class BaseInteractEventDto {
   eventId: string;
 }
 
-export class UpdateHighlightEventDto extends BaseInteractEventDto{
+export class UpdateHighlightEventDto extends BaseInteractEventDto {
   @ApiProperty({ required: true })
   @IsBoolean()
   isHighlighted: boolean;
 }
 
-export class JoinEventDto extends BaseInteractEventDto{}
+export class JoinEventDto extends BaseInteractEventDto {}
 
-export class AddFavoriteDto extends BaseInteractEventDto{}
+export class AddFavoriteDto extends BaseInteractEventDto {}
 
-export class FindCreatedEventDto extends BasePagingDto{}
+export class FindCreatedEventDto extends BasePagingDto {}
 
-export class FindFavoriteEventDto extends BasePagingDto{}
+export class FindFavoriteEventDto extends BasePagingDto {}
+
+export class EventLocation {
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  latitude: string;
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  longitude: string;
+}
+
+export class UpdateEventDto {
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  id: string;
+
+  @OptionalProperty()
+  title: string;
+
+  @OptionalProperty()
+  eventDate: Date;
+  @OptionalProperty()
+  eventEndDate: Date;
+
+  @OptionalProperty()
+  location: string;
+
+  @OptionalProperty({type: EventLocation})
+  locationDetail: EventLocation;
+
+  @OptionalProperty()
+  description: string;
+
+  @OptionalProperty()
+  content: string;
+
+  @OptionalProperty()
+  numberOfTicket: number;
+
+  @OptionalProperty()
+  eventScope: EventScope;
+}

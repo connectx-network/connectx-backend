@@ -4,14 +4,14 @@ import {
   Get,
   Param,
   Patch,
-  Post,
+  Post, Put,
   Query, UseGuards,
 } from '@nestjs/common';
 import { EventService } from './event.service';
 import {
   AddFavoriteDto,
   CreateEventDto, FindCreatedEventDto,
-  FindEventDto, FindFeedDto, JoinEventDto, UpdateHighlightEventDto,
+  FindEventDto, FindFeedDto, JoinEventDto, UpdateEventDto, UpdateHighlightEventDto,
 } from './event.dto';
 import {ApiBearerAuth, ApiTags} from '@nestjs/swagger';
 import {TelegramMiniAppGuard} from "../../guards/tma.guard";
@@ -93,6 +93,13 @@ export class EventController {
   @ApiBearerAuth()
   async addFavorite(@TmaUser('id') telegramId: number, @Body() addFavoriteDto: AddFavoriteDto) {
     return this.eventService.addFavorite(`${telegramId}`, addFavoriteDto);
+  }
+
+  @Put('/tma')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async update(@TmaUser('id') telegramId: number, @Body() updateEventDto: UpdateEventDto) {
+    return this.eventService.update(`${telegramId}`, updateEventDto);
   }
 
   // @Get('/joined-user')
