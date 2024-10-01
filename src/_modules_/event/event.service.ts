@@ -19,7 +19,7 @@ import {
   UpdateEventDto,
   UpdateHighlightEventDto,
 } from './event.dto';
-import { JoinedEventUserStatus, Prisma } from '@prisma/client';
+import {EventScope, JoinedEventUserStatus, Prisma} from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import * as moment from 'moment-timezone';
 import { NotificationMessage } from '../../types/notification.type';
@@ -169,7 +169,7 @@ export class EventService {
       findEventDto;
     const skip = (page - 1) * size;
 
-    const findEventCondition: Prisma.EventWhereInput = { isDeleted: false };
+    const findEventCondition: Prisma.EventWhereInput = { isDeleted: false, eventScope: EventScope.PUBLIC };
     if (userId) {
       findEventCondition.joinedEventUsers = {
         some: {
