@@ -7,8 +7,9 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import {
   AddFavoriteDto,
+  BaseInteractEventDto,
   CreateEventDto,
-  CreateEventInvitationDto,
+  CreateEventInvitationDto, CreateInvitationDto,
   FindCreatedEventDto,
   FindEventDto,
   FindEventResponse,
@@ -18,7 +19,7 @@ import {
   UpdateEventDto,
   UpdateHighlightEventDto,
 } from './event.dto';
-import { Prisma } from '@prisma/client';
+import { JoinedEventUserStatus, Prisma } from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import * as moment from 'moment-timezone';
 import { NotificationMessage } from '../../types/notification.type';
@@ -53,6 +54,7 @@ export class EventService {
       title,
       cityId,
       content,
+      mapsUrl,
       ticketType,
       tags,
       assets,
@@ -90,6 +92,9 @@ export class EventService {
     }
     if (cityId) {
       createEventPayload.cityId = cityId;
+    }
+    if (mapsUrl) {
+      createEventPayload.mapsUrl = mapsUrl;
     }
     if (content) {
       createEventPayload.content = content;
@@ -1338,11 +1343,10 @@ export class EventService {
       numberOfTicket,
       description,
       location,
-      locationDetail,
+      mapsUrl,
     } = updateEventDto;
 
-    const updateEventPayload : Prisma.EventUpdateInput = {}
-    const updateLocationDetailPayload : Prisma.EventLocationDetailUpdateInput = {}
+    const updateEventPayload: Prisma.EventUpdateInput = {};
 
     if (title) {
       updateEventPayload.title = title;
@@ -1368,10 +1372,99 @@ export class EventService {
     if (location) {
       updateEventPayload.location = location;
     }
-    if (locationDetail) {
-      const {longitude, latitude} = locationDetail
-      updateLocationDetailPayload.longitude = longitude
-      updateLocationDetailPayload.latitude = latitude
+    if (mapsUrl) {
+      updateEventPayload.mapsUrl = mapsUrl;
     }
+  }
+
+  async rejectInvitation(
+    telegramId: string,
+    rejectInvitationDto: BaseInteractEventDto,
+  ) {
+    const user = await this.userService.findUserByTelegramId(telegramId);
+    if (!user) {
+      throw new NotFoundException('Not Found User');
+    }
+
+    const { eventId } = rejectInvitationDto;
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id: eventId,
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
+    const joinedEventUser = await this.prisma.joinedEventUser.findUnique({
+      where: {
+        userId_eventId: {
+          userId: user.id,
+          eventId: event.id,
+        },
+      },
+    });
+
+    if (!joinedEventUser) {
+      throw new NotFoundException('You has not been invited into this event!');
+    }
+
+    await this.prisma.joinedEventUser.update({
+      where: {
+        id: joinedEventUser.id,
+      },
+      data: {
+        status: JoinedEventUserStatus.REJECTED,
+      },
+    });
+
+    return { success: true };
+  }
+
+  async createInvitation(
+      telegramId: string,
+      createInvitationDto: CreateInvitationDto,
+  ) {
+    const user = await this.userService.findUserByTelegramId(telegramId);
+    if (!user) {
+      throw new NotFoundException('Not Found User');
+    }
+
+    const { eventId, userId } = createInvitationDto;
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id: eventId,
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
+    const joinedEventUser = await this.prisma.joinedEventUser.findUnique({
+      where: {
+        userId_eventId: {
+          userId,
+          eventId: event.id,
+        },
+      },
+    });
+
+    if (joinedEventUser) {
+      throw new NotFoundException('User has not been invited into this event!');
+    }
+
+    await this.prisma.joinedEventUser.create({
+      data: {
+        eventId,
+        userId,
+        status: JoinedEventUserStatus.REJECTED,
+      },
+    });
+
+    return { success: true };
   }
 }

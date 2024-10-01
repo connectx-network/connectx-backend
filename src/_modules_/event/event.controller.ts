@@ -9,8 +9,8 @@ import {
 } from '@nestjs/common';
 import { EventService } from './event.service';
 import {
-  AddFavoriteDto,
-  CreateEventDto, FindCreatedEventDto,
+  AddFavoriteDto, BaseInteractEventDto,
+  CreateEventDto, CreateInvitationDto, FindCreatedEventDto,
   FindEventDto, FindFeedDto, JoinEventDto, UpdateEventDto, UpdateHighlightEventDto,
 } from './event.dto';
 import {ApiBearerAuth, ApiTags} from '@nestjs/swagger';
@@ -100,6 +100,20 @@ export class EventController {
   @ApiBearerAuth()
   async update(@TmaUser('id') telegramId: number, @Body() updateEventDto: UpdateEventDto) {
     return this.eventService.update(`${telegramId}`, updateEventDto);
+  }
+
+  @Post('/invitation')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async invite(@TmaUser('id') telegramId: number, @Body() createInvitationDto: CreateInvitationDto) {
+    return this.eventService.createInvitation(`${telegramId}`, createInvitationDto);
+  }
+
+  @Post('/invitation/reject')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async rejectInvitation(@TmaUser('id') telegramId: number, @Body() rejectInvitationDto: BaseInteractEventDto) {
+    return this.eventService.rejectInvitation(`${telegramId}`, rejectInvitationDto);
   }
 
   // @Get('/joined-user')

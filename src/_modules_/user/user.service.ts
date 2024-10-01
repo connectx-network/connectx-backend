@@ -399,6 +399,14 @@ export class UserService {
     return { success: true };
   }
 
+  async findUserByTelegramId(telegramId: string) {
+    return this.prisma.user.findUnique({
+      where: {
+        telegramId
+      }
+    })
+  }
+
   // async createMany(emails: string[]) {
   //   return Promise.all(
   //     emails.map(async (email) => {

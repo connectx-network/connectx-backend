@@ -166,6 +166,7 @@ model Event {
   eventDate             DateTime               @map("event_date")
   eventEndDate          DateTime               @map("event_end_date")
   location              String?                @map("location")
+  mapsUrl               String?                @map("maps_url")
   eventType             EventType              @default(NORMAL) @map("event_type")
   eventScope            EventScope             @default(PUBLIC) @map("event_scope")
   registUrl             String?                @map("regist_url")
@@ -287,15 +288,16 @@ model UserEventFavorite {
 }
 
 model JoinedEventUser {
-  id          String    @id @unique @default(uuid())
-  eventId     String    @map("event_id")
-  userId      String    @map("user_id")
-  knowEventBy String?   @map("know_event_by")
-  joinDate    DateTime  @default(now()) @map("join_date")
-  checkInDate DateTime? @map("check_in_date")
-  checkedIn   Boolean   @default(false) @map("checked_in")
-  event       Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String                @id @unique @default(uuid())
+  eventId     String                @map("event_id")
+  userId      String                @map("user_id")
+  knowEventBy String?               @map("know_event_by")
+  joinDate    DateTime              @default(now()) @map("join_date")
+  checkInDate DateTime?             @map("check_in_date")
+  status      JoinedEventUserStatus @default(REGISTERED)
+  checkedIn   Boolean               @default(false) @map("checked_in")
+  event       Event                 @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventId])
   @@map("joined_event_user")
@@ -414,4 +416,10 @@ enum FileType {
   IMAGE
   VIDEO
   USER_AVATAR
+}
+
+enum JoinedEventUserStatus {
+  REGISTERED
+  INVITED
+  REJECTED
 }

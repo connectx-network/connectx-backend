@@ -85,6 +85,9 @@ export class CreateEventDto {
   cityId: string;
 
   @OptionalProperty()
+  mapsUrl: string;
+
+  @OptionalProperty()
   location: string;
 
   @OptionalProperty()
@@ -246,8 +249,8 @@ export class UpdateEventDto {
   @OptionalProperty()
   location: string;
 
-  @OptionalProperty({type: EventLocation})
-  locationDetail: EventLocation;
+  @OptionalProperty()
+  mapsUrl: string;
 
   @OptionalProperty()
   description: string;
@@ -260,4 +263,12 @@ export class UpdateEventDto {
 
   @OptionalProperty()
   eventScope: EventScope;
+}
+
+export class CreateInvitationDto extends BaseInteractEventDto {
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  userId: string;
 }
