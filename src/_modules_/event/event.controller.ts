@@ -11,7 +11,7 @@ import { EventService } from './event.service';
 import {
   AddFavoriteDto, BaseInteractEventDto,
   CreateEventDto, CreateInvitationDto, FindCreatedEventDto,
-  FindEventDto, FindFeedDto, JoinEventDto, UpdateEventDto, UpdateHighlightEventDto,
+  FindEventDto, FindEventGuestDto, FindFeedDto, JoinEventDto, UpdateEventDto, UpdateHighlightEventDto,
 } from './event.dto';
 import {ApiBearerAuth, ApiTags} from '@nestjs/swagger';
 import {TelegramMiniAppGuard} from "../../guards/tma.guard";
@@ -67,6 +67,11 @@ export class EventController {
   @Get('/:shortId')
   async findOne(@Param('shortId') id: string) {
     return this.eventService.findOne(id);
+  }
+
+  @Get('/guest/:eventId')
+  async findGuest(@Param('eventId') id: string, @Query() findEventGuestDto: FindEventGuestDto) {
+    return this.eventService.findGuest(id, findEventGuestDto);
   }
 
   @Get()

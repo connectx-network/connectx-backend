@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsDateString, IsEnum, IsNotEmpty } from 'class-validator';
 import { IsBool, OptionalProperty } from '../../decorators/validator.decorator';
 import { BasePagingDto, BasePagingResponse } from '../../types/base.type';
-import { Event, EventAssetType, EventScope, TicketType } from '@prisma/client';
+import {Event, EventAssetType, EventScope, JoinedEventUserStatus, TicketType} from '@prisma/client';
 import { Transform } from 'class-transformer';
 
 export enum EventStatus {
@@ -271,4 +271,11 @@ export class CreateInvitationDto extends BaseInteractEventDto {
   })
   @IsNotEmpty()
   userId: string;
+}
+
+export class FindEventGuestDto extends BasePagingDto {
+  @OptionalProperty({description: 'REGISTERED | INVITED | REJECTED'})
+  status: JoinedEventUserStatus
+  @OptionalProperty()
+  checkedIn: boolean
 }

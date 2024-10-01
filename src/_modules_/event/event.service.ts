@@ -9,9 +9,11 @@ import {
   AddFavoriteDto,
   BaseInteractEventDto,
   CreateEventDto,
-  CreateEventInvitationDto, CreateInvitationDto,
+  CreateEventInvitationDto,
+  CreateInvitationDto,
   FindCreatedEventDto,
   FindEventDto,
+  FindEventGuestDto,
   FindEventResponse,
   FindFeedDto,
   FindJoinedEventUserDto,
@@ -19,7 +21,7 @@ import {
   UpdateEventDto,
   UpdateHighlightEventDto,
 } from './event.dto';
-import {EventScope, JoinedEventUserStatus, Prisma} from '@prisma/client';
+import { EventScope, JoinedEventUserStatus, Prisma } from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import * as moment from 'moment-timezone';
 import { NotificationMessage } from '../../types/notification.type';
@@ -169,7 +171,10 @@ export class EventService {
       findEventDto;
     const skip = (page - 1) * size;
 
-    const findEventCondition: Prisma.EventWhereInput = { isDeleted: false, eventScope: EventScope.PUBLIC };
+    const findEventCondition: Prisma.EventWhereInput = {
+      isDeleted: false,
+      eventScope: EventScope.PUBLIC,
+    };
     if (userId) {
       findEventCondition.joinedEventUsers = {
         some: {
@@ -1424,8 +1429,8 @@ export class EventService {
   }
 
   async createInvitation(
-      telegramId: string,
-      createInvitationDto: CreateInvitationDto,
+    telegramId: string,
+    createInvitationDto: CreateInvitationDto,
   ) {
     const user = await this.userService.findUserByTelegramId(telegramId);
     if (!user) {
@@ -1466,5 +1471,38 @@ export class EventService {
     });
 
     return { success: true };
+  }
+
+  async findGuest(id: string, findGuestDto: FindEventGuestDto) {
+    const { checkedIn, status, page, size } = findGuestDto;
+    const skip = (page - 1) * size;
+    const filter: Prisma.JoinedEventUserWhereInput = {
+      eventId: id
+    };
+
+    if (checkedIn) {
+      filter.checkedIn = Boolean(checkedIn);
+    }
+    if (status) {
+      filter.status = status;
+    }
+
+    const [users, count] = await Promise.all([
+      this.prisma.user.findMany({
+        where: {
+          joinedEventUsers: {
+            some: filter,
+          },
+        },
+        take: size,
+        skip,
+      }),
+      this.prisma.joinedEventUser.count({ where: filter }),
+    ]);
+
+    return {
+      ...getDefaultPaginationReponse(findGuestDto, count),
+      data: users
+    }
   }
 }
