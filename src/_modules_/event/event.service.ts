@@ -1,4 +1,5 @@
 import {
+  Body,
   ConflictException,
   Injectable,
   NotAcceptableException,
@@ -7,7 +8,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import {
   AddFavoriteDto,
-  BaseInteractEventDto,
+  BaseInteractEventDto, CheckInByAdminDto,
   CreateEventDto,
   CreateEventInvitationDto,
   CreateInvitationDto,
@@ -18,7 +19,7 @@ import {
   FindFeedDto,
   FindJoinedEventUserDto,
   JoinEventDto,
-  UpdateEventDto,
+  UpdateEventDto, UpdateGuestStatusDto,
   UpdateHighlightEventDto,
 } from './event.dto';
 import { EventScope, JoinedEventUserStatus, Prisma } from '@prisma/client';
@@ -1164,20 +1165,20 @@ export class EventService {
     });
   }
 
-  async checkIn(userId: string, eventId: string) {
-    const userEvent = await this.findEventUser(userId, eventId);
-    if (userEvent.checkedIn) {
-      throw new ConflictException('User has checked in this event!');
-    }
-    await this.prisma.joinedEventUser.update({
-      where: { id: userEvent.id },
-      data: {
-        checkedIn: true,
-      },
-    });
-    return { success: true };
-  }
-
+  // async checkIn(userId: string, eventId: string) {
+  //   const userEvent = await this.findEventUser(userId, eventId);
+  //   if (userEvent.checkedIn) {
+  //     throw new ConflictException('User has checked in this event!');
+  //   }
+  //   await this.prisma.joinedEventUser.update({
+  //     where: { id: userEvent.id },
+  //     data: {
+  //       checkedIn: true,
+  //     },
+  //   });  
+  //   return { success: true };
+  // }
+  //
   private generateUniqueId(length: number = 6): string {
     const characters =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -1467,6 +1468,100 @@ export class EventService {
         eventId,
         userId,
         status: JoinedEventUserStatus.REJECTED,
+      },
+    });
+
+    return { success: true };
+  }
+
+  async updateGuestStatus(telegramId: string, updateGuestStatus: UpdateGuestStatusDto) {
+    const user = await this.userService.findUserByTelegramId(telegramId);
+    if (!user) {
+      throw new NotFoundException('Not Found User');
+    }
+
+    const { eventId, userId, status } = updateGuestStatus;
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id: eventId,
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
+    if (event.userId !== user.id) {
+      throw new NotAcceptableException(`Only event's owner can update event`);
+    }
+
+    const guest = await this.prisma.joinedEventUser.findUnique({
+      where: {
+        userId_eventId: {
+          eventId,
+          userId,
+        }
+      },
+    });
+
+    if (!guest) {
+      throw new NotFoundException('Not found guest!');
+    }
+
+    await this.prisma.joinedEventUser.update({
+      where: {
+        id: guest.id,
+      },
+      data: {
+        status
+      },
+    });
+
+    return { success: true };
+  }
+
+  async checkInByAdmin(telegramId: string, checkInByAdminDto: CheckInByAdminDto) {
+    const user = await this.userService.findUserByTelegramId(telegramId);
+    if (!user) {
+      throw new NotFoundException('Not Found User');
+    }
+
+    const { eventId, userId } = checkInByAdminDto;
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id: eventId,
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
+    if (event.userId !== user.id) {
+      throw new NotAcceptableException(`Only event's owner can update event`);
+    }
+
+    const guest = await this.prisma.joinedEventUser.findUnique({
+      where: {
+        userId_eventId: {
+          eventId,
+          userId,
+        }
+      },
+    });
+
+    if (!guest) {
+      throw new NotFoundException('Not found guest!');
+    }
+
+    await this.prisma.joinedEventUser.update({
+      where: {
+        id: guest.id,
+      },
+      data: {
+        checkedIn: true
       },
     });
 

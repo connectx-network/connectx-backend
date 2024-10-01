@@ -9,9 +9,17 @@ import {
 } from '@nestjs/common';
 import { EventService } from './event.service';
 import {
-  AddFavoriteDto, BaseInteractEventDto,
-  CreateEventDto, CreateInvitationDto, FindCreatedEventDto,
-  FindEventDto, FindEventGuestDto, FindFeedDto, JoinEventDto, UpdateEventDto, UpdateHighlightEventDto,
+  AddFavoriteDto,
+  BaseInteractEventDto, CheckInByAdminDto,
+  CreateEventDto,
+  CreateInvitationDto,
+  FindCreatedEventDto,
+  FindEventDto,
+  FindEventGuestDto,
+  FindFeedDto,
+  JoinEventDto,
+  UpdateEventDto, UpdateGuestStatusDto,
+  UpdateHighlightEventDto,
 } from './event.dto';
 import {ApiBearerAuth, ApiTags} from '@nestjs/swagger';
 import {TelegramMiniAppGuard} from "../../guards/tma.guard";
@@ -112,6 +120,20 @@ export class EventController {
   @ApiBearerAuth()
   async invite(@TmaUser('id') telegramId: number, @Body() createInvitationDto: CreateInvitationDto) {
     return this.eventService.createInvitation(`${telegramId}`, createInvitationDto);
+  }
+
+  @Put('/guest/status')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async updateInvitation(@TmaUser('id') telegramId: number, @Body() updateGuestStatusDto: UpdateGuestStatusDto) {
+    return this.eventService.updateGuestStatus(`${telegramId}`, updateGuestStatusDto);
+  }
+
+  @Patch('/guest/checkin')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async checkInByAdmin(@TmaUser('id') telegramId: number, @Body() checkInByAdminDto: CheckInByAdminDto) {
+    return this.eventService.checkInByAdmin(`${telegramId}`, checkInByAdminDto);
   }
 
   @Post('/invitation/reject')

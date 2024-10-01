@@ -2,7 +2,13 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsDateString, IsEnum, IsNotEmpty } from 'class-validator';
 import { IsBool, OptionalProperty } from '../../decorators/validator.decorator';
 import { BasePagingDto, BasePagingResponse } from '../../types/base.type';
-import {Event, EventAssetType, EventScope, JoinedEventUserStatus, TicketType} from '@prisma/client';
+import {
+  Event,
+  EventAssetType,
+  EventScope,
+  JoinedEventUserStatus,
+  TicketType,
+} from '@prisma/client';
 import { Transform } from 'class-transformer';
 
 export enum EventStatus {
@@ -274,13 +280,39 @@ export class CreateInvitationDto extends BaseInteractEventDto {
 }
 
 export class FindEventGuestDto extends BasePagingDto {
-  @OptionalProperty({description: 'REGISTERED | INVITED | REJECTED'})
-  status: JoinedEventUserStatus
+  @OptionalProperty({ description: 'REGISTERED | INVITED | REJECTED' })
+  status: JoinedEventUserStatus;
   @OptionalProperty()
-  checkedIn: boolean
-  @OptionalProperty({type: 'string', description: 'fullName | telegramUsername | joinDate | checkInDate'})
+  checkedIn: boolean;
+  @OptionalProperty({
+    type: 'string',
+    description: 'fullName | telegramUsername | joinDate | checkInDate',
+  })
   @Transform((param) => param.value.split(','))
   sort?: string[] = ['joinDate', 'desc'];
   @OptionalProperty()
-  query: string
+  query: string;
+}
+
+export class UpdateGuestStatusDto extends BaseInteractEventDto {
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  userId: string;
+  @ApiProperty({
+    required: true,
+    description: 'REGISTERED | INVITED | REJECTED',
+    enum: JoinedEventUserStatus,
+  })
+  @IsEnum(JoinedEventUserStatus)
+  status: JoinedEventUserStatus;
+}
+
+export class CheckInByAdminDto extends BaseInteractEventDto{
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  userId: string;
 }
