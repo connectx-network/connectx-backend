@@ -1474,11 +1474,25 @@ export class EventService {
   }
 
   async findGuest(id: string, findGuestDto: FindEventGuestDto) {
-    const { checkedIn, status, page, size } = findGuestDto;
+    const { checkedIn, status, page, size, sort, query } = findGuestDto;
     const skip = (page - 1) * size;
     const filter: Prisma.JoinedEventUserWhereInput = {
       eventId: id
     };
+
+    const filterOrder : Prisma.JoinedEventUserOrderByWithRelationInput = {}
+
+    if (sort) {
+      const [sortField, order] = sort
+      if (sortField) {
+        if (['fullName', 'telegramUsername'].includes(sortField)) {
+          filterOrder.user = {}
+          filterOrder.user[sortField] = order.trim()
+        }else {
+          filterOrder[sortField] = order.trim()
+        }
+      }
+    }
 
     if (checkedIn) {
       filter.checkedIn = Boolean(checkedIn);
@@ -1486,16 +1500,40 @@ export class EventService {
     if (status) {
       filter.status = status;
     }
+    if (query) {
+      filter.OR = [
+        {
+          user: {
+            fullName: {
+              contains: query,
+              mode: "insensitive"
+            }
+          }
+        },
+        {
+          user: {
+            telegramUsername: {
+              contains: query,
+              mode: "insensitive"
+            }
+          }
+        }
+      ];
+    }
 
     const [users, count] = await Promise.all([
-      this.prisma.user.findMany({
-        where: {
-          joinedEventUsers: {
-            some: filter,
-          },
+      this.prisma.joinedEventUser.findMany({
+        where: filter,
+        select: {
+          user: true,
+          checkedIn: true,
+          status: true,
+          joinDate: true,
+          checkInDate: true
         },
         take: size,
         skip,
+        orderBy: filterOrder
       }),
       this.prisma.joinedEventUser.count({ where: filter }),
     ]);

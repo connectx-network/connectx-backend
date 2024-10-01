@@ -278,4 +278,9 @@ export class FindEventGuestDto extends BasePagingDto {
   status: JoinedEventUserStatus
   @OptionalProperty()
   checkedIn: boolean
+  @OptionalProperty({type: 'string', description: 'fullName | telegramUsername | joinDate | checkInDate'})
+  @Transform((param) => param.value.split(','))
+  sort?: string[] = ['joinDate', 'desc'];
+  @OptionalProperty()
+  query: string
 }
