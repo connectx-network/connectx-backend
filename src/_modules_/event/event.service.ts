@@ -1562,7 +1562,7 @@ export class EventService {
   }
 
   async findGuest(id: string, findGuestDto: FindEventGuestDto) {
-    const { checkedIn, status, page, size, sort, query } = findGuestDto;
+    const { status, page, size, sort, query } = findGuestDto;
     const skip = (page - 1) * size;
     const filter: Prisma.JoinedEventUserWhereInput = {
       eventId: id
@@ -1581,12 +1581,12 @@ export class EventService {
         }
       }
     }
-
-    if (checkedIn) {
-      filter.checkedIn = Boolean(checkedIn);
-    }
     if (status) {
-      filter.status = status;
+      if (status === 'CHECKED_IN') {
+        filter.checkedIn = true;
+      } else {
+        filter.status = status;
+      }
     }
     if (query) {
       filter.OR = [

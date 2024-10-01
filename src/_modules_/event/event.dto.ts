@@ -16,6 +16,13 @@ export enum EventStatus {
   FINISHED = 'FINISHED',
 }
 
+export enum JoinedEventStatusParam {
+  REGISTERED  = 'REGISTERED',
+  INVITED  = 'INVITED',
+  REJECTED  = 'REJECTED',
+  CHECKED_IN  = 'CHECKED_IN',
+}
+
 export class CreateEventHostDto {
   @ApiProperty({
     required: true,
@@ -280,10 +287,8 @@ export class CreateInvitationDto extends BaseInteractEventDto {
 }
 
 export class FindEventGuestDto extends BasePagingDto {
-  @OptionalProperty({ description: 'REGISTERED | INVITED | REJECTED' })
-  status: JoinedEventUserStatus;
-  @OptionalProperty()
-  checkedIn: boolean;
+  @OptionalProperty({ description: 'REGISTERED | INVITED | REJECTED | CHECKED_IN' })
+  status: JoinedEventStatusParam;
   @OptionalProperty({
     type: 'string',
     description: 'fullName | telegramUsername | joinDate | checkInDate',
