@@ -370,18 +370,11 @@ export class EventService {
           eventLocationDetail: true,
           joinedEventUsers: {
             take: 4,
-            orderBy: [
-              {
-                userId: user.id ? 'asc' : 'desc',
-              },
-              {
-                userId: {
-                  in: user.following.map((u) => u.id),
-                }
-                  ? 'asc'
-                  : 'desc',
-              },
-            ],
+            where: {
+              userId: {
+                in: user.following.map((u) => u.id),
+              }
+            },
             include: {
               user: {
                 select: {
