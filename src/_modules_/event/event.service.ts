@@ -1599,6 +1599,7 @@ export class EventService {
       },
       data: {
         checkedIn: true,
+        checkInDate: new Date()
       },
     });
 
