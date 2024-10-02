@@ -1596,8 +1596,19 @@ export class EventService {
   async findGuest(id: string, findGuestDto: FindEventGuestDto) {
     const { status, page, size, sort, query } = findGuestDto;
     const skip = (page - 1) * size;
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        shortId: id,
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
     const filter: Prisma.JoinedEventUserWhereInput = {
-      eventId: id
+      eventId: event.id
     };
 
     const filterOrder : Prisma.JoinedEventUserOrderByWithRelationInput = {}
