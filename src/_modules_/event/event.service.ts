@@ -1611,7 +1611,7 @@ export class EventService {
 
     const event = await this.prisma.event.findUnique({
       where: {
-        shortId: id,
+        id,
       },
     });
 

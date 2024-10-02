@@ -77,8 +77,8 @@ export class EventController {
     return this.eventService.findOne(id);
   }
 
-  @Get('/guest/:shortId')
-  async findGuest(@Param('shortId') id: string, @Query() findEventGuestDto: FindEventGuestDto) {
+  @Get('/guest/:eventId')
+  async findGuest(@Param('eventId') id: string, @Query() findEventGuestDto: FindEventGuestDto) {
     return this.eventService.findGuest(id, findEventGuestDto);
   }
 
