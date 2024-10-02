@@ -1641,6 +1641,7 @@ export class EventService {
         filter.checkedIn = true;
       } else {
         filter.status = status;
+        filter.checkedIn = false;
       }
     }
     if (query) {
