@@ -22,7 +22,7 @@ import {
   UpdateEventDto, UpdateGuestStatusDto,
   UpdateHighlightEventDto,
 } from './event.dto';
-import { EventScope, JoinedEventUserStatus, Prisma } from '@prisma/client';
+import {EventAssetType, EventScope, JoinedEventUserStatus, Prisma} from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import * as moment from 'moment-timezone';
 import { NotificationMessage } from '../../types/notification.type';
@@ -1343,9 +1343,23 @@ export class EventService {
       description,
       location,
       mapsUrl,
+      assetUrl
     } = updateEventDto;
 
     const updateEventPayload: Prisma.EventUpdateInput = {};
+    const updateAssetPayload: Prisma.EventAssetUpdateInput = {}
+
+    const currentAsset = await this.prisma.eventAsset.findFirst({
+      where: {
+        eventId: id,
+        type: EventAssetType.THUMBNAIL
+      }
+    })
+
+    const updateAssetCondition: Prisma.EventAssetWhereUniqueInput = {
+      id: currentAsset.id
+    }
+
 
     if (title) {
       updateEventPayload.title = title;
@@ -1374,6 +1388,24 @@ export class EventService {
     if (mapsUrl) {
       updateEventPayload.mapsUrl = mapsUrl;
     }
+    if (assetUrl) {
+      updateAssetPayload.url = assetUrl;
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.event.update({
+        where: {
+          id
+        },
+        data: updateEventPayload
+      }),
+      this.prisma.eventAsset.update({
+        where: updateAssetCondition,
+        data: updateAssetPayload
+      })
+    ])
+
+    return {success: true}
   }
 
   async rejectInvitation(

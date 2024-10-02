@@ -269,6 +269,9 @@ export class UpdateEventDto {
   description: string;
 
   @OptionalProperty()
+  assetUrl: string;
+
+  @OptionalProperty()
   content: string;
 
   @OptionalProperty()
