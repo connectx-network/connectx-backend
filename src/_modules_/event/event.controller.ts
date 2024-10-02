@@ -1,6 +1,6 @@
 import {
   Body,
-  Controller,
+  Controller, Delete,
   Get,
   Param,
   Patch,
@@ -12,7 +12,7 @@ import {
   AddFavoriteDto,
   BaseInteractEventDto, CheckInByAdminDto,
   CreateEventDto,
-  CreateInvitationDto,
+  CreateInvitationDto, DeleteEventDto,
   FindCreatedEventDto,
   FindEventDto,
   FindEventGuestDto,
@@ -141,6 +141,13 @@ export class EventController {
   @ApiBearerAuth()
   async rejectInvitation(@TmaUser('id') telegramId: number, @Body() rejectInvitationDto: BaseInteractEventDto) {
     return this.eventService.rejectInvitation(`${telegramId}`, rejectInvitationDto);
+  }
+
+  @Delete('')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async delete(@TmaUser('id') telegramId: number, @Body() deleteEventDto: DeleteEventDto) {
+    return this.eventService.delete(`${telegramId}`, deleteEventDto);
   }
 
   // @Get('/joined-user')

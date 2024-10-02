@@ -324,3 +324,5 @@ export class CheckInByAdminDto extends BaseInteractEventDto{
   @IsNotEmpty()
   userId: string;
 }
+
+export class DeleteEventDto extends BaseInteractEventDto {}

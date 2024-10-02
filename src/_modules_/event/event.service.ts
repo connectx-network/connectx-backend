@@ -1,5 +1,4 @@
 import {
-  Body,
   ConflictException,
   Injectable,
   NotAcceptableException,
@@ -8,10 +7,12 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import {
   AddFavoriteDto,
-  BaseInteractEventDto, CheckInByAdminDto,
+  BaseInteractEventDto,
+  CheckInByAdminDto,
   CreateEventDto,
   CreateEventInvitationDto,
   CreateInvitationDto,
+  DeleteEventDto,
   FindCreatedEventDto,
   FindEventDto,
   FindEventGuestDto,
@@ -19,10 +20,16 @@ import {
   FindFeedDto,
   FindJoinedEventUserDto,
   JoinEventDto,
-  UpdateEventDto, UpdateGuestStatusDto,
+  UpdateEventDto,
+  UpdateGuestStatusDto,
   UpdateHighlightEventDto,
 } from './event.dto';
-import {EventAssetType, EventScope, JoinedEventUserStatus, Prisma} from '@prisma/client';
+import {
+  EventAssetType,
+  EventScope,
+  JoinedEventUserStatus,
+  Prisma,
+} from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import * as moment from 'moment-timezone';
 import { NotificationMessage } from '../../types/notification.type';
@@ -373,7 +380,7 @@ export class EventService {
             where: {
               userId: {
                 in: user.following.map((u) => u.id),
-              }
+              },
             },
             include: {
               user: {
@@ -1343,23 +1350,22 @@ export class EventService {
       description,
       location,
       mapsUrl,
-      assetUrl
+      assetUrl,
     } = updateEventDto;
 
     const updateEventPayload: Prisma.EventUpdateInput = {};
-    const updateAssetPayload: Prisma.EventAssetUpdateInput = {}
+    const updateAssetPayload: Prisma.EventAssetUpdateInput = {};
 
     const currentAsset = await this.prisma.eventAsset.findFirst({
       where: {
         eventId: id,
-        type: EventAssetType.THUMBNAIL
-      }
-    })
+        type: EventAssetType.THUMBNAIL,
+      },
+    });
 
     const updateAssetCondition: Prisma.EventAssetWhereUniqueInput = {
-      id: currentAsset.id
-    }
-
+      id: currentAsset.id,
+    };
 
     if (title) {
       updateEventPayload.title = title;
@@ -1395,17 +1401,17 @@ export class EventService {
     await this.prisma.$transaction([
       this.prisma.event.update({
         where: {
-          id
+          id,
         },
-        data: updateEventPayload
+        data: updateEventPayload,
       }),
       this.prisma.eventAsset.update({
         where: updateAssetCondition,
-        data: updateAssetPayload
-      })
-    ])
+        data: updateAssetPayload,
+      }),
+    ]);
 
-    return {success: true}
+    return { success: true };
   }
 
   async rejectInvitation(
@@ -1499,7 +1505,10 @@ export class EventService {
     return { success: true };
   }
 
-  async updateGuestStatus(telegramId: string, updateGuestStatus: UpdateGuestStatusDto) {
+  async updateGuestStatus(
+    telegramId: string,
+    updateGuestStatus: UpdateGuestStatusDto,
+  ) {
     const user = await this.userService.findUserByTelegramId(telegramId);
     if (!user) {
       throw new NotFoundException('Not Found User');
@@ -1526,7 +1535,7 @@ export class EventService {
         userId_eventId: {
           eventId,
           userId,
-        }
+        },
       },
     });
 
@@ -1539,14 +1548,17 @@ export class EventService {
         id: guest.id,
       },
       data: {
-        status
+        status,
       },
     });
 
     return { success: true };
   }
 
-  async checkInByAdmin(telegramId: string, checkInByAdminDto: CheckInByAdminDto) {
+  async checkInByAdmin(
+    telegramId: string,
+    checkInByAdminDto: CheckInByAdminDto,
+  ) {
     const user = await this.userService.findUserByTelegramId(telegramId);
     if (!user) {
       throw new NotFoundException('Not Found User');
@@ -1573,7 +1585,7 @@ export class EventService {
         userId_eventId: {
           eventId,
           userId,
-        }
+        },
       },
     });
 
@@ -1586,7 +1598,7 @@ export class EventService {
         id: guest.id,
       },
       data: {
-        checkedIn: true
+        checkedIn: true,
       },
     });
 
@@ -1608,19 +1620,19 @@ export class EventService {
     }
 
     const filter: Prisma.JoinedEventUserWhereInput = {
-      eventId: event.id
+      eventId: event.id,
     };
 
-    const filterOrder : Prisma.JoinedEventUserOrderByWithRelationInput = {}
+    const filterOrder: Prisma.JoinedEventUserOrderByWithRelationInput = {};
 
     if (sort) {
-      const [sortField, order] = sort
+      const [sortField, order] = sort;
       if (sortField) {
         if (['fullName', 'telegramUsername'].includes(sortField)) {
-          filterOrder.user = {}
-          filterOrder.user[sortField] = order.trim()
-        }else {
-          filterOrder[sortField] = order.trim()
+          filterOrder.user = {};
+          filterOrder.user[sortField] = order.trim();
+        } else {
+          filterOrder[sortField] = order.trim();
         }
       }
     }
@@ -1637,18 +1649,18 @@ export class EventService {
           user: {
             fullName: {
               contains: query,
-              mode: "insensitive"
-            }
-          }
+              mode: 'insensitive',
+            },
+          },
         },
         {
           user: {
             telegramUsername: {
               contains: query,
-              mode: "insensitive"
-            }
-          }
-        }
+              mode: 'insensitive',
+            },
+          },
+        },
       ];
     }
 
@@ -1660,18 +1672,57 @@ export class EventService {
           checkedIn: true,
           status: true,
           joinDate: true,
-          checkInDate: true
+          checkInDate: true,
         },
         take: size,
         skip,
-        orderBy: filterOrder
+        orderBy: filterOrder,
       }),
       this.prisma.joinedEventUser.count({ where: filter }),
     ]);
 
     return {
       ...getDefaultPaginationReponse(findGuestDto, count),
-      data: users
+      data: users,
+    };
+  }
+
+  async delete(telegramId: string, deleteEventDto: DeleteEventDto) {
+    const { eventId } = deleteEventDto;
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id: eventId,
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
     }
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    if (event.userId !== user.id) {
+      throw new NotAcceptableException(`Only event's owner can update event`);
+    }
+
+    await this.prisma.event.update({
+      where: {
+        id: eventId,
+      },
+      data: {
+        isDeleted: true,
+      },
+    });
+
+    return { success: true };
   }
 }
