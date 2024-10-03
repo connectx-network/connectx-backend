@@ -298,21 +298,8 @@ export class EventService {
           )
         ) 
       ),
-      CITY_EVENTS AS (
-          SELECT id
-          FROM public.event
-          WHERE city_id in (
-          SELECT city_id 
-          FROM user_city
-          WHERE user_id = (
-          SELECT id FROM U
-          )
-        )
-      ),
       COMBINED_EVENTS AS (
         SELECT id FROM FRIEND_EVENTS
-        UNION
-        SELECT id FROM CITY_EVENTS
       )
       
       SELECT id
