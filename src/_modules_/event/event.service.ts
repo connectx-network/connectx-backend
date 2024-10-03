@@ -9,6 +9,7 @@ import {
   AddFavoriteDto,
   BaseInteractEventDto,
   CheckInByAdminDto,
+  CheckInByQrDto,
   CreateEventDto,
   CreateEventInvitationDto,
   CreateInvitationDto,
@@ -27,6 +28,7 @@ import {
 import {
   EventAssetType,
   EventScope,
+  HostPermission,
   JoinedEventUserStatus,
   Prisma,
 } from '@prisma/client';
@@ -1599,7 +1601,7 @@ export class EventService {
       },
       data: {
         checkedIn: true,
-        checkInDate: new Date()
+        checkInDate: new Date(),
       },
     });
 
@@ -1722,6 +1724,69 @@ export class EventService {
       },
       data: {
         isDeleted: true,
+      },
+    });
+
+    return { success: true };
+  }
+
+  async checkInGuestByQrCode(
+    telegramId: string,
+    checkInByQrDto: CheckInByQrDto,
+  ) {
+    const user = await this.userService.findUserByTelegramId(telegramId);
+    if (!user) {
+      throw new NotFoundException('Not Found User');
+    }
+
+    const { eventId, userId } = checkInByQrDto;
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id: eventId,
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
+    // Check if user has permission Checkin or Manager, or user is owner of event
+    const eventHost = await this.prisma.eventHost.findFirst({
+      where: {
+        eventId: event.id,
+        userId: user.id,
+        accepted: true,
+        permission: {
+          in: [HostPermission.MANAGER, HostPermission.CHECKIN],
+        },
+      },
+    });
+
+    if (!eventHost && eventHost.userId !== user.id) {
+      throw new NotFoundException('User does not have permission to checkin!');
+    }
+
+    const guest = await this.prisma.joinedEventUser.findUnique({
+      where: {
+        userId_eventId: {
+          eventId,
+          userId,
+        },
+      },
+    });
+
+    if (!guest) {
+      throw new NotFoundException('Not found guest!');
+    }
+
+    await this.prisma.joinedEventUser.update({
+      where: {
+        id: guest.id,
+      },
+      data: {
+        checkedIn: true,
+        checkInDate: new Date(),
       },
     });
 

@@ -17,10 +17,10 @@ export enum EventStatus {
 }
 
 export enum JoinedEventStatusParam {
-  REGISTERED  = 'REGISTERED',
-  INVITED  = 'INVITED',
-  REJECTED  = 'REJECTED',
-  CHECKED_IN  = 'CHECKED_IN',
+  REGISTERED = 'REGISTERED',
+  INVITED = 'INVITED',
+  REJECTED = 'REJECTED',
+  CHECKED_IN = 'CHECKED_IN',
 }
 
 export class CreateEventHostDto {
@@ -290,7 +290,9 @@ export class CreateInvitationDto extends BaseInteractEventDto {
 }
 
 export class FindEventGuestDto extends BasePagingDto {
-  @OptionalProperty({ description: 'REGISTERED | INVITED | REJECTED | CHECKED_IN' })
+  @OptionalProperty({
+    description: 'REGISTERED | INVITED | REJECTED | CHECKED_IN',
+  })
   status: JoinedEventStatusParam;
   @OptionalProperty({
     type: 'string',
@@ -317,7 +319,7 @@ export class UpdateGuestStatusDto extends BaseInteractEventDto {
   status: JoinedEventUserStatus;
 }
 
-export class CheckInByAdminDto extends BaseInteractEventDto{
+export class CheckInByAdminDto extends BaseInteractEventDto {
   @ApiProperty({
     required: true,
   })
@@ -326,3 +328,11 @@ export class CheckInByAdminDto extends BaseInteractEventDto{
 }
 
 export class DeleteEventDto extends BaseInteractEventDto {}
+
+export class CheckInByQrDto extends BaseInteractEventDto {
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  userId: string;
+}
