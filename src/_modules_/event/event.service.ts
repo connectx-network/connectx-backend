@@ -300,21 +300,8 @@ export class EventService {
           )
         ) 
       ),
-      CITY_EVENTS AS (
-          SELECT id
-          FROM public.event
-          WHERE city_id in (
-          SELECT city_id 
-          FROM user_city
-          WHERE user_id = (
-          SELECT id FROM U
-          )
-        )
-      ),
       COMBINED_EVENTS AS (
         SELECT id FROM FRIEND_EVENTS
-        UNION
-        SELECT id FROM CITY_EVENTS
       )
       
       SELECT id
@@ -379,11 +366,16 @@ export class EventService {
           eventLocationDetail: true,
           joinedEventUsers: {
             take: 4,
-            where: {
-              userId: {
-                in: user.following.map((u) => u.id),
+            orderBy: [
+              {
+                userId: user.id ? 'asc' : 'desc'
               },
-            },
+              {
+                userId: {
+                  in: user.following.map(u => u.id)
+                }  ? 'asc' : 'desc'
+              }
+            ],
             include: {
               user: {
                 select: {

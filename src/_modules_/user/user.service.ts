@@ -274,12 +274,12 @@ export class UserService {
         take: size,
         skip,
         include: {
-          following: {
+          followers: {
             where: {
               userId: currentUser.id
             }
           },
-          followers: {
+          following: {
             where: {
               targetId: currentUser.id
             }
@@ -299,8 +299,8 @@ export class UserService {
 
     const data = users.map(item => {
       const newItem = {...item}
-      const isFollowing = !!newItem.following.find(i => i.userId === currentUser.id)
-      const isFollower = !!newItem.followers.find(i => i.targetId === currentUser.id)
+      const isFollowing = !!item.followers.find(i => i.userId === currentUser.id);
+      const isFollower = !!item.following.find(i => i.targetId === currentUser.id);
 
       delete newItem.following
       delete newItem.followers
