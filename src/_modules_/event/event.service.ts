@@ -161,6 +161,8 @@ export class EventService {
     const hostIds = hosts
       ? hosts.map((host) => ({
           userId: host.userId,
+          permission: HostPermission.CREATOR,
+          accepted: true,
         }))
       : [];
 
@@ -368,13 +370,15 @@ export class EventService {
             take: 4,
             orderBy: [
               {
-                userId: user.id ? 'asc' : 'desc'
+                userId: user.id ? 'asc' : 'desc',
               },
               {
                 userId: {
-                  in: user.following.map(u => u.id)
-                }  ? 'asc' : 'desc'
-              }
+                  in: user.following.map((u) => u.id),
+                }
+                  ? 'asc'
+                  : 'desc',
+              },
             ],
             include: {
               user: {

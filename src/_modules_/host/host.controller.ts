@@ -29,8 +29,6 @@ export class HostController {
   @UseGuards(TelegramMiniAppGuard)
   @ApiBearerAuth()
   getHosts(@Query('eventId') eventId: string) {
-    console.log('eventId', eventId);
-
     return this.hostService.getHosts(eventId);
   }
 

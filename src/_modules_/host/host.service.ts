@@ -26,7 +26,6 @@ export class HostService {
         id: eventId,
       },
     });
-    console.log(eventId, event);
 
     if (!event) {
       throw new NotFoundException('Not found event!');
