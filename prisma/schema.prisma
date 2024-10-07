@@ -28,6 +28,7 @@ model User {
   address               String?
   avatarUrl             String?                @map("avatar_url")
   linkedInUrl           String?                @map("link_in_url")
+  twitterUrl            String?                @map("twitter_url")
   companyUrl            String?                @map("company_url")
   isPrivate             Boolean                @default(false) @map("is_private")
   isPrivateFeeds        Boolean                @default(false) @map("is_private_feeds")
@@ -48,8 +49,19 @@ model User {
   eventHosts            EventHost[]
   userCities            UserCity[]
   userEventFavorites    UserEventFavorite[]
+  userSocials           UserSocial[]
 
   @@map("user")
+}
+
+model UserSocial {
+  id           String @id @unique @default(uuid())
+  platformName String @map("platform_name")
+  url          String @map("url")
+  userId       String @map("user_id")
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_social")
 }
 
 model City {

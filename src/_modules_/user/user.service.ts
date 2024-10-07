@@ -39,7 +39,10 @@ export class UserService {
       categories,
       cityId,
       isPrivate,
-      isPrivateFeeds
+      isPrivateFeeds,
+      linkedInUrl,
+      twitterUrl,
+      customLinks
     } = updateUserDto;
 
     const user = await this.prisma.user.findUnique({
@@ -104,6 +107,19 @@ export class UserService {
     }
     if (gender) {
       updateUserPayload.gender = gender;
+    }
+    if (linkedInUrl) {
+      updateUserPayload.linkedInUrl = linkedInUrl;
+    }
+    if (twitterUrl) {
+      updateUserPayload.twitterUrl = twitterUrl;
+    }
+    if (customLinks) {
+      updateUserPayload.userSocials = {
+        createMany: {
+          data: customLinks.map(item => ({platformName: item.platformName, url: item.url}))
+        }
+      };
     }
 
     if (categories && categories.length > 0) {
@@ -342,7 +358,8 @@ export class UserService {
           where: {
             targetId: currentUser.id
           }
-        }
+        },
+        userSocials: true
       },
     });
     if (!user) {
