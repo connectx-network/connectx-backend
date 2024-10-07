@@ -1802,9 +1802,9 @@ export class EventService {
       throw new NotFoundException('Not found event!');
     }
 
-    // if (event.userId !== user.id) {
-    //   throw new NotAcceptableException(`You're not owner of this event`);
-    // }
+    if (event.userId !== user.id) {
+      throw new NotAcceptableException(`You're not owner of this event`);
+    }
     const paging: FindEventGuestDto = {page: 1, size: 1000}
     const {data: dataList} = await this.findGuest(event.id, paging);
 
