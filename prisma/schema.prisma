@@ -238,14 +238,15 @@ model EventLocationDetail {
 }
 
 model EventHost {
-  id          String         @id @unique @default(uuid())
-  userId      String         @map("user_id")
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  eventId     String         @map("event_id")
-  event       Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  accepted    Boolean        @default(false)
-  permission  HostPermission @default(MANAGER)
-  invitedDate DateTime       @default(now()) @map("invited_date")
+  id              String         @id @unique @default(uuid())
+  userId          String         @map("user_id")
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId         String         @map("event_id")
+  event           Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  accepted        Boolean        @default(false)
+  permission      HostPermission @default(MANAGER)
+  invitedDate     DateTime       @default(now()) @map("invited_date")
+  showOnEventPage Boolean        @default(true) @map("show_on_event_page")
 
   @@map("event_host")
 }
@@ -431,4 +432,5 @@ enum HostPermission {
   MANAGER
   CHECKIN
   NOT_MANAGER
+  CREATOR
 }

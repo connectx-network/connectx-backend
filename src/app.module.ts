@@ -6,7 +6,7 @@ import { PrismaModule } from './_modules_/prisma/prisma.module';
 import { FirebaseModule } from './_modules_/firebase/firebase.module';
 import { FileModule } from './_modules_/file/file.module';
 import { AuthModule } from './_modules_/auth/auth.module';
-  import { MailerModule } from '@nestjs-modules/mailer';
+import { MailerModule } from '@nestjs-modules/mailer';
 import { MailModule } from './_modules_/mail/mail.module';
 import { EventModule } from './_modules_/event/event.module';
 import { UserModule } from './_modules_/user/user.module';
@@ -18,6 +18,8 @@ import { CategoryModule } from './_modules_/category/category.module';
 import { CityModule } from './_modules_/city/city.module';
 import { OnboardingModule } from './_modules_/onboarding/onboarding.module';
 import { S3Module } from './_modules_/s3/s3.module';
+import { TelegramBotModule } from './_modules_/telegram-bot/telegram-bot.module';
+import { HostModule } from './_modules_/host/host.module';
 
 @Module({
   imports: [
@@ -54,6 +56,8 @@ import { S3Module } from './_modules_/s3/s3.module';
     QrCodeModule,
     CategoryModule,
     S3Module,
+    TelegramBotModule,
+    HostModule,
   ],
   controllers: [AppController],
   providers: [AppService],
