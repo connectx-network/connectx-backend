@@ -343,4 +343,62 @@ export class UserConnectionService {
       data: users,
     };
   }
+
+  async findListFriend(
+    telegramId: number,
+    findListFollowDto: FindListFollowDto,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId: `${telegramId}`,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    const { size, page } = findListFollowDto;
+    const skip = (page - 1) * size;
+
+    const findListFollowingCondition: Prisma.UserWhereInput = {
+      following: {
+        some: {
+          targetId: user.id,
+          accepted: true,
+        },
+      },
+      followers: {
+        some: {
+          userId: user.id,
+          accepted: true,
+        }
+      }
+    };
+
+    const [users, count] = await Promise.all([
+      this.prisma.user.findMany({
+        skip,
+        take: size,
+        where: findListFollowingCondition,
+        select: {
+          id: true,
+          telegramId: true,
+          fullName: true,
+          gender: true,
+          company: true,
+          jobTitle: true,
+          avatarUrl: true,
+        }
+      }),
+      this.prisma.user.count({
+        where: findListFollowingCondition,
+      }),
+    ]);
+
+    return {
+      ...getDefaultPaginationReponse(findListFollowDto, count),
+      data: users,
+    };
+  }
 }

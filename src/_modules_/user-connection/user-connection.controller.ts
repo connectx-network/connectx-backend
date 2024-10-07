@@ -78,6 +78,16 @@ export class UserConnectionController {
     return this.userConnectionService.findListFollower(telegramId, findListFollowDto);
   }
 
+  @Get('/friend')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async getListFriend(
+    @TmaUser('id') telegramId: number,
+    @Query() findListFollowDto: FindListFollowDto
+  ) {
+    return this.userConnectionService.findListFriend(telegramId, findListFollowDto);
+  }
+
   @Delete()
   @Roles(Role.ALL)
   async delete(
