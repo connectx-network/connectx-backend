@@ -26,6 +26,7 @@ export class CityDto {
   @IsNotEmpty()
   longitude: number;
 }
+
 export class UpdateUserDto {
   @OptionalProperty()
   fullName: string;
@@ -56,6 +57,12 @@ export class UpdateUserDto {
   isPrivate: boolean
   @OptionalProperty()
   isPrivateFeeds: boolean
+  @OptionalProperty()
+  linkedInUrl: string
+  @OptionalProperty()
+  twitterUrl: string
+  @OptionalProperty({type: 'string', isArray: true})
+  customLinks: string[]
 }
 
 export class UpdateAvatarDto {
