@@ -13,7 +13,7 @@ import { Roles } from '../../decorators/role.decorator';
 import { Role } from '../../types/auth.type';
 import {
   AcceptConnectionDto,
-  DeleteConnectionDto, FindListFollowDto,
+  DeleteConnectionDto, FindListFollowDto, FindListFriendDto,
   FindUserConnectionDto,
 } from './user-connection.dto';
 import {ApiBearerAuth, ApiTags} from '@nestjs/swagger';
@@ -83,9 +83,9 @@ export class UserConnectionController {
   @ApiBearerAuth()
   async getListFriend(
     @TmaUser('id') telegramId: number,
-    @Query() findListFollowDto: FindListFollowDto
+    @Query() findListFriendDto: FindListFriendDto
   ) {
-    return this.userConnectionService.findListFriend(telegramId, findListFollowDto);
+    return this.userConnectionService.findListFriend(telegramId, findListFriendDto);
   }
 
   @Delete()

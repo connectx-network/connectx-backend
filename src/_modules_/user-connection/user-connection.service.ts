@@ -7,7 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import {
   AcceptConnectionDto,
-  ConnectionStatus, FindListFollowDto,
+  ConnectionStatus, FindListFollowDto, FindListFriendDto,
   FindUserConnectionDto,
   FindUserConnectionResponse,
 } from './user-connection.dto';
@@ -346,7 +346,7 @@ export class UserConnectionService {
 
   async findListFriend(
     telegramId: number,
-    findListFollowDto: FindListFollowDto,
+    findListFriendDto: FindListFriendDto,
   ) {
     const user = await this.prisma.user.findUnique({
       where: {
@@ -358,7 +358,7 @@ export class UserConnectionService {
       throw new NotFoundException('Not found user!');
     }
 
-    const { size, page } = findListFollowDto;
+    const { size, page, query } = findListFriendDto;
     const skip = (page - 1) * size;
 
     const findListFollowingCondition: Prisma.UserWhereInput = {
@@ -375,6 +375,23 @@ export class UserConnectionService {
         }
       }
     };
+
+    if (query) {
+      findListFollowingCondition.OR = [
+        {
+          fullName: {
+            contains: query,
+            mode: 'insensitive'
+          }
+        },
+        {
+          telegramUsername: {
+            contains: query,
+            mode: 'insensitive'
+          }
+        }
+      ]
+    }
 
     const [users, count] = await Promise.all([
       this.prisma.user.findMany({
@@ -397,7 +414,7 @@ export class UserConnectionService {
     ]);
 
     return {
-      ...getDefaultPaginationReponse(findListFollowDto, count),
+      ...getDefaultPaginationReponse(findListFriendDto, count),
       data: users,
     };
   }

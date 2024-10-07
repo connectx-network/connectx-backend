@@ -51,3 +51,7 @@ export class AcceptConnectionDto {
 
 export class FindListFollowDto extends BasePagingDto{}
 
+export class FindListFriendDto extends BasePagingDto{
+  @OptionalProperty()
+  query: string;
+}
