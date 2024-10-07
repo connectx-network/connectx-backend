@@ -39,7 +39,7 @@ export class AcceptOrRejectHostDto {
   accept: boolean;
 
   @ApiProperty()
-  id: string;
+  shortEventId: string;
 }
 
 export class DeleteHostDto {

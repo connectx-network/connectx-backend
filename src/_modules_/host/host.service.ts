@@ -214,11 +214,17 @@ export class HostService {
       throw new NotFoundException('Not found user!');
     }
 
-    const { id, accept } = acceptOrRejectHostDto;
+    const { shortEventId, accept } = acceptOrRejectHostDto;
 
-    const eventHost = await this.prisma.eventHost.findUnique({
+    const event = await this.prisma.event.findUnique({
       where: {
-        id,
+        shortId: shortEventId,
+      },
+    });
+    const eventHost = await this.prisma.eventHost.findFirst({
+      where: {
+        userId: userLogin.id,
+        eventId: event.id,
       },
     });
 
@@ -232,7 +238,7 @@ export class HostService {
 
     await this.prisma.eventHost.update({
       where: {
-        id,
+        id: eventHost.id,
       },
       data: {
         accepted: accept,
