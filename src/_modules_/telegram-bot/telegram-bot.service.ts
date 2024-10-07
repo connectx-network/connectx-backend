@@ -5,11 +5,10 @@ import { Telegraf } from 'telegraf';
 export class TelegramBotService {
   private bot: Telegraf;
   constructor() {
-    // this.bot = new Telegraf(process.env.TELEGRAM_KEY);
+    this.bot = new Telegraf(process.env.TELEGRAM_KEY);
     // this.bot.start((ctx) => {
     //   ctx.reply('Welcome');
     // });
-    // this.bot.launch();
   }
 
   async sendMessage(chatId: number, message: string): Promise<void> {

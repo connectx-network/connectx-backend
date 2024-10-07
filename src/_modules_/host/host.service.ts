@@ -92,7 +92,7 @@ export class HostService {
       event.userId === userLogin.id ||
       (hostUserLogin && hostUserLogin.permission === HostPermission.MANAGER);
 
-    if (allowManageEVent) {
+    if (!allowManageEVent) {
       throw new BadRequestException('You are not allowed to add host!');
     }
 
@@ -104,7 +104,7 @@ export class HostService {
     });
 
     if (existedEventHost) {
-      throw new NotFoundException('User is already host of this event!');
+      throw new BadRequestException('User is already host of this event!');
     }
 
     const user = await this.prisma.user.findUnique({
@@ -127,15 +127,15 @@ export class HostService {
       },
     });
 
-    // Send notification via Telegram
-    await this.telegramBotService.sendMessage(
-      +user.telegramId,
-      `
-      Hello ${user.fullName}! 
-      You have invited to be host of the event: ${event.title}!
-      Event link: ${process.env.TELEGRAM_BOT_URL}?startapp=eventId_${event.shortId} 
-      `,
-    );
+    try {
+      // Send notification via Telegram
+      await this.telegramBotService.sendMessage(
+        +user.telegramId,
+        `Hello ${user.fullName}!\nYou have invited to be host of the event: ${event.title}!\nEvent link: ${process.env.TELEGRAM_BOT_URL}?startapp=inviteHost_${event.shortId}`,
+      );
+    } catch (error) {
+      console.log(error);
+    }
 
     return {
       success: true,
@@ -180,7 +180,7 @@ export class HostService {
       event.userId === userLogin.id ||
       (hostUserLogin && hostUserLogin.permission === HostPermission.MANAGER);
 
-    if (allowManageEVent) {
+    if (!allowManageEVent) {
       throw new BadRequestException('You are not allowed to update host!');
     }
 
@@ -289,7 +289,7 @@ export class HostService {
       event.userId === userLogin.id ||
       (hostUserLogin && hostUserLogin.permission === HostPermission.MANAGER);
 
-    if (allowManageEVent) {
+    if (!allowManageEVent) {
       throw new BadRequestException('You are not allowed to add host!');
     }
 
