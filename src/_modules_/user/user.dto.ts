@@ -27,15 +27,6 @@ export class CityDto {
   longitude: number;
 }
 
-export class CustomLinkDto {
-  @ApiProperty({ required: true })
-  @IsNotEmpty()
-  platformName: string;
-  @ApiProperty({ required: true })
-  @IsNotEmpty()
-  url: string;
-}
-
 export class UpdateUserDto {
   @OptionalProperty()
   fullName: string;
@@ -70,8 +61,8 @@ export class UpdateUserDto {
   linkedInUrl: string
   @OptionalProperty()
   twitterUrl: string
-  @OptionalProperty({type: CustomLinkDto, isArray: true})
-  customLinks: CustomLinkDto[]
+  @OptionalProperty({type: 'string', isArray: true})
+  customLinks: string[]
 }
 
 export class UpdateAvatarDto {

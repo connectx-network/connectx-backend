@@ -55,11 +55,10 @@ model User {
 }
 
 model UserSocial {
-  id           String @id @unique @default(uuid())
-  platformName String @map("platform_name")
-  url          String @map("url")
-  userId       String @map("user_id")
-  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @unique @default(uuid())
+  url    String @map("url")
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_social")
 }

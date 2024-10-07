@@ -117,7 +117,7 @@ export class UserService {
     if (customLinks) {
       updateUserPayload.userSocials = {
         createMany: {
-          data: customLinks.map(item => ({platformName: item.platformName, url: item.url}))
+          data: customLinks.map(item => ({url: item}))
         }
       };
     }
