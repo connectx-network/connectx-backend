@@ -7,7 +7,7 @@ import {
   Patch,
   Post,
   Put,
-  Query,
+  Query, Res,
   UseGuards,
 } from '@nestjs/common';
 import { EventService } from './event.service';
@@ -31,6 +31,7 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { TelegramMiniAppGuard } from '../../guards/tma.guard';
 import { TmaUser } from '../../decorators/tmaUser.decorator';
+import { Response } from 'express';
 
 @Controller('event')
 @ApiTags('event')
@@ -108,6 +109,21 @@ export class EventController {
     @Query() findEventGuestDto: FindEventGuestDto,
   ) {
     return this.eventService.findGuest(id, findEventGuestDto);
+  }
+
+  @Get('/guest/export/:eventId')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async exportGuest(
+    @TmaUser('id') telegramId: number,
+    @Param('eventId') id: string,
+    @Res() res: Response
+  ) {
+    console.log('export', id  )
+    const {buffer, fileName} = await this.eventService.exportGuest(`${telegramId}`, id)
+    res.header(`Content-Disposition`, `attachment; filename=${fileName}.xlsx`);
+    res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
   }
 
   @Get()
