@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotAcceptableException,
@@ -1755,13 +1756,19 @@ export class EventService {
         userId: user.id,
         accepted: true,
         permission: {
-          in: [HostPermission.MANAGER, HostPermission.CHECKIN],
+          in: [
+            HostPermission.MANAGER,
+            HostPermission.CHECKIN,
+            HostPermission.CREATOR,
+          ],
         },
       },
     });
 
-    if (!eventHost && eventHost.userId !== user.id) {
-      throw new NotFoundException('User does not have permission to checkin!');
+    if (!eventHost || (eventHost && eventHost.userId !== user.id)) {
+      throw new BadRequestException(
+        'User does not have permission to checkin!',
+      );
     }
 
     const guest = await this.prisma.joinedEventUser.findUnique({
@@ -1809,13 +1816,13 @@ export class EventService {
     if (event.userId !== user.id) {
       throw new NotAcceptableException(`You're not owner of this event`);
     }
-    const paging: FindEventGuestDto = {page: 1, size: 1000}
-    const {data: dataList} = await this.findGuest(event.id, paging);
+    const paging: FindEventGuestDto = { page: 1, size: 1000 };
+    const { data: dataList } = await this.findGuest(event.id, paging);
 
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('TestExportXLS');
 
-    const data = dataList.map(item => {
+    const data = dataList.map((item) => {
       return {
         telegramUserName: item.user.telegramUsername,
         telegramId: item.user.telegramId,
@@ -1827,9 +1834,11 @@ export class EventService {
         checkedIn: item.checkedIn,
         status: item.status,
         joinDate: moment(item.joinDate).format('hh:mm DD/MM/YYYY'),
-        checkInDate: item.checkInDate ? moment(item.checkInDate).format('hh:mm DD/MM/YYYY') : ''
-      }
-    })
+        checkInDate: item.checkInDate
+          ? moment(item.checkInDate).format('hh:mm DD/MM/YYYY')
+          : '',
+      };
+    });
 
     worksheet.columns = [
       { header: 'Telegram username', key: 'telegramUserName' },
@@ -1846,14 +1855,12 @@ export class EventService {
     ];
 
     for (let i = 0; i < data.length; i++) {
-      worksheet.addRow(
-        data[i]
-      )
+      worksheet.addRow(data[i]);
     }
 
     const buffer = await workbook.xlsx.writeBuffer();
-    const fileName = `list guest ${moment().tz('Asia/Bangkok').format('YYYY-MM-DD')}`
+    const fileName = `list guest ${moment().tz('Asia/Bangkok').format('YYYY-MM-DD')}`;
 
-    return {buffer, fileName}
+    return { buffer, fileName };
   }
 }
