@@ -16,7 +16,7 @@ import {
   CreateInvitationDto,
   DeleteEventDto,
   FindCreatedEventDto,
-  FindEventDto,
+  FindEventDto, FindEventFriendDto,
   FindEventGuestDto,
   FindEventResponse,
   FindFeedDto,
@@ -44,6 +44,7 @@ import { MailJob, Queues } from '../../types/queue.type';
 import { UserService } from '../user/user.service';
 import { MailService } from '../mail/mail.service';
 import * as ExcelJS from 'exceljs';
+import { BasePagingDto } from '../../types/base.type';
 
 @Injectable()
 export class EventService {
@@ -1690,6 +1691,65 @@ export class EventService {
 
     return {
       ...getDefaultPaginationReponse(findGuestDto, count),
+      data: users,
+    };
+  }
+
+  async findEventFriend(telegramId: string, id: string, findEventFriendDto: FindEventFriendDto) {
+    const { page, size,  query } = findEventFriendDto;
+    const skip = (page - 1) * size;
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    const filter : Prisma.UserWhereInput = {}
+
+    filter.joinedEventUsers = {
+      some: {
+        eventId: event.id
+      }
+    }
+
+    filter.followers = {
+      some: {
+        userId: user.id
+      }
+    }
+
+    filter.following = {
+      some: {
+        targetId: user.id
+      }
+    }
+
+    const [users, count] = await Promise.all([
+      this.prisma.user.findMany({
+        where: filter,
+        take: size,
+        skip,
+      }),
+      this.prisma.user.count({ where: filter }),
+    ]);
+
+    return {
+      ...getDefaultPaginationReponse(findEventFriendDto, count),
       data: users,
     };
   }

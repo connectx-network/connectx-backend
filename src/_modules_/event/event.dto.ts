@@ -336,3 +336,7 @@ export class CheckInByQrDto extends BaseInteractEventDto {
   @IsNotEmpty()
   userId: string;
 }
+export class FindEventFriendDto extends BasePagingDto {
+  @OptionalProperty()
+  query?: string;
+}
