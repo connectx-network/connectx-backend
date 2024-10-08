@@ -163,12 +163,17 @@ export class EventService {
     const hostIds = hosts
       ? hosts.map((host) => ({
           userId: host.userId,
-          permission: HostPermission.CREATOR,
+          permission: HostPermission.MANAGER,
           accepted: true,
         }))
       : [];
 
-    const addHostIds = [...hostIds, ...[{ userId: user.id }]];
+    const addHostIds = [
+      ...hostIds,
+      ...[
+        { userId: user.id, permission: HostPermission.CREATOR, accepted: true },
+      ],
+    ];
     createEventPayload.eventHosts = {
       createMany: {
         data: addHostIds,
