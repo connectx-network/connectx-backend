@@ -130,7 +130,6 @@ export class EventController {
     @Param('eventId') id: string,
     @Res() res: Response
   ) {
-    console.log('export', id  )
     const {buffer, fileName} = await this.eventService.exportGuest(`${telegramId}`, id)
     res.header(`Content-Disposition`, `attachment; filename=${fileName}.xlsx`);
     res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

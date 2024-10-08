@@ -21,7 +21,7 @@ import {
   FindEventResponse,
   FindFeedDto,
   FindJoinedEventUserDto,
-  JoinEventDto,
+  JoinEventDto, SendInvitationDto,
   UpdateEventDto,
   UpdateGuestStatusDto,
   UpdateHighlightEventDto,
@@ -45,6 +45,8 @@ import { UserService } from '../user/user.service';
 import { MailService } from '../mail/mail.service';
 import * as ExcelJS from 'exceljs';
 import { BasePagingDto } from '../../types/base.type';
+import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
+import { AddHostRequestDto } from '../host/host.dto';
 
 @Injectable()
 export class EventService {
@@ -54,7 +56,7 @@ export class EventService {
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
     private readonly userService: UserService,
-    private readonly mailService: MailService,
+    private readonly telegramBotService: TelegramBotService,
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
   ) {}
 
@@ -1487,6 +1489,12 @@ export class EventService {
       throw new NotFoundException('Not found event!');
     }
 
+    const target = await this.userService.findOne(userId);
+
+    if (!target) {
+      throw new NotFoundException('Not Found Target');
+    }
+
     const joinedEventUser = await this.prisma.joinedEventUser.findUnique({
       where: {
         userId_eventId: {
@@ -1507,6 +1515,16 @@ export class EventService {
         status: JoinedEventUserStatus.INVITED,
       },
     });
+
+    try {
+      // Send notification via Telegram
+      await this.telegramBotService.sendMessage(
+        +target.telegramId,
+        `Hello ${target.fullName}!\nYou have invited to be guest of the event: ${event.title}!\nEvent detail: https://t.me/connectx_network_bot/app?startapp=inviteUser_${event.shortId}`,
+      );
+    } catch (error) {
+      console.log(error);
+    }
 
     return { success: true };
   }
