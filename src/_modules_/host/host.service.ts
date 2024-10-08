@@ -131,7 +131,7 @@ export class HostService {
       // Send notification via Telegram
       await this.telegramBotService.sendMessage(
         +user.telegramId,
-        `Hello ${user.fullName}!\nYou have invited to be host of the event: ${event.title}!\nEvent link: ${process.env.TELEGRAM_BOT_URL}?startapp=inviteHost_${event.shortId}`,
+        `Hello ${user.fullName}!\nYou have invited to be host of the event: ${event.title}!\nEvent detail: https://t.me/connectx_network_bot/app?startapp=inviteHost_${event.shortId}`,
       );
     } catch (error) {
       console.log(error);

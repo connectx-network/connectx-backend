@@ -52,7 +52,7 @@ export class HostController {
     return this.hostService.updateHost(telegramId, updateHostRequestDto);
   }
 
-  @Patch('accept-reject')
+  @Patch('confirm-to-be-host')
   @UseGuards(TelegramMiniAppGuard)
   @ApiBearerAuth()
   acceptOrRejectHost(
