@@ -1477,7 +1477,7 @@ export class EventService {
       throw new NotFoundException('Not Found User');
     }
 
-    const { eventId, userId } = createInvitationDto;
+    const { eventId, userIds, message } = createInvitationDto;
 
     const event = await this.prisma.event.findUnique({
       where: {
@@ -1489,42 +1489,39 @@ export class EventService {
       throw new NotFoundException('Not found event!');
     }
 
-    const target = await this.userService.findOne(userId);
-
-    if (!target) {
-      throw new NotFoundException('Not Found Target');
-    }
-
-    const joinedEventUser = await this.prisma.joinedEventUser.findUnique({
-      where: {
-        userId_eventId: {
-          userId,
-          eventId: event.id,
+    await Promise.all(userIds.map(async (userId) => {
+      const joinedEventUser = await this.prisma.joinedEventUser.findUnique({
+        where: {
+          userId_eventId: {
+            userId,
+            eventId: event.id,
+          },
         },
-      },
-    });
+      });
 
-    if (joinedEventUser) {
-      throw new NotFoundException('User has not been invited into this event!');
-    }
+      if (joinedEventUser) {
+        return
+      }
 
-    await this.prisma.joinedEventUser.create({
-      data: {
-        eventId,
-        userId,
-        status: JoinedEventUserStatus.INVITED,
-      },
-    });
+      await this.prisma.joinedEventUser.createMany({
+        data: {
+          eventId,
+          userId,
+          status: JoinedEventUserStatus.INVITED,
+        },
+      });
 
-    try {
-      // Send notification via Telegram
-      await this.telegramBotService.sendMessage(
-        +target.telegramId,
-        `Hello ${target.fullName}!\nYou have invited to be guest of the event: ${event.title}!\nEvent detail: https://t.me/connectx_network_bot/app?startapp=eventId_${event.shortId}`,
-      );
-    } catch (error) {
-      console.log(error);
-    }
+      const target = await this.userService.findOne(userId)
+
+      try {
+        return this.telegramBotService.sendMessage(
+          +target.telegramId,
+          `Hello ${target.fullName}!\nYou have invited to be guest of the event: ${event.title}!\n ${message} \nEvent detail: https://t.me/connectx_network_bot/app?startapp=eventId_${event.shortId}`,
+        );
+      } catch (error) {
+        console.log(error);
+      }
+    }))
 
     return { success: true };
   }

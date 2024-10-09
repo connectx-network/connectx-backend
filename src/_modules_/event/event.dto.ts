@@ -284,9 +284,15 @@ export class UpdateEventDto {
 export class CreateInvitationDto extends BaseInteractEventDto {
   @ApiProperty({
     required: true,
+    isArray: true,
   })
   @IsNotEmpty()
-  userId: string;
+  userIds: string[];
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  message: string;
 }
 
 export class FindEventGuestDto extends BasePagingDto {
@@ -336,6 +342,7 @@ export class CheckInByQrDto extends BaseInteractEventDto {
   @IsNotEmpty()
   userId: string;
 }
+
 export class FindEventFriendDto extends BasePagingDto {
   @OptionalProperty()
   query?: string;
