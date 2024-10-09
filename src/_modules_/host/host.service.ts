@@ -245,6 +245,26 @@ export class HostService {
       },
     });
 
+    if (accept) {
+      const joinedUser = await this.prisma.joinedEventUser.findUnique({
+        where: {
+          userId_eventId: {
+            userId: userLogin.id,
+            eventId: event.id,
+          },
+        },
+      });
+
+      if (!joinedUser) {
+        await this.prisma.joinedEventUser.create({
+          data: {
+            userId: userLogin.id,
+            eventId: event.id,
+          },
+        });
+      }
+    }
+
     return {
       success: true,
     };
