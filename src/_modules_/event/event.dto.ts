@@ -336,3 +336,20 @@ export class CheckInByQrDto extends BaseInteractEventDto {
   @IsNotEmpty()
   userId: string;
 }
+export class FindEventFriendDto extends BasePagingDto {
+  @OptionalProperty()
+  query?: string;
+}
+
+export class SendInvitationDto {
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  eventId: string;
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  userId: string;
+}

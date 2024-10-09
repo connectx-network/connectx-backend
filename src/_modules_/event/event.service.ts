@@ -16,12 +16,12 @@ import {
   CreateInvitationDto,
   DeleteEventDto,
   FindCreatedEventDto,
-  FindEventDto,
+  FindEventDto, FindEventFriendDto,
   FindEventGuestDto,
   FindEventResponse,
   FindFeedDto,
   FindJoinedEventUserDto,
-  JoinEventDto,
+  JoinEventDto, SendInvitationDto,
   UpdateEventDto,
   UpdateGuestStatusDto,
   UpdateHighlightEventDto,
@@ -44,6 +44,9 @@ import { MailJob, Queues } from '../../types/queue.type';
 import { UserService } from '../user/user.service';
 import { MailService } from '../mail/mail.service';
 import * as ExcelJS from 'exceljs';
+import { BasePagingDto } from '../../types/base.type';
+import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
+import { AddHostRequestDto } from '../host/host.dto';
 
 @Injectable()
 export class EventService {
@@ -53,7 +56,7 @@ export class EventService {
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
     private readonly userService: UserService,
-    private readonly mailService: MailService,
+    private readonly telegramBotService: TelegramBotService,
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
   ) {}
 
@@ -1486,6 +1489,12 @@ export class EventService {
       throw new NotFoundException('Not found event!');
     }
 
+    const target = await this.userService.findOne(userId);
+
+    if (!target) {
+      throw new NotFoundException('Not Found Target');
+    }
+
     const joinedEventUser = await this.prisma.joinedEventUser.findUnique({
       where: {
         userId_eventId: {
@@ -1506,6 +1515,16 @@ export class EventService {
         status: JoinedEventUserStatus.INVITED,
       },
     });
+
+    try {
+      // Send notification via Telegram
+      await this.telegramBotService.sendMessage(
+        +target.telegramId,
+        `Hello ${target.fullName}!\nYou have invited to be guest of the event: ${event.title}!\nEvent detail: https://t.me/connectx_network_bot/app?startapp=eventId_${event.shortId}`,
+      );
+    } catch (error) {
+      console.log(error);
+    }
 
     return { success: true };
   }
@@ -1690,6 +1709,65 @@ export class EventService {
 
     return {
       ...getDefaultPaginationReponse(findGuestDto, count),
+      data: users,
+    };
+  }
+
+  async findEventFriend(telegramId: string, id: string, findEventFriendDto: FindEventFriendDto) {
+    const { page, size,  query } = findEventFriendDto;
+    const skip = (page - 1) * size;
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    const filter : Prisma.UserWhereInput = {}
+
+    filter.joinedEventUsers = {
+      some: {
+        eventId: event.id
+      }
+    }
+
+    filter.followers = {
+      some: {
+        userId: user.id
+      }
+    }
+
+    filter.following = {
+      some: {
+        targetId: user.id
+      }
+    }
+
+    const [users, count] = await Promise.all([
+      this.prisma.user.findMany({
+        where: filter,
+        take: size,
+        skip,
+      }),
+      this.prisma.user.count({ where: filter }),
+    ]);
+
+    return {
+      ...getDefaultPaginationReponse(findEventFriendDto, count),
       data: users,
     };
   }

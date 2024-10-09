@@ -5,6 +5,7 @@ import { BullModule } from '@nestjs/bull';
 import { Queues } from '../../types/queue.type';
 import { UserModule } from '../user/user.module';
 import { MailModule } from '../mail/mail.module';
+import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
 
 @Module({
   imports: [
@@ -15,6 +16,6 @@ import { MailModule } from '../mail/mail.module';
     MailModule,
   ],
   controllers: [EventController],
-  providers: [EventService],
+  providers: [EventService, TelegramBotService],
 })
 export class EventModule {}
