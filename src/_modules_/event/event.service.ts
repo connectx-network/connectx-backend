@@ -734,7 +734,18 @@ export class EventService {
       throw new NotFoundException('Not found user!');
     }
 
-    findEventCondition.userId = user.id;
+    findEventCondition.OR = [
+      {
+        userId: user.id
+      },
+      {
+        eventHosts: {
+          some: {
+            userId: user.id
+          }
+        }
+      }
+    ]
 
     const [events, count] = await Promise.all([
       this.prisma.event.findMany({
@@ -1910,7 +1921,7 @@ export class EventService {
         company: item.user.company,
         jobTitle: item.user.jobTitle,
         linkedInUrl: item.user.linkedInUrl,
-        twitterUrl: item.user.linkedInUrl,
+        twitterUrl: item.user.twitterUrl,
         checkedIn: item.checkedIn,
         status: item.status,
         joinDate: moment(item.joinDate).format('hh:mm DD/MM/YYYY'),
