@@ -13,4 +13,6 @@ export class CreateEventFeedbackDto {
 }
 
 export class FindEventFeedbackDto extends BasePagingDto {
+  @ApiProperty({ required: true })
+  eventId: string;
 }

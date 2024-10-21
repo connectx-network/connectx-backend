@@ -33,11 +33,12 @@ export class EventFeedbackService {
   }
 
   async find(findEventFeedbackDto: FindEventFeedbackDto) {
-    const { page, size } = findEventFeedbackDto;
+    const { page, size, eventId } = findEventFeedbackDto;
     const skip = (page - 1) * size;
 
     const filter: Prisma.EventFeedbackWhereInput = {
       isDelete: false,
+      eventId,
     };
     const [feedbacks, count] = await Promise.all([
       this.prisma.eventFeedback.findMany({
