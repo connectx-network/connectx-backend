@@ -202,8 +202,21 @@ model Event {
   eventSponsors         EventSponsor[]
   eventSocials          EventSocial[]
   userEventFavorites    UserEventFavorite[]
+  eventFeedbacks        EventFeedback[]
 
   @@map("event")
+}
+
+model EventFeedback {
+  id          String   @id @unique @default(uuid())
+  rate        Int      @map("rate")
+  content     String
+  createdDate DateTime @default(now()) @map("created_date")
+  isDelete    Boolean  @default(false) @map("is_delete")
+  eventId     String   @map("event_id")
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_feedback")
 }
 
 model EventSponsor {

@@ -20,6 +20,7 @@ import { OnboardingModule } from './_modules_/onboarding/onboarding.module';
 import { S3Module } from './_modules_/s3/s3.module';
 import { TelegramBotModule } from './_modules_/telegram-bot/telegram-bot.module';
 import { HostModule } from './_modules_/host/host.module';
+import { EventFeedbackModule } from './_modules_/event-feedback/event-feedback.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { HostModule } from './_modules_/host/host.module';
     S3Module,
     TelegramBotModule,
     HostModule,
+    EventFeedbackModule,
   ],
   controllers: [AppController],
   providers: [AppService],
