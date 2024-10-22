@@ -58,9 +58,44 @@ export class EventFeedbackService {
       }),
     ]);
 
+    const statistic = await this.findStatistic(eventId);
+
     return {
       ...getDefaultPaginationReponse(findEventFeedbackDto, count),
+      statistic,
       data: feedbacks,
     };
+  }
+
+  async findStatistic(eventId: string) {
+    const query = `
+      SELECT 
+        (
+          SELECT COUNT(id)::int
+          FROM public.event_feedback
+          WHERE rate = 1 AND event_id = '${eventId}'
+        ) as "1",
+        (
+          SELECT COUNT(id)::int
+          FROM public.event_feedback
+          WHERE rate = 2 AND event_id = '${eventId}'
+        ) as "2",
+        (
+          SELECT COUNT(id)::int
+          FROM public.event_feedback
+          WHERE rate = 3 AND event_id = '${eventId}'
+        ) as "3",
+        (
+          SELECT COUNT(id)::int
+          FROM public.event_feedback
+          WHERE rate = 4 AND event_id = '${eventId}'
+        ) as "4",
+        (
+          SELECT COUNT(id)::int
+          FROM public.event_feedback
+          WHERE rate = 5 AND event_id = '${eventId}'
+        ) as "5"
+    `;
+    return this.prisma.$queryRawUnsafe(query);
   }
 }
