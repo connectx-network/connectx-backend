@@ -50,6 +50,7 @@ model User {
   userCities            UserCity[]
   userEventFavorites    UserEventFavorite[]
   userSocials           UserSocial[]
+  eventFeedbacks        EventFeedback[]
 
   @@map("user")
 }
@@ -215,6 +216,8 @@ model EventFeedback {
   isDelete    Boolean  @default(false) @map("is_delete")
   eventId     String   @map("event_id")
   event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("event_feedback")
 }

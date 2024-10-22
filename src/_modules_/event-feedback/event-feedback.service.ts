@@ -26,6 +26,7 @@ export class EventFeedbackService {
         rate,
         content,
         eventId,
+        userId: user.id,
       },
     });
 
@@ -47,6 +48,9 @@ export class EventFeedbackService {
         where: filter,
         orderBy: {
           createdDate: 'desc',
+        },
+        include: {
+          user: true,
         },
       }),
       this.prisma.eventFeedback.count({
