@@ -94,7 +94,12 @@ export class EventFeedbackService {
           SELECT COUNT(id)::int
           FROM public.event_feedback
           WHERE rate = 5 AND event_id = '${eventId}'
-        ) as "5"
+        ) as "5",
+        (
+          SELECT SUM(rate) / COUNT(id)::float    as average_rate
+          FROM public.event_feedback
+          WHERE event_id = '${eventId}'
+        )
     `;
     return this.prisma.$queryRawUnsafe(query);
   }
