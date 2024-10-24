@@ -1,15 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Put,
-  Query, Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, Res, UseGuards } from '@nestjs/common';
 import { EventService } from './event.service';
 import {
   AddFavoriteDto,
@@ -20,7 +9,8 @@ import {
   CreateInvitationDto,
   DeleteEventDto,
   FindCreatedEventDto,
-  FindEventDto, FindEventFriendDto,
+  FindEventDto,
+  FindEventFriendDto,
   FindEventGuestDto,
   FindFeedDto,
   JoinEventDto,
@@ -36,7 +26,8 @@ import { Response } from 'express';
 @Controller('event')
 @ApiTags('event')
 export class EventController {
-  constructor(private readonly eventService: EventService) {}
+  constructor(private readonly eventService: EventService) {
+  }
 
   @Post()
   @UseGuards(TelegramMiniAppGuard)
@@ -128,9 +119,9 @@ export class EventController {
   async exportGuest(
     @TmaUser('id') telegramId: number,
     @Param('eventId') id: string,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
-    const {buffer, fileName} = await this.eventService.exportGuest(`${telegramId}`, id)
+    const { buffer, fileName } = await this.eventService.exportGuest(`${telegramId}`, id);
     res.header(`Content-Disposition`, `attachment; filename=${fileName}.xlsx`);
     res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.send(buffer);

@@ -16,23 +16,18 @@ import {
   CreateInvitationDto,
   DeleteEventDto,
   FindCreatedEventDto,
-  FindEventDto, FindEventFriendDto,
+  FindEventDto,
+  FindEventFriendDto,
   FindEventGuestDto,
   FindEventResponse,
   FindFeedDto,
   FindJoinedEventUserDto,
-  JoinEventDto, SendInvitationDto,
+  JoinEventDto,
   UpdateEventDto,
   UpdateGuestStatusDto,
   UpdateHighlightEventDto,
 } from './event.dto';
-import {
-  EventAssetType,
-  EventScope,
-  HostPermission,
-  JoinedEventUserStatus,
-  Prisma,
-} from '@prisma/client';
+import { EventAssetType, EventScope, HostPermission, JoinedEventUserStatus, Prisma } from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import * as moment from 'moment-timezone';
 import { NotificationMessage } from '../../types/notification.type';
@@ -42,11 +37,8 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { MailJob, Queues } from '../../types/queue.type';
 import { UserService } from '../user/user.service';
-import { MailService } from '../mail/mail.service';
 import * as ExcelJS from 'exceljs';
-import { BasePagingDto } from '../../types/base.type';
 import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
-import { AddHostRequestDto } from '../host/host.dto';
 
 @Injectable()
 export class EventService {
@@ -58,7 +50,8 @@ export class EventService {
     private readonly userService: UserService,
     private readonly telegramBotService: TelegramBotService,
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
-  ) {}
+  ) {
+  }
 
   async create(telegramId: number, createEventDto: CreateEventDto) {
     const {
@@ -165,10 +158,10 @@ export class EventService {
 
     const hostIds = hosts
       ? hosts.map((host) => ({
-          userId: host.userId,
-          permission: HostPermission.MANAGER,
-          accepted: true,
-        }))
+        userId: host.userId,
+        permission: HostPermission.MANAGER,
+        accepted: true,
+      }))
       : [];
 
     const addHostIds = [
@@ -736,16 +729,16 @@ export class EventService {
 
     findEventCondition.OR = [
       {
-        userId: user.id
+        userId: user.id,
       },
       {
         eventHosts: {
           some: {
-            userId: user.id
-          }
-        }
-      }
-    ]
+            userId: user.id,
+          },
+        },
+      },
+    ];
 
     const [events, count] = await Promise.all([
       this.prisma.event.findMany({
@@ -917,7 +910,11 @@ export class EventService {
   }
 
   async join(telegramId: string, joinEventDto: JoinEventDto) {
-    const { eventId } = joinEventDto;
+    const { eventId, shortId } = joinEventDto;
+
+    if (!eventId && !shortId) {
+      return;
+    }
 
     const user = await this.prisma.user.findUnique({
       where: {
@@ -929,9 +926,16 @@ export class EventService {
       throw new NotFoundException('Not found user!');
     }
 
-    const event = await this.prisma.event.findUnique({
+    const event = await this.prisma.event.findFirst({
       where: {
-        id: eventId,
+        OR: [
+          {
+            id: eventId,
+          },
+          {
+            shortId,
+          },
+        ],
       },
     });
 
@@ -1511,7 +1515,7 @@ export class EventService {
       });
 
       if (joinedEventUser) {
-        return
+        return;
       }
 
       await this.prisma.joinedEventUser.createMany({
@@ -1522,7 +1526,7 @@ export class EventService {
         },
       });
 
-      const target = await this.userService.findOne(userId)
+      const target = await this.userService.findOne(userId);
 
       try {
         return this.telegramBotService.sendMessage(
@@ -1532,7 +1536,7 @@ export class EventService {
       } catch (error) {
         console.log(error);
       }
-    }))
+    }));
 
     return { success: true };
   }
@@ -1722,7 +1726,7 @@ export class EventService {
   }
 
   async findEventFriend(telegramId: string, id: string, findEventFriendDto: FindEventFriendDto) {
-    const { page, size,  query } = findEventFriendDto;
+    const { page, size, query } = findEventFriendDto;
     const skip = (page - 1) * size;
 
     const event = await this.prisma.event.findUnique({
@@ -1745,25 +1749,25 @@ export class EventService {
       throw new NotFoundException('Not found user!');
     }
 
-    const filter : Prisma.UserWhereInput = {}
+    const filter: Prisma.UserWhereInput = {};
 
     filter.joinedEventUsers = {
       some: {
-        eventId: event.id
-      }
-    }
+        eventId: event.id,
+      },
+    };
 
     filter.followers = {
       some: {
-        userId: user.id
-      }
-    }
+        userId: user.id,
+      },
+    };
 
     filter.following = {
       some: {
-        targetId: user.id
-      }
-    }
+        targetId: user.id,
+      },
+    };
 
     const [users, count] = await Promise.all([
       this.prisma.user.findMany({

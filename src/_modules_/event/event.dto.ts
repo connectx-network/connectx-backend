@@ -2,13 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsDateString, IsEnum, IsNotEmpty } from 'class-validator';
 import { IsBool, OptionalProperty } from '../../decorators/validator.decorator';
 import { BasePagingDto, BasePagingResponse } from '../../types/base.type';
-import {
-  Event,
-  EventAssetType,
-  EventScope,
-  JoinedEventUserStatus,
-  TicketType,
-} from '@prisma/client';
+import { Event, EventAssetType, EventScope, JoinedEventUserStatus, TicketType } from '@prisma/client';
 import { Transform } from 'class-transformer';
 
 export enum EventStatus {
@@ -167,14 +161,16 @@ export class FindEventDto extends BasePagingDto {
   query: string;
 }
 
-export class FindFeedDto extends BasePagingDto {}
+export class FindFeedDto extends BasePagingDto {
+}
 
 export class FindOneEventDto {
   @OptionalProperty()
   userId: string;
 }
 
-export class FindEventResponse extends BasePagingResponse<Event> {}
+export class FindEventResponse extends BasePagingResponse<Event> {
+}
 
 export class CreateEventInvitationDto {
   @ApiProperty({ required: true })
@@ -223,13 +219,21 @@ export class UpdateHighlightEventDto extends BaseInteractEventDto {
   isHighlighted: boolean;
 }
 
-export class JoinEventDto extends BaseInteractEventDto {}
+export class JoinEventDto {
+  @OptionalProperty()
+  eventId: string;
+  @OptionalProperty()
+  shortId: string;
+}
 
-export class AddFavoriteDto extends BaseInteractEventDto {}
+export class AddFavoriteDto extends BaseInteractEventDto {
+}
 
-export class FindCreatedEventDto extends BasePagingDto {}
+export class FindCreatedEventDto extends BasePagingDto {
+}
 
-export class FindFavoriteEventDto extends BasePagingDto {}
+export class FindFavoriteEventDto extends BasePagingDto {
+}
 
 export class EventLocation {
   @ApiProperty({
@@ -333,7 +337,8 @@ export class CheckInByAdminDto extends BaseInteractEventDto {
   userId: string;
 }
 
-export class DeleteEventDto extends BaseInteractEventDto {}
+export class DeleteEventDto extends BaseInteractEventDto {
+}
 
 export class CheckInByQrDto extends BaseInteractEventDto {
   @ApiProperty({
