@@ -911,7 +911,7 @@ export class EventService {
 
   async join(telegramId: string, joinEventDto: JoinEventDto) {
     const { eventId, shortId } = joinEventDto;
-
+    console.log({ eventId, shortId });
     if (!eventId && !shortId) {
       return;
     }
@@ -926,17 +926,10 @@ export class EventService {
       throw new NotFoundException('Not found user!');
     }
 
-    const event = await this.prisma.event.findFirst({
-      where: {
-        OR: [
-          {
-            id: eventId,
-          },
-          {
-            shortId,
-          },
-        ],
-      },
+    const findEventCondition = eventId ? { id: eventId } : { shortId };
+
+    const event = await this.prisma.event.findUnique({
+      where: findEventCondition,
     });
 
     if (!event) {
@@ -947,10 +940,10 @@ export class EventService {
       where: {
         userId_eventId: {
           userId: user.id,
-          eventId,
+          eventId: event.id,
         },
       },
-    });
+    }); 
 
     if (joinedUser) {
       throw new ConflictException('You have joined this event!');
@@ -959,7 +952,7 @@ export class EventService {
     await this.prisma.joinedEventUser.create({
       data: {
         userId: user.id,
-        eventId,
+        eventId: event.id,
       },
     });
 
