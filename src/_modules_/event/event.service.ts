@@ -22,6 +22,7 @@ import {
   FindEventResponse,
   FindFeedDto,
   FindJoinedEventUserDto,
+  GetEventInsightDto,
   JoinEventDto,
   UpdateEventDto,
   UpdateGuestStatusDto,
@@ -709,8 +710,8 @@ export class EventService {
       data: {
         eventId: event.id,
         userId: user.id,
-      }
-    })
+      },
+    });
 
     return { ...event, isJoined, isFavorite };
   }
@@ -1980,5 +1981,17 @@ export class EventService {
     const fileName = `list guest ${moment().tz('Asia/Bangkok').format('YYYY-MM-DD')}`;
 
     return { buffer, fileName };
+  }
+
+  async getInsights(getEventInsightDto: GetEventInsightDto) {
+    const { eventId, startDate } = getEventInsightDto;
+    return this.prisma.eventView.count({
+      where: {
+        eventId,
+        createdAt: {
+          gte: new Date(startDate),
+        },
+      },
+    });
   }
 }

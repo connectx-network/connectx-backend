@@ -367,3 +367,16 @@ export class SendInvitationDto {
   @IsNotEmpty()
   userId: string;
 }
+
+export class GetEventInsightDto {
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  eventId: string;
+  @ApiProperty({
+    required: true,
+  })
+  @IsDateString()
+  startDate: string;
+}
