@@ -910,8 +910,7 @@ export class EventService {
   }
 
   async join(telegramId: string, joinEventDto: JoinEventDto) {
-    const { eventId, shortId } = joinEventDto;
-    console.log({ eventId, shortId });
+    const { eventId, shortId, isAccepted } = joinEventDto;
     if (!eventId && !shortId) {
       return;
     }
@@ -943,18 +942,36 @@ export class EventService {
           eventId: event.id,
         },
       },
-    }); 
-
-    if (joinedUser) {
-      throw new ConflictException('You have joined this event!');
-    }
-
-    await this.prisma.joinedEventUser.create({
-      data: {
-        userId: user.id,
-        eventId: event.id,
-      },
     });
+
+    if (!isAccepted) {
+      if (joinedUser) {
+        throw new ConflictException('You have joined this event!');
+      }
+
+      await this.prisma.joinedEventUser.create({
+        data: {
+          userId: user.id,
+          eventId: event.id,
+        },
+      });
+    } else {
+      if (!joinedUser) {
+        throw new ConflictException('You have not been invited to this event!');
+      }
+      const updateStatus =
+        isAccepted === 'Y'
+          ? JoinedEventUserStatus.REGISTERED
+          : JoinedEventUserStatus.REJECTED;
+      await this.prisma.joinedEventUser.update({
+        where: {
+          id: joinedUser.id,
+        },
+        data: {
+          status: updateStatus,
+        },
+      });
+    }
 
     return { success: true };
   }
@@ -1497,39 +1514,41 @@ export class EventService {
       throw new NotFoundException('Not found event!');
     }
 
-    await Promise.all(userIds.map(async (userId) => {
-      const joinedEventUser = await this.prisma.joinedEventUser.findUnique({
-        where: {
-          userId_eventId: {
-            userId,
-            eventId: event.id,
+    await Promise.all(
+      userIds.map(async (userId) => {
+        const joinedEventUser = await this.prisma.joinedEventUser.findUnique({
+          where: {
+            userId_eventId: {
+              userId,
+              eventId: event.id,
+            },
           },
-        },
-      });
+        });
 
-      if (joinedEventUser) {
-        return;
-      }
+        if (joinedEventUser) {
+          return;
+        }
 
-      await this.prisma.joinedEventUser.createMany({
-        data: {
-          eventId,
-          userId,
-          status: JoinedEventUserStatus.INVITED,
-        },
-      });
+        await this.prisma.joinedEventUser.createMany({
+          data: {
+            eventId,
+            userId,
+            status: JoinedEventUserStatus.INVITED,
+          },
+        });
 
-      const target = await this.userService.findOne(userId);
+        const target = await this.userService.findOne(userId);
 
-      try {
-        return this.telegramBotService.sendMessage(
-          +target.telegramId,
-          `Hello ${target.fullName}!\nYou have invited to be guest of the event: ${event.title}!\n ${message} \nEvent detail: https://t.me/connectx_network_bot/app?startapp=inviteUser_${event.shortId}`,
-        );
-      } catch (error) {
-        console.log(error);
-      }
-    }));
+        try {
+          return this.telegramBotService.sendMessage(
+            +target.telegramId,
+            `Hello ${target.fullName}!\nYou have invited to be guest of the event: ${event.title}!\n ${message} \nEvent detail: https://t.me/connectx_network_bot/app?startapp=inviteUser_${event.shortId}`,
+          );
+        } catch (error) {
+          console.log(error);
+        }
+      }),
+    );
 
     return { success: true };
   }
@@ -1718,7 +1737,11 @@ export class EventService {
     };
   }
 
-  async findEventFriend(telegramId: string, id: string, findEventFriendDto: FindEventFriendDto) {
+  async findEventFriend(
+    telegramId: string,
+    id: string,
+    findEventFriendDto: FindEventFriendDto,
+  ) {
     const { page, size, query } = findEventFriendDto;
     const skip = (page - 1) * size;
 

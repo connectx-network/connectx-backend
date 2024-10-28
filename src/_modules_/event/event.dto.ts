@@ -224,6 +224,8 @@ export class JoinEventDto {
   eventId: string;
   @OptionalProperty()
   shortId: string;
+  @OptionalProperty()
+  isAccepted: string;
 }
 
 export class AddFavoriteDto extends BaseInteractEventDto {
