@@ -705,6 +705,13 @@ export class EventService {
 
     const isFavorite = !!favoriteEvent;
 
+    await this.prisma.eventView.create({
+      data: {
+        eventId: event.id,
+        userId: user.id,
+      }
+    })
+
     return { ...event, isJoined, isFavorite };
   }
 
