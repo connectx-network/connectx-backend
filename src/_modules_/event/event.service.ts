@@ -207,6 +207,7 @@ export class EventService {
     throw new Error(error.message);
   }
    
+  return newEvent;
   }
 
   async find(findEventDto: FindEventDto): Promise<FindEventResponse> {
