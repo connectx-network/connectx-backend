@@ -39,6 +39,7 @@ import { MailJob, Queues } from '../../types/queue.type';
 import { UserService } from '../user/user.service';
 import * as ExcelJS from 'exceljs';
 import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
+import { NftService } from '../nft/nft.service';
 
 @Injectable()
 export class EventService {
@@ -50,6 +51,7 @@ export class EventService {
     private readonly userService: UserService,
     private readonly telegramBotService: TelegramBotService,
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
+    private readonly nftService: NftService
   ) {
   }
 
@@ -74,7 +76,6 @@ export class EventService {
       eventScope,
       numberOfTicket,
     } = createEventDto;
-
     const shortId = await this.generateUniqueCode();
 
     const user = await this.prisma.user.findUnique({
@@ -176,9 +177,36 @@ export class EventService {
       },
     };
 
-    return this.prisma.event.create({
+    const newEvent = await this.prisma.event.create({
       data: createEventPayload,
     });
+    
+    let image = '';
+    let coverImage = '';
+    assets.forEach(item => {
+      if (item.type == EventAssetType.THUMBNAIL) {
+        image = item.url
+      } else if (item.type == EventAssetType.BACKGROUND) {
+        coverImage = item.url;
+      }
+    })
+    
+  let newCollection; 
+  try{
+    newCollection =
+    await this.nftService.deployCollection(newEvent.id, {
+      name: newEvent.title,
+      description: newEvent.description,
+      image: image || undefined,
+      cover_image: coverImage || undefined,
+    });
+  } catch(error) {
+    if(newCollection) {
+      this.nftService.deleteCollection(newCollection?.id)
+    }
+    throw new Error(error.message);
+  }
+   
   }
 
   async find(findEventDto: FindEventDto): Promise<FindEventResponse> {
@@ -1015,7 +1043,6 @@ export class EventService {
       },
     });
 
-    console.log('like', likedEvent?.id);
 
     if (likedEvent) {
       await this.prisma.userEventFavorite.delete({

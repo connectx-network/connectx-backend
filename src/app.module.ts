@@ -21,6 +21,7 @@ import { S3Module } from './_modules_/s3/s3.module';
 import { TelegramBotModule } from './_modules_/telegram-bot/telegram-bot.module';
 import { HostModule } from './_modules_/host/host.module';
 import { EventFeedbackModule } from './_modules_/event-feedback/event-feedback.module';
+import { NftModule } from './_modules_/nft/nft.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { EventFeedbackModule } from './_modules_/event-feedback/event-feedback.m
     TelegramBotModule,
     HostModule,
     EventFeedbackModule,
+    NftModule
   ],
   controllers: [AppController],
   providers: [AppService],
