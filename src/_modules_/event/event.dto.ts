@@ -368,6 +368,13 @@ export class SendInvitationDto {
   userId: string;
 }
 
+export enum InsightFilterType {
+  WEEK = 'WEEK',
+  MONTH = 'MONTH',
+  QUARTER = 'QUARTER',
+  YEAR = 'YEAR',
+}
+
 export class GetEventInsightDto {
   @ApiProperty({
     required: true,
@@ -376,7 +383,8 @@ export class GetEventInsightDto {
   eventId: string;
   @ApiProperty({
     required: true,
+    enum: InsightFilterType,
   })
-  @IsDateString()
-  startDate: string;
+  @IsEnum(InsightFilterType)
+  insightFilterType: InsightFilterType;
 }
