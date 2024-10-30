@@ -8,10 +8,10 @@ export class BaseFileUploadDto {
   fileType: FileType;
 }
 
-export class SingleUploadDto extends BaseFileUploadDto {
-  @ApiProperty({ type: 'string', format: 'binary', required: true })
-  file: Express.Multer.File;
-}
+  export class SingleUploadDto extends BaseFileUploadDto {
+    @ApiProperty({ type: 'string', format: 'binary', required: true })
+    file: Express.Multer.File;
+  }
 
 export class DeleteFileDto {
   @ApiProperty({ required: true })
