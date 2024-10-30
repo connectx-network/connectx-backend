@@ -407,13 +407,13 @@ export class EventService {
               {
                 userId: user.id ? 'asc' : 'desc',
               },
-              {
-                userId: {
-                  in: user.following.map((u) => u.id),
-                }
-                  ? 'asc'
-                  : 'desc',
-              },
+              // {
+              //   userId: {
+              //     in: user.following.map((u) => u.id),
+              //   }
+              //     ? 'asc'
+              //     : 'desc',
+              // },
             ],
             include: {
               user: {
