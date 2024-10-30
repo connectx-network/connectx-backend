@@ -27,7 +27,14 @@ import {
   UpdateGuestStatusDto,
   UpdateHighlightEventDto,
 } from './event.dto';
-import { EventAsset, EventAssetType, EventScope, HostPermission, JoinedEventUserStatus, Prisma } from '@prisma/client';
+import {
+  EventAsset,
+  EventAssetType,
+  EventScope,
+  HostPermission,
+  JoinedEventUserStatus,
+  Prisma,
+} from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import * as moment from 'moment-timezone';
 import { NotificationMessage } from '../../types/notification.type';
@@ -51,9 +58,8 @@ export class EventService {
     private readonly userService: UserService,
     private readonly telegramBotService: TelegramBotService,
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
-    private readonly nftService: NftService
-  ) {
-  }
+    private readonly nftService: NftService,
+  ) {}
 
   async create(telegramId: number, createEventDto: CreateEventDto) {
     const {
@@ -138,10 +144,17 @@ export class EventService {
         },
       };
     }
+
+    // get social for mint nft
+    let socialLinks = [];
+
     if (socials) {
       createEventPayload.eventSocials = {
         createMany: {
-          data: socials.map((item) => ({ ...item })),
+          data: socials.map((item) => {
+            socialLinks.push(item.url);
+            return { ...item };
+          }),
         },
       };
     }
@@ -159,10 +172,10 @@ export class EventService {
 
     const hostIds = hosts
       ? hosts.map((host) => ({
-        userId: host.userId,
-        permission: HostPermission.MANAGER,
-        accepted: true,
-      }))
+          userId: host.userId,
+          permission: HostPermission.MANAGER,
+          accepted: true,
+        }))
       : [];
 
     const addHostIds = [
@@ -180,31 +193,30 @@ export class EventService {
     const newEvent = await this.prisma.event.create({
       data: createEventPayload,
     });
-    
+
     let image = '';
     let coverImage = '';
-    assets.forEach(item => {
+    assets.forEach((item) => {
       if (item.type == EventAssetType.THUMBNAIL) {
-        image = item.url
+        image = item.url;
       } else if (item.type == EventAssetType.BACKGROUND) {
         coverImage = item.url;
       }
-    })
-    
-  let newCollection; 
-  try{
-    newCollection =
-    await this.nftService.deployCollection(newEvent.id, {
-      name: newEvent.title,
-      description: newEvent.description,
-      image: image || undefined,
-      cover_image: coverImage || undefined,
     });
-  } catch(error) {
-    throw new Error(error.message);
-  }
-   
-  return newEvent;
+
+    try {
+      await this.nftService.deployCollection(newEvent.id, {
+        name: newEvent.title,
+        description: newEvent.description,
+        image: image.length > 0 ? image : undefined,
+        cover_image: coverImage.length ? coverImage : undefined,
+        social_links: socialLinks.length > 0 ? socialLinks : undefined,
+      });
+    } catch (error) {
+      throw new Error(error.message);
+    }
+
+    return newEvent;
   }
 
   async find(findEventDto: FindEventDto): Promise<FindEventResponse> {
@@ -735,8 +747,8 @@ export class EventService {
       data: {
         eventId: event.id,
         userId: user.id,
-      }
-    })
+      },
+    });
 
     return { ...event, isJoined, isFavorite };
   }
@@ -1040,7 +1052,6 @@ export class EventService {
         },
       },
     });
-
 
     if (likedEvent) {
       await this.prisma.userEventFavorite.delete({
@@ -1650,8 +1661,8 @@ export class EventService {
         id: eventId,
       },
       include: {
-        eventAssets: true
-      }
+        eventAssets: true,
+      },
     });
 
     if (!event) {
@@ -1675,6 +1686,10 @@ export class EventService {
       throw new NotFoundException('Not found guest!');
     }
 
+    if(guest?.checkedIn) {
+      throw new BadRequestException('Already checked in');
+    }
+    
     await this.prisma.joinedEventUser.update({
       where: {
         id: guest.id,
@@ -1685,34 +1700,29 @@ export class EventService {
       },
     });
 
-    // // create nft when user checked in at event
-    // try{
-    //   // get thumnail url from event asset list
-    //   let thumbnailUrl = this.getThumbnaileventAsset(event.eventAssets);
-    //   let attributes = [
-    //     {
-    //       "trait_type": "Location",
-    //       "value": `${event?.location??""}`
-    //     },
-    //     {
-    //       "trait_type": "Date",
-    //       "value": `${Date.now()}`
-    //     },
-    //   ]
-    //   let newNft =
-    //   await this.nftService.createNftItem(event.id, user.id, {
-    //     name: event.title,
-    //     description: event.description,
-    //     image: thumbnailUrl || undefined,
-    //     attributes
-    //   });
-
-    // } catch(error) {
-    //   console.log(error)
-    //   throw new Error(error.message);
-    // }
-
-
+    // create nft when user checked in at event
+    try {
+      // get thumnail url from event asset list
+      let thumbnailUrl = this.getThumbnaileventAsset(event.eventAssets);
+      let attributes = [
+        {
+          "trait_type": "Location",
+          "value": `${event?.location??""}`
+        },
+        {
+          "trait_type": "Date",
+          "value": `${Date.now()}`
+        },
+      ]
+      await this.nftService.createNftItem(event.id, userId, {
+        name: event.title,
+        description: event.description,
+        image: thumbnailUrl || undefined,
+        attributes
+      });
+    } catch (error) {
+      throw new Error(error.message);
+    }
 
     return { success: true };
   }
@@ -1917,6 +1927,9 @@ export class EventService {
       where: {
         id: eventId,
       },
+      include: {
+        eventAssets: true,
+      },
     });
 
     if (!event) {
@@ -1958,6 +1971,10 @@ export class EventService {
       throw new NotFoundException('Not found guest!');
     }
 
+    if(guest?.checkedIn) {
+      throw new BadRequestException('Already checked in');
+    }
+    
     await this.prisma.joinedEventUser.update({
       where: {
         id: guest.id,
@@ -1967,6 +1984,30 @@ export class EventService {
         checkInDate: new Date(),
       },
     });
+
+      // create nft when user checked in at event
+      try {
+        // get thumnail url from event asset list
+        let thumbnailUrl = this.getThumbnaileventAsset(event.eventAssets);
+        let attributes = [
+          {
+            "trait_type": "Location",
+            "value": `${event?.location??""}`
+          },
+          {
+            "trait_type": "Date",
+            "value": `${Date.now()}`
+          },
+        ]
+        await this.nftService.createNftItem(event.id, userId, {
+          name: event.title,
+          description: event.description,
+          image: thumbnailUrl || undefined,
+          attributes
+        });
+      } catch (error) {
+        throw new Error(error.message);
+      }
 
     return { success: true };
   }
@@ -2040,12 +2081,14 @@ export class EventService {
 
   // get thumbnail url from event asset list
   private getThumbnaileventAsset(eventAsset: EventAsset[]) {
+    let url = null;
     eventAsset.forEach((item) => {
-      if(item.type == EventAssetType.THUMBNAIL) {
-        return item.url;
+      if (item.type == EventAssetType.THUMBNAIL) {
+        url = item.url;
+        return;
       }
-    })
+    });
 
-    return null; 
+    return url;
   }
 }

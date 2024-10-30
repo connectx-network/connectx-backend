@@ -49,14 +49,14 @@ export class NftService {
     { name, description, image, cover_image, social_links }: DeployCollection,
   ) {
     const adminWallet = await this.getAdminWallet();
-    const uuid = uuidv4(); 
+    const uuid = uuidv4();
     const collectionMetadata = createNftCollectionMetadata({
       name: name,
       description: description,
       image: image,
       cover_image,
       social_links,
-      uuid
+      uuid,
     });
 
     try {
@@ -71,15 +71,15 @@ export class NftService {
         royaltyAddress: adminWallet.contract.address,
         nextItemIndex: 0,
         collectionContentUrl: `ipfs://${IpfsHash}`,
-        commonContentUrl:`ipfs://${IpfsHash}`,
+        commonContentUrl: '',
       };
 
       const collection = new NftCollection(collectionDt);
       const seqno = await collection.deploy(adminWallet);
-      let isSuccess  = await waitSeqno(seqno, adminWallet);
+      let isSuccess = await waitSeqno(seqno, adminWallet);
 
-      let newCollection; 
-      if(isSuccess) {
+      let newCollection;
+      if (isSuccess) {
         newCollection = await this.prisma.nftCollection.create({
           data: {
             name: name,
@@ -98,7 +98,6 @@ export class NftService {
             royaltyAddress: collectionDt.royaltyAddress.toString(),
           },
         });
-  
       }
     } catch (error) {
       throw new InternalServerErrorException(
@@ -163,7 +162,9 @@ export class NftService {
     const collection = new NftCollectionWrapper(nftCollectionAddress);
 
     let listItems: any;
-    let rpc = Number(process.env.MAINNET)  ? process.env.TON_API_MAINNET_RPC : process.env.TON_API_TESTNET_RPC; 
+    let rpc = Number(process.env.MAINNET)
+      ? process.env.TON_API_MAINNET_RPC
+      : process.env.TON_API_TESTNET_RPC;
 
     try {
       listItems = await axios.get(
@@ -188,7 +189,7 @@ export class NftService {
       pinataMetadata: { name: `${name} #${itemIndex}` },
     });
 
-    const amount = `${process.env.VALUE_WHEN_CREATE_NFT}`
+    const amount = `${process.env.VALUE_WHEN_CREATE_NFT}`;
 
     const mintParams = {
       queryId: itemIndex,
@@ -196,6 +197,7 @@ export class NftService {
       itemIndex: itemIndex,
       amount: toNano(amount),
       commonContentUrl: `ipfs://${IpfsHash}`,
+      uuid: uuidv4(),
     };
 
     const nftItem = new NftItem(collection);
@@ -203,7 +205,7 @@ export class NftService {
     const seqno = await nftItem.deploy(adminWallet, mintParams);
     const isSuccess = await waitSeqno(seqno, adminWallet);
 
-    if(isSuccess) {
+    if (isSuccess) {
       await this.prisma.nftItem.create({
         data: {
           itemOwnerAddress: foundUser.tonRawAddress,
@@ -211,6 +213,11 @@ export class NftService {
           itemIndex: mintParams.itemIndex,
           amount: mintParams.amount.toString(),
           commonContentUrl: mintParams.commonContentUrl,
+          user: {
+            connect: {
+              id: userId,
+            },
+          },
           nftCollection: {
             connect: {
               id: collectionId,
@@ -227,13 +234,16 @@ export class NftService {
   }
 
   async deleteCollection(collectionId: string) {
-    return this.prisma.nftCollection.delete({where:{id: collectionId}})
+    return this.prisma.nftCollection.delete({ where: { id: collectionId } });
   }
 
   // Private functions
   private async getAdminWallet(): Promise<OpenedWallet> {
-    const isMainNet = Number(process.env.MAINNET) ? true : false; 
-    const wallet = await openWallet(process.env.MNEMONIC!.split(' '), isMainNet);
+    const isMainNet = Number(process.env.MAINNET) ? true : false;
+    const wallet = await openWallet(
+      process.env.MNEMONIC!.split(' '),
+      isMainNet,
+    );
     return wallet;
   }
 }

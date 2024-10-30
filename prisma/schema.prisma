@@ -53,6 +53,7 @@ model User {
   userSocials           UserSocial[]
   eventFeedbacks        EventFeedback[]
   eventViews            EventView[]
+  nftItems               NftItem[]
 
   @@map("user")
 }
@@ -435,6 +436,8 @@ model NftItem {
   queryId Int? @map("query_id")
   amount String 
   nftCollection NftCollection  @relation(fields: [nftCollectionId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("nft_item")
 }
