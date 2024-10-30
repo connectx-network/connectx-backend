@@ -12,11 +12,11 @@ export type NftCollectionMetadata = {
 };
 
 export type NftMetadata = {
+  // event name 
   name: string;
   description: string;
   image?: string;
   attributes?: NftAttributes[];
-  lottie?: string;
   content_url?: string;
   content_type?: string;
 };

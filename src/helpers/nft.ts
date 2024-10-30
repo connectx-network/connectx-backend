@@ -12,13 +12,13 @@ export type OpenedWallet = {
   keyPair: KeyPair;
 };
 
-export async function openWallet(mnemonic: string[], testnet: boolean) {
+export async function openWallet(mnemonic: string[], isMainNet: boolean) {
   const keyPair = await mnemonicToPrivateKey(mnemonic);
 
-  const toncenterBaseEndpoint: string = testnet
-    ? process.env.TESTNET_RPC
-    : process.env.MAINNET_RPC;
-
+  const toncenterBaseEndpoint: string = isMainNet
+    ? process.env.MAINNET_RPC
+    : process.env.TESTNET_RPC;
+    
   const client = new TonClient({
     endpoint: `${toncenterBaseEndpoint}`,
     apiKey: process.env.TONCENTER_API_KEY,
@@ -78,11 +78,17 @@ export function encodeOffChainContent(content: string) {
 }
 
 export async function waitSeqno(seqno: number, wallet: OpenedWallet) {
+  let result = false; 
   for (let attempt = 0; attempt < 10; attempt++) {
     await sleep(1000);
     const seqnoAfter = await wallet.contract.getSeqno();
-    if (seqnoAfter == seqno + 1) break;
+    if (seqnoAfter == seqno + 1) {
+      result = true; 
+      break;
+    }
   }
+
+  return result;
 }
 
 export function sleep(ms: number): Promise<void> {

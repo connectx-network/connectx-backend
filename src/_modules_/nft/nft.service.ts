@@ -25,6 +25,7 @@ import { Address, toNano } from '@ton/core';
 import { NftItem } from 'src/helpers/nft.item';
 import { QrCodeService } from '../qr-code/qr-code.service';
 import { v4 as uuidv4 } from 'uuid';
+import { NftCollectionWrapper } from 'src/helpers/nft.collection.wrapper';
 
 interface DeployCollection {
   name: string;
@@ -42,6 +43,7 @@ export class NftService {
     private readonly qrCodeService: QrCodeService,
   ) {}
 
+  // deploy collection onchain + save in database
   async deployCollection(
     eventId: string,
     { name, description, image, cover_image, social_links }: DeployCollection,
@@ -74,35 +76,38 @@ export class NftService {
 
       const collection = new NftCollection(collectionDt);
       const seqno = await collection.deploy(adminWallet);
-      await waitSeqno(seqno, adminWallet);
+      let isSuccess  = await waitSeqno(seqno, adminWallet);
 
-      const newCollection = await this.prisma.nftCollection.create({
-        data: {
-          name: name,
-          description: description,
-          image: image,
-          coverImage: cover_image || '',
-          socialLinks: social_links || [],
-          nftCollectionAddress: collection.address.toString(),
-          event: {
-            connect: {
-              id: eventId,
+      let newCollection; 
+      if(isSuccess) {
+        newCollection = await this.prisma.nftCollection.create({
+          data: {
+            name: name,
+            description: description,
+            image: image,
+            coverImage: cover_image || '',
+            socialLinks: social_links || [],
+            nftCollectionAddress: collection.address.toString(),
+            event: {
+              connect: {
+                id: eventId,
+              },
             },
+            ...collectionDt,
+            ownerAddress: collectionDt.ownerAddress.toString(),
+            royaltyAddress: collectionDt.royaltyAddress.toString(),
           },
-          ...collectionDt,
-          ownerAddress: collectionDt.ownerAddress.toString(),
-          royaltyAddress: collectionDt.royaltyAddress.toString(),
-        },
-      });
-
-     return newCollection;
+        });
+  
+      }
     } catch (error) {
       throw new InternalServerErrorException(
         error?.message || 'Internal Server Error: Deploy Collection Failed',
       );
     }
   }
-//event name, location, and date.
+
+  // create nft onchain + save in database
   async createNftItem(
     eventId: string,
     userId: string,
@@ -111,7 +116,6 @@ export class NftService {
       description,
       image,
       attributes,
-      lottie,
       content_url,
       content_type,
     }: NftMetadata,
@@ -145,7 +149,7 @@ export class NftService {
     if (!nftCollection) {
       throw new NotFoundException('NFT Collection Not Found');
     }
-
+    // Todo
     if (!foundUser.tonRawAddress) {
       throw new NotAcceptableException('User does not have ton address');
     }
@@ -156,35 +160,26 @@ export class NftService {
       ...nftCollectionData
     } = nftCollection;
 
-    const collection = new NftCollection({
-      ...nftCollectionData,
-      ownerAddress: adminWallet.contract.address,
-      royaltyAddress: adminWallet.contract.address,
-    });
-
+    const collection = new NftCollectionWrapper(nftCollectionAddress);
 
     let listItems: any;
+    let rpc = Number(process.env.MAINNET)  ? process.env.TON_API_MAINNET_RPC : process.env.TON_API_TESTNET_RPC; 
 
     try {
       listItems = await axios.get(
-        `https://testnet.tonapi.io/v2/nfts/collections/${collection.address}/items`,
+        `${rpc}/nfts/collections/${collection.address}/items`,
       );
     } catch (error) {
       throw new InternalServerErrorException("Can't get items from collection");
     }
-
-    const qrcode = await this.qrCodeService.generateQrCode(
-      `${eventId};${userId}`,
-    );
 
     const itemIndex = listItems?.data?.nft_items?.length;
 
     const itemMetadata = createNftMetadata({
       name: `${name} #${itemIndex}`,
       description,
-      image: qrcode,
+      image: image,
       attributes,
-      lottie,
       content_url,
       content_type,
     });
@@ -193,7 +188,7 @@ export class NftService {
       pinataMetadata: { name: `${name} #${itemIndex}` },
     });
 
-    const amount = '0.01';
+    const amount = `${process.env.VALUE_WHEN_CREATE_NFT}`
 
     const mintParams = {
       queryId: itemIndex,
@@ -206,28 +201,28 @@ export class NftService {
     const nftItem = new NftItem(collection);
 
     const seqno = await nftItem.deploy(adminWallet, mintParams);
+    const isSuccess = await waitSeqno(seqno, adminWallet);
 
-    await waitSeqno(seqno, adminWallet);
-
-    await this.prisma.nftItem.create({
-      data: {
-        itemOwnerAddress: foundUser.tonRawAddress,
-        queryId: mintParams.queryId,
-        itemIndex: mintParams.itemIndex,
-        amount: mintParams.amount.toString(),
-        commonContentUrl: mintParams.commonContentUrl,
-        nftCollection: {
-          connect: {
-            id: collectionId,
+    if(isSuccess) {
+      await this.prisma.nftItem.create({
+        data: {
+          itemOwnerAddress: foundUser.tonRawAddress,
+          queryId: mintParams.queryId,
+          itemIndex: mintParams.itemIndex,
+          amount: mintParams.amount.toString(),
+          commonContentUrl: mintParams.commonContentUrl,
+          nftCollection: {
+            connect: {
+              id: collectionId,
+            },
           },
         },
-      },
-    });
+      });
+    }
 
     return {
       collectionAddress: collection.address.toString(),
       tokenId: itemIndex,
-      success: true,
     };
   }
 
@@ -237,7 +232,7 @@ export class NftService {
 
   // Private functions
   private async getAdminWallet(): Promise<OpenedWallet> {
-    const isMainNet = process.env.MAINNET ? true : false; 
+    const isMainNet = Number(process.env.MAINNET) ? true : false; 
     const wallet = await openWallet(process.env.MNEMONIC!.split(' '), isMainNet);
     return wallet;
   }

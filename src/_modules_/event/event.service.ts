@@ -27,7 +27,7 @@ import {
   UpdateGuestStatusDto,
   UpdateHighlightEventDto,
 } from './event.dto';
-import { EventAssetType, EventScope, HostPermission, JoinedEventUserStatus, Prisma } from '@prisma/client';
+import { EventAsset, EventAssetType, EventScope, HostPermission, JoinedEventUserStatus, Prisma } from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import * as moment from 'moment-timezone';
 import { NotificationMessage } from '../../types/notification.type';
@@ -201,9 +201,6 @@ export class EventService {
       cover_image: coverImage || undefined,
     });
   } catch(error) {
-    if(newCollection) {
-      this.nftService.deleteCollection(newCollection?.id)
-    }
     throw new Error(error.message);
   }
    
@@ -404,13 +401,13 @@ export class EventService {
               {
                 userId: user.id ? 'asc' : 'desc',
               },
-              {
-                userId: {
-                  in: user.following.map((u) => u.id),
-                }
-                  ? 'asc'
-                  : 'desc',
-              },
+              // {
+              //   userId: {
+              //     in: user.following.map((u) => u.id),
+              //   }
+              //     ? 'asc'
+              //     : 'desc',
+              // },
             ],
             include: {
               user: {
@@ -1648,11 +1645,13 @@ export class EventService {
     }
 
     const { eventId, userId } = checkInByAdminDto;
-
     const event = await this.prisma.event.findUnique({
       where: {
         id: eventId,
       },
+      include: {
+        eventAssets: true
+      }
     });
 
     if (!event) {
@@ -1685,6 +1684,35 @@ export class EventService {
         checkInDate: new Date(),
       },
     });
+
+    // // create nft when user checked in at event
+    // try{
+    //   // get thumnail url from event asset list
+    //   let thumbnailUrl = this.getThumbnaileventAsset(event.eventAssets);
+    //   let attributes = [
+    //     {
+    //       "trait_type": "Location",
+    //       "value": `${event?.location??""}`
+    //     },
+    //     {
+    //       "trait_type": "Date",
+    //       "value": `${Date.now()}`
+    //     },
+    //   ]
+    //   let newNft =
+    //   await this.nftService.createNftItem(event.id, user.id, {
+    //     name: event.title,
+    //     description: event.description,
+    //     image: thumbnailUrl || undefined,
+    //     attributes
+    //   });
+
+    // } catch(error) {
+    //   console.log(error)
+    //   throw new Error(error.message);
+    // }
+
+
 
     return { success: true };
   }
@@ -2008,5 +2036,16 @@ export class EventService {
     const fileName = `list guest ${moment().tz('Asia/Bangkok').format('YYYY-MM-DD')}`;
 
     return { buffer, fileName };
+  }
+
+  // get thumbnail url from event asset list
+  private getThumbnaileventAsset(eventAsset: EventAsset[]) {
+    eventAsset.forEach((item) => {
+      if(item.type == EventAssetType.THUMBNAIL) {
+        return item.url;
+      }
+    })
+
+    return null; 
   }
 }
