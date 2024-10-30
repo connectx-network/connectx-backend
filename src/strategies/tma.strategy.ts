@@ -1,7 +1,7 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
-import { validate, parse, type InitDataParsed } from '@telegram-apps/init-data-node';
+import { validate, parse } from '@telegram-apps/init-data-node';
 
 @Injectable()
 export class TmaStrategy extends PassportStrategy(Strategy, 'tma') {
