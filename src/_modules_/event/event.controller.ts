@@ -19,7 +19,7 @@ import {
   UpdateGuestStatusDto,
   UpdateHighlightEventDto,
 } from './event.dto';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { TelegramMiniAppGuard } from '../../guards/tma.guard';
 import { TmaUser } from '../../decorators/tmaUser.decorator';
 import { Response } from 'express';
@@ -40,6 +40,22 @@ export class EventController {
     return this.eventService.create(telegramId, createEventDto);
   }
 
+  @Get('/user-nfts')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiOperation({ summary: 'Get nft belong user' })
+  @ApiBearerAuth()
+  async getUserNfts(@TmaUser('id') telegramId: number) {
+    return this.eventService.getUserNfts(`${telegramId}`);
+  }
+  
+  @Get('/user-nft/:eventId')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiOperation({ summary: 'Get nft belong user in specific event' })
+  @ApiBearerAuth()
+  async getUserNft(@TmaUser('id') telegramId: number, @Param('eventId') eventId: string) {
+    return this.eventService.getUserNft(`${telegramId}`,eventId);
+  }
+  
   @Get('/created')
   @UseGuards(TelegramMiniAppGuard)
   @ApiBearerAuth()
@@ -127,6 +143,8 @@ export class EventController {
     res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.send(buffer);
   }
+
+
 
   @Get()
   async find(@Query() findEventDto: FindEventDto) {
@@ -251,4 +269,9 @@ export class EventController {
   async getInsight(@Body() getEventInsightDto: GetEventInsightDto) {
     return this.eventService.getInsights(getEventInsightDto);
   }
+
+  
+  
+
+
 }

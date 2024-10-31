@@ -208,11 +208,11 @@ export class EventService {
     });
 
     await this.nftService.createCollection(newEvent.id, {
-        name: newEvent.title,
-        description: newEvent.description,
-        image: image.length > 0 ? image : undefined,
-        cover_image: coverImage.length ? coverImage : undefined,
-        social_links: socialLinks.length > 0 ? socialLinks : undefined,
+      name: newEvent.title,
+      description: newEvent.description,
+      image: image.length > 0 ? image : undefined,
+      cover_image: coverImage.length ? coverImage : undefined,
+      social_links: socialLinks.length > 0 ? socialLinks : undefined,
     });
 
     return newEvent;
@@ -1685,10 +1685,10 @@ export class EventService {
       throw new NotFoundException('Not found guest!');
     }
 
-    if(guest?.checkedIn) {
+    if (guest?.checkedIn) {
       throw new BadRequestException('Already checked in');
     }
-    
+
     await this.prisma.joinedEventUser.update({
       where: {
         id: guest.id,
@@ -2018,7 +2018,6 @@ export class EventService {
       throw new BadRequestException('Can not mint NFT');
     }
 
-
     return { success: true };
   }
 
@@ -2150,5 +2149,53 @@ export class EventService {
         return { ...item, view };
       }),
     );
+  }
+
+  async getUserNfts(telegramId: string) {
+    const user = await this.userService.findUserByTelegramId(telegramId);
+
+    if (!user) {
+      throw new NotFoundException('Not Found User');
+    }
+
+    const listNft = await this.prisma.nftItem.findMany({
+      where: {
+        userId: user.id,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    return listNft.length > 0 ? listNft : [];
+  }
+
+  async getUserNft(telegramId: string, eventId: string) {
+    const user = await this.userService.findUserByTelegramId(telegramId);
+
+    if (!user) {
+      throw new NotFoundException('Not found User');
+    }
+
+    //  find the NFT collection by eventId
+    const nftCollection = await this.prisma.nftCollection.findFirst({
+      where: {
+        eventId: eventId
+      }
+    })
+    if (!nftCollection) {
+      throw new NotFoundException(
+        `NFT collection associated with eventId ${eventId} not found`,
+      );
+    }
+
+    const nftItem = await this.prisma.nftItem.findFirst({
+      where: {
+        userId: user.id,
+        nftCollectionId: nftCollection.id
+      },
+    });
+
+    return nftItem ?? null;
   }
 }
