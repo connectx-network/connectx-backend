@@ -22,6 +22,8 @@ import {
   FindEventResponse,
   FindFeedDto,
   FindJoinedEventUserDto,
+  GetEventInsightDto,
+  InsightFilterType,
   JoinEventDto,
   UpdateEventDto,
   UpdateGuestStatusDto,
@@ -47,6 +49,7 @@ import { UserService } from '../user/user.service';
 import * as ExcelJS from 'exceljs';
 import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
 import { NftService } from '../nft/nft.service';
+import DurationConstructor = moment.unitOfTime.DurationConstructor;
 
 @Injectable()
 export class EventService {
@@ -1816,7 +1819,7 @@ export class EventService {
     id: string,
     findEventFriendDto: FindEventFriendDto,
   ) {
-    const { page, size, query } = findEventFriendDto;
+    const { page, size } = findEventFriendDto;
     const skip = (page - 1) * size;
 
     const event = await this.prisma.event.findUnique({
@@ -2097,5 +2100,55 @@ export class EventService {
     });
 
     return url;
+  }
+
+  async getInsights(getEventInsightDto: GetEventInsightDto) {
+    const { eventId, insightFilterType } = getEventInsightDto;
+    let dateStep = 1;
+    let stepType: DurationConstructor = 'days';
+    let numberOfSteps = 7;
+
+    if (insightFilterType === InsightFilterType.WEEK) {
+      dateStep = 1;
+      numberOfSteps = 7;
+    } else if (insightFilterType === InsightFilterType.MONTH) {
+      dateStep = 3;
+      numberOfSteps = 10;
+    } else if (insightFilterType === InsightFilterType.QUARTER) {
+      dateStep = 10;
+      numberOfSteps = 12;
+    } else if (insightFilterType === InsightFilterType.YEAR) {
+      dateStep = 1;
+      numberOfSteps = 12;
+      stepType = 'months';
+    }
+
+    const filterStep = [];
+
+    let dateMock = new Date();
+
+    for (let i = 0; i < numberOfSteps; i++) {
+      filterStep.push({
+        start: moment(dateMock).subtract(dateStep, stepType).toDate(),
+        end: dateMock,
+      });
+
+      dateMock = moment(dateMock).subtract(dateStep, stepType).toDate();
+    }
+
+    return Promise.all(
+      filterStep.map(async (item) => {
+        const view = await this.prisma.eventView.count({
+          where: {
+            eventId,
+            createdAt: {
+              gte: item.start,
+              lte: item.end,
+            },
+          },
+        });
+        return { ...item, view };
+      }),
+    );
   }
 }

@@ -24,6 +24,7 @@ import { EventFeedbackModule } from './_modules_/event-feedback/event-feedback.m
 import { NftModule } from './_modules_/nft/nft.module';
 import { CronJobModule } from './_modules_/cron-job/cron-job.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AuthTonModule } from './_modules_/auth-ton/auth-ton.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     NftModule, 
     ScheduleModule.forRoot(),
     CronJobModule, 
+    AuthTonModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -13,6 +13,7 @@ import {
   FindEventFriendDto,
   FindEventGuestDto,
   FindFeedDto,
+  GetEventInsightDto,
   JoinEventDto,
   UpdateEventDto,
   UpdateGuestStatusDto,
@@ -244,5 +245,10 @@ export class EventController {
     return this.eventService.checkInGuestByQrCode(`${telegramId}`, checkInByQr);
   }
 
-
+  @Post('/insight')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async getInsight(@Body() getEventInsightDto: GetEventInsightDto) {
+    return this.eventService.getInsights(getEventInsightDto);
+  }
 }

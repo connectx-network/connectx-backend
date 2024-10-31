@@ -367,3 +367,24 @@ export class SendInvitationDto {
   @IsNotEmpty()
   userId: string;
 }
+
+export enum InsightFilterType {
+  WEEK = 'WEEK',
+  MONTH = 'MONTH',
+  QUARTER = 'QUARTER',
+  YEAR = 'YEAR',
+}
+
+export class GetEventInsightDto {
+  @ApiProperty({
+    required: true,
+  })
+  @IsNotEmpty()
+  eventId: string;
+  @ApiProperty({
+    required: true,
+    enum: InsightFilterType,
+  })
+  @IsEnum(InsightFilterType)
+  insightFilterType: InsightFilterType;
+}
