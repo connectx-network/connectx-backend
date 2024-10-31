@@ -53,7 +53,7 @@ model User {
   userSocials           UserSocial[]
   eventFeedbacks        EventFeedback[]
   eventViews            EventView[]
-  nftItems               NftItem[]
+  nftItems              NftItem[]
 
   @@map("user")
 }
@@ -208,7 +208,7 @@ model Event {
   userEventFavorites    UserEventFavorite[]
   eventFeedbacks        EventFeedback[]
   eventViews            EventView[]
-  nftCollection NftCollection?
+  nftCollection         NftCollection?
 
   @@map("event")
 }
@@ -414,30 +414,43 @@ model NftCollection {
   coverImage String? @map("cover_image")
   socialLinks	 String[] @map("social_links")
   nftCollectionAddress String? @map("nft_collection_address") 
-  ownerAddress String @map("owner_address")
+  ownerAddress String? @map("owner_address")
   royaltyPercent Int @map("royalty_percent")
-  royaltyAddress String @map("royalty_address")
-  nextItemIndex Int @map("next_item_index")
+  royaltyAddress String? @map("royalty_address")
+  nextItemIndex Int? @map("next_item_index")
   collectionContentUrl String? @map("collection_content_url")
   commonContentUrl String? @map("common_content_url")
+  error Json? @map("error")
+
+  nftItems NftItem[] 
+  statusOnChain CollectionCreationStatus @default(PENDING) @map("status_onchain")
+
   eventId String? @map("event_id") @unique
   event Event? @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  nftItems NftItem[] 
 
   @@map("nft_collection")
 }
 
 model NftItem {
   id String @id @unique @default(uuid())
-  itemOwnerAddress String @map("item_owner_address")
-  itemIndex Int @map("item_index")
-  commonContentUrl String @map("common_content_url")
-  nftCollectionId String @map("nft_collection_id")
+  itemOwnerAddress String? @map("item_owner_address")
+  itemIndex Int? @map("item_index")
+  commonContentUrl String? @map("common_content_url")
   queryId Int? @map("query_id")
-  amount String 
-  nftCollection NftCollection  @relation(fields: [nftCollectionId], references: [id], onDelete: Cascade)
+  amount String? 
+  statusOnChain NFTCreationStatus @default(PENDING) @map("status_onchain")
+  nftName String? @map("nft_name")
+  nftDescription String? @map("nft_description")
+  nftImage String? @map("nft_image")
+  nftAttributes Json? @map("nft_attributes")
+  nftAddress String? @map("nft_address")
+  error Json? @map("error")
+  
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  nftCollectionId String @map("nft_collection_id")
+  nftCollection NftCollection  @relation(fields: [nftCollectionId], references: [id], onDelete: Cascade)
 
   @@map("nft_item")
 }
@@ -512,4 +525,18 @@ enum HostPermission {
   CHECKIN
   NOT_MANAGER
   CREATOR
+}
+
+// Represent for status creattion colleciton nft in blockchain 
+enum CollectionCreationStatus { 
+  SUCCESS
+  PENDING
+  FAILED
+}
+
+// Represent for status mint nft in blockchain
+enum NFTCreationStatus { 
+  SUCCESS
+  PENDING
+  FAILED
 }

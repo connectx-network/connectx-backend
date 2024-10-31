@@ -204,17 +204,13 @@ export class EventService {
       }
     });
 
-    try {
-      await this.nftService.deployCollection(newEvent.id, {
+    await this.nftService.createCollection(newEvent.id, {
         name: newEvent.title,
         description: newEvent.description,
         image: image.length > 0 ? image : undefined,
         cover_image: coverImage.length ? coverImage : undefined,
         social_links: socialLinks.length > 0 ? socialLinks : undefined,
-      });
-    } catch (error) {
-      throw new Error(error.message);
-    }
+    });
 
     return newEvent;
   }
@@ -1700,28 +1696,33 @@ export class EventService {
       },
     });
 
-    // create nft when user checked in at event
-    try {
-      // get thumnail url from event asset list
-      let thumbnailUrl = this.getThumbnaileventAsset(event.eventAssets);
-      let attributes = [
-        {
-          "trait_type": "Location",
-          "value": `${event?.location??""}`
-        },
-        {
-          "trait_type": "Date",
-          "value": `${Date.now()}`
-        },
-      ]
-      await this.nftService.createNftItem(event.id, userId, {
+    // get thumnail url from event asset list
+    let thumbnailUrl = this.getThumbnaileventAsset(event.eventAssets);
+    let attributes = [
+      {
+        trait_type: 'Location',
+        value: `${event?.location ?? ''}`,
+      },
+      {
+        trait_type: 'Date',
+        value: `${Date.now()}`,
+      },
+    ];
+
+    // create nft off chain
+    const createNFTOffChain = await this.nftService.createNftItemOffChain(
+      event.id,
+      userId,
+      {
         name: event.title,
         description: event.description,
         image: thumbnailUrl || undefined,
-        attributes
-      });
-    } catch (error) {
-      throw new Error(error.message);
+        attributes,
+      },
+    );
+
+    if (!createNFTOffChain) {
+      throw new BadRequestException('Can not mint NFT');
     }
 
     return { success: true };
@@ -1971,10 +1972,10 @@ export class EventService {
       throw new NotFoundException('Not found guest!');
     }
 
-    if(guest?.checkedIn) {
+    if (guest?.checkedIn) {
       throw new BadRequestException('Already checked in');
     }
-    
+
     await this.prisma.joinedEventUser.update({
       where: {
         id: guest.id,
@@ -1985,29 +1986,35 @@ export class EventService {
       },
     });
 
-      // create nft when user checked in at event
-      try {
-        // get thumnail url from event asset list
-        let thumbnailUrl = this.getThumbnaileventAsset(event.eventAssets);
-        let attributes = [
-          {
-            "trait_type": "Location",
-            "value": `${event?.location??""}`
-          },
-          {
-            "trait_type": "Date",
-            "value": `${Date.now()}`
-          },
-        ]
-        await this.nftService.createNftItem(event.id, userId, {
-          name: event.title,
-          description: event.description,
-          image: thumbnailUrl || undefined,
-          attributes
-        });
-      } catch (error) {
-        throw new Error(error.message);
-      }
+    // get thumnail url from event asset list
+    let thumbnailUrl = this.getThumbnaileventAsset(event.eventAssets);
+    let attributes = [
+      {
+        trait_type: 'Location',
+        value: `${event?.location ?? ''}`,
+      },
+      {
+        trait_type: 'Date',
+        value: `${Date.now()}`,
+      },
+    ];
+
+    // create nft offchain
+    const createNFTOffChain = await this.nftService.createNftItemOffChain(
+      event.id,
+      userId,
+      {
+        name: event.title,
+        description: event.description,
+        image: thumbnailUrl || undefined,
+        attributes,
+      },
+    );
+
+    if (!createNFTOffChain) {
+      throw new BadRequestException('Can not mint NFT');
+    }
+
 
     return { success: true };
   }
