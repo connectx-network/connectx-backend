@@ -29,7 +29,14 @@ import {
   UpdateGuestStatusDto,
   UpdateHighlightEventDto,
 } from './event.dto';
-import { EventAssetType, EventScope, HostPermission, JoinedEventUserStatus, Prisma } from '@prisma/client';
+import {
+  EventAsset,
+  EventAssetType,
+  EventScope,
+  HostPermission,
+  JoinedEventUserStatus,
+  Prisma,
+} from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import * as moment from 'moment-timezone';
 import { NotificationMessage } from '../../types/notification.type';
@@ -54,9 +61,8 @@ export class EventService {
     private readonly userService: UserService,
     private readonly telegramBotService: TelegramBotService,
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
-    private readonly nftService: NftService
-  ) {
-  }
+    private readonly nftService: NftService,
+  ) {}
 
   async create(telegramId: number, createEventDto: CreateEventDto) {
     const {
@@ -141,10 +147,17 @@ export class EventService {
         },
       };
     }
+
+    // get social for mint nft
+    let socialLinks = [];
+
     if (socials) {
       createEventPayload.eventSocials = {
         createMany: {
-          data: socials.map((item) => ({ ...item })),
+          data: socials.map((item) => {
+            socialLinks.push(item.url);
+            return { ...item };
+          }),
         },
       };
     }
@@ -162,10 +175,10 @@ export class EventService {
 
     const hostIds = hosts
       ? hosts.map((host) => ({
-        userId: host.userId,
-        permission: HostPermission.MANAGER,
-        accepted: true,
-      }))
+          userId: host.userId,
+          permission: HostPermission.MANAGER,
+          accepted: true,
+        }))
       : [];
 
     const addHostIds = [
@@ -183,34 +196,26 @@ export class EventService {
     const newEvent = await this.prisma.event.create({
       data: createEventPayload,
     });
-    
+
     let image = '';
     let coverImage = '';
-    assets.forEach(item => {
+    assets.forEach((item) => {
       if (item.type == EventAssetType.THUMBNAIL) {
-        image = item.url
+        image = item.url;
       } else if (item.type == EventAssetType.BACKGROUND) {
         coverImage = item.url;
       }
-    })
-    
-  let newCollection; 
-  try{
-    newCollection =
-    await this.nftService.deployCollection(newEvent.id, {
-      name: newEvent.title,
-      description: newEvent.description,
-      image: image || undefined,
-      cover_image: coverImage || undefined,
     });
-  } catch(error) {
-    if(newCollection) {
-      this.nftService.deleteCollection(newCollection?.id)
-    }
-    throw new Error(error.message);
-  }
-   
-  return newEvent;
+
+    await this.nftService.createCollection(newEvent.id, {
+        name: newEvent.title,
+        description: newEvent.description,
+        image: image.length > 0 ? image : undefined,
+        cover_image: coverImage.length ? coverImage : undefined,
+        social_links: socialLinks.length > 0 ? socialLinks : undefined,
+    });
+
+    return newEvent;
   }
 
   async find(findEventDto: FindEventDto): Promise<FindEventResponse> {
@@ -1047,7 +1052,6 @@ export class EventService {
       },
     });
 
-
     if (likedEvent) {
       await this.prisma.userEventFavorite.delete({
         where: {
@@ -1651,10 +1655,12 @@ export class EventService {
     }
 
     const { eventId, userId } = checkInByAdminDto;
-
     const event = await this.prisma.event.findUnique({
       where: {
         id: eventId,
+      },
+      include: {
+        eventAssets: true,
       },
     });
 
@@ -1679,6 +1685,10 @@ export class EventService {
       throw new NotFoundException('Not found guest!');
     }
 
+    if(guest?.checkedIn) {
+      throw new BadRequestException('Already checked in');
+    }
+    
     await this.prisma.joinedEventUser.update({
       where: {
         id: guest.id,
@@ -1688,6 +1698,35 @@ export class EventService {
         checkInDate: new Date(),
       },
     });
+
+    // get thumnail url from event asset list
+    let thumbnailUrl = this.getThumbnaileventAsset(event.eventAssets);
+    let attributes = [
+      {
+        trait_type: 'Location',
+        value: `${event?.location ?? ''}`,
+      },
+      {
+        trait_type: 'Date',
+        value: `${Date.now()}`,
+      },
+    ];
+
+    // create nft off chain
+    const createNFTOffChain = await this.nftService.createNftItemOffChain(
+      event.id,
+      userId,
+      {
+        name: event.title,
+        description: event.description,
+        image: thumbnailUrl || undefined,
+        attributes,
+      },
+    );
+
+    if (!createNFTOffChain) {
+      throw new BadRequestException('Can not mint NFT');
+    }
 
     return { success: true };
   }
@@ -1892,6 +1931,9 @@ export class EventService {
       where: {
         id: eventId,
       },
+      include: {
+        eventAssets: true,
+      },
     });
 
     if (!event) {
@@ -1933,6 +1975,10 @@ export class EventService {
       throw new NotFoundException('Not found guest!');
     }
 
+    if (guest?.checkedIn) {
+      throw new BadRequestException('Already checked in');
+    }
+
     await this.prisma.joinedEventUser.update({
       where: {
         id: guest.id,
@@ -1942,6 +1988,36 @@ export class EventService {
         checkInDate: new Date(),
       },
     });
+
+    // get thumnail url from event asset list
+    let thumbnailUrl = this.getThumbnaileventAsset(event.eventAssets);
+    let attributes = [
+      {
+        trait_type: 'Location',
+        value: `${event?.location ?? ''}`,
+      },
+      {
+        trait_type: 'Date',
+        value: `${Date.now()}`,
+      },
+    ];
+
+    // create nft offchain
+    const createNFTOffChain = await this.nftService.createNftItemOffChain(
+      event.id,
+      userId,
+      {
+        name: event.title,
+        description: event.description,
+        image: thumbnailUrl || undefined,
+        attributes,
+      },
+    );
+
+    if (!createNFTOffChain) {
+      throw new BadRequestException('Can not mint NFT');
+    }
+
 
     return { success: true };
   }
@@ -2011,6 +2087,19 @@ export class EventService {
     const fileName = `list guest ${moment().tz('Asia/Bangkok').format('YYYY-MM-DD')}`;
 
     return { buffer, fileName };
+  }
+
+  // get thumbnail url from event asset list
+  private getThumbnaileventAsset(eventAsset: EventAsset[]) {
+    let url = null;
+    eventAsset.forEach((item) => {
+      if (item.type == EventAssetType.THUMBNAIL) {
+        url = item.url;
+        return;
+      }
+    });
+
+    return url;
   }
 
   async getInsights(getEventInsightDto: GetEventInsightDto) {

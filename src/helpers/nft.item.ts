@@ -2,11 +2,12 @@ import { Address, internal, SendMode } from '@ton/core';
 import { NftCollection } from './nft.collection';
 import { TonClient } from '@ton/ton';
 import { mintParams, OpenedWallet } from './nft';
+import { NftCollectionWrapper } from './nft.collection.wrapper';
 
 export class NftItem {
-  private collection: NftCollection;
+  private collection: NftCollectionWrapper;
 
-  constructor(collection: NftCollection) {
+  constructor(collection: NftCollectionWrapper) {
     this.collection = collection;
   }
 
@@ -15,28 +16,32 @@ export class NftItem {
     params: mintParams,
   ): Promise<number> {
     const seqno = await wallet.contract.getSeqno();
+    try {
+      let res = await wallet.contract.sendTransfer({
+        seqno,
+        secretKey: wallet.keyPair.secretKey,
+        messages: [
+          internal({
+            value: '0.05',
+            to: this.collection.address,
+            body: this.collection.createMintBody(params),
+          }),
+        ],
+        sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
+      });
 
-    await wallet.contract.sendTransfer({
-      seqno,
-      secretKey: wallet.keyPair.secretKey,
-      messages: [
-        internal({
-          value: '0.05',
-          to: this.collection.address,
-          body: this.collection.createMintBody(params),
-        }),
-      ],
-      sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
-    });
+    } catch(error) {
+      throw new Error(error)
+    }
+   
     return seqno;
   }
 
-  static async getAddressByIndex(
+  public async getAddressByIndex(
     collectionAddress: Address,
     itemIndex: number,
   ): Promise<Address> {
-    const isMainNet = process.env.MAINNET ? true : false; 
-    const endPointRpc = isMainNet ? process.env.MAINNET_RPC : process.env.TESTNET_RPC;
+    const endPointRpc = Number(process.env.MAINNET) ? process.env.MAINNET_RPC : process.env.TESTNET_RPC;
 
     const client = new TonClient({
       endpoint: endPointRpc,
@@ -49,4 +54,5 @@ export class NftItem {
     );
     return response.stack.readAddress();
   }
+
 }

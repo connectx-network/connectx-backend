@@ -22,6 +22,8 @@ import { TelegramBotModule } from './_modules_/telegram-bot/telegram-bot.module'
 import { HostModule } from './_modules_/host/host.module';
 import { EventFeedbackModule } from './_modules_/event-feedback/event-feedback.module';
 import { NftModule } from './_modules_/nft/nft.module';
+import { CronJobModule } from './_modules_/cron-job/cron-job.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthTonModule } from './_modules_/auth-ton/auth-ton.module';
 
 @Module({
@@ -63,6 +65,8 @@ import { AuthTonModule } from './_modules_/auth-ton/auth-ton.module';
     HostModule,
     EventFeedbackModule,
     NftModule, 
+    ScheduleModule.forRoot(),
+    CronJobModule, 
     AuthTonModule
   ],
   controllers: [AppController],
