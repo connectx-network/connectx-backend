@@ -21,6 +21,8 @@ model User {
   nickname              String?
   // Raw ton address
   tonRawAddress         String?                @map("ton_raw_address")
+  // Solana adress 
+  solanaAddress         String?                 @map("solana_address")
   description           String?
   phoneNumber           String?                @map("phone_number")
   company               String?
@@ -539,4 +541,9 @@ enum NFTCreationStatus {
   SUCCESS
   PENDING
   FAILED
+}
+
+enum SignatureType {
+  TON 
+  SOLANA
 }
