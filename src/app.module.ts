@@ -25,6 +25,7 @@ import { NftModule } from './_modules_/nft/nft.module';
 import { CronJobModule } from './_modules_/cron-job/cron-job.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AuthTonModule } from './_modules_/auth-ton/auth-ton.module';
+import { AuthSolanaModule } from './_modules_/auth-solana/auth-solana.module';
 
 @Module({
   imports: [
@@ -67,7 +68,8 @@ import { AuthTonModule } from './_modules_/auth-ton/auth-ton.module';
     NftModule, 
     ScheduleModule.forRoot(),
     CronJobModule, 
-    AuthTonModule
+    AuthTonModule, 
+    AuthSolanaModule
   ],
   controllers: [AppController],
   providers: [AppService],
