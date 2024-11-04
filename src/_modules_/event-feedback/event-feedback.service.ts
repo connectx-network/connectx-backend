@@ -55,7 +55,7 @@ export class EventFeedbackService {
       }),
       this.prisma.eventFeedback.count({
         where: filter,
-      }),
+      })
     ]);
 
     const statistic = await this.findStatistic(eventId);

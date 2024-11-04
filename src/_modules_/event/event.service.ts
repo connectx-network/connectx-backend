@@ -29,14 +29,7 @@ import {
   UpdateGuestStatusDto,
   UpdateHighlightEventDto,
 } from './event.dto';
-import {
-  EventAsset,
-  EventAssetType,
-  EventScope,
-  HostPermission,
-  JoinedEventUserStatus,
-  Prisma,
-} from '@prisma/client';
+import { EventAsset, EventAssetType, EventScope, HostPermission, JoinedEventUserStatus, Prisma } from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import * as moment from 'moment-timezone';
 import { NotificationMessage } from '../../types/notification.type';
@@ -62,7 +55,8 @@ export class EventService {
     private readonly telegramBotService: TelegramBotService,
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
     private readonly nftService: NftService,
-  ) {}
+  ) {
+  }
 
   async create(telegramId: number, createEventDto: CreateEventDto) {
     const {
@@ -175,10 +169,10 @@ export class EventService {
 
     const hostIds = hosts
       ? hosts.map((host) => ({
-          userId: host.userId,
-          permission: HostPermission.MANAGER,
-          accepted: true,
-        }))
+        userId: host.userId,
+        permission: HostPermission.MANAGER,
+        accepted: true,
+      }))
       : [];
 
     const addHostIds = [
@@ -663,6 +657,9 @@ export class EventService {
       where: {
         telegramId: `${telegramId}`,
       },
+      include: {
+        userCities: true,
+      },
     });
 
     if (!user) {
@@ -742,11 +739,17 @@ export class EventService {
 
     const isFavorite = !!favoriteEvent;
 
+    const createEventViewPayload: Prisma.EventViewUncheckedCreateInput = {
+      eventId: event.id,
+      userId: user.id,
+    };
+
+    if (user.userCities && user.userCities[0]) {
+      createEventViewPayload.cityId = user.userCities[0].cityId;
+    }
+
     await this.prisma.eventView.create({
-      data: {
-        eventId: event.id,
-        userId: user.id,
-      },
+      data: createEventViewPayload,
     });
 
     return { ...event, isJoined, isFavorite };
@@ -2135,7 +2138,7 @@ export class EventService {
       dateMock = moment(dateMock).subtract(dateStep, stepType).toDate();
     }
 
-    return Promise.all(
+    const data = await Promise.all(
       filterStep.map(async (item) => {
         const view = await this.prisma.eventView.count({
           where: {
@@ -2149,6 +2152,14 @@ export class EventService {
         return { ...item, view };
       }),
     );
+
+    const statistics = await this.getInsignCity({
+      eventId,
+      start: moment().subtract(numberOfSteps, stepType).format('YYYY-MM-DD'),
+      end: moment().add(1, 'day').format('YYYY-MM-DD'),
+    });
+
+    return { data, statistics };
   }
 
   async getUserNfts(telegramId: string) {
@@ -2180,9 +2191,9 @@ export class EventService {
     //  find the NFT collection by eventId
     const nftCollection = await this.prisma.nftCollection.findFirst({
       where: {
-        eventId: eventId
-      }
-    })
+        eventId: eventId,
+      },
+    });
     if (!nftCollection) {
       throw new NotFoundException(
         `NFT collection associated with eventId ${eventId} not found`,
@@ -2192,10 +2203,34 @@ export class EventService {
     const nftItem = await this.prisma.nftItem.findFirst({
       where: {
         userId: user.id,
-        nftCollectionId: nftCollection.id
+        nftCollectionId: nftCollection.id,
       },
     });
 
     return nftItem ?? null;
+  }
+
+  async getInsignCity({
+                        eventId,
+                        start,
+                        end,
+                      }: {
+    eventId: string;
+    start: string;
+    end: string;
+  }) {
+    const query = `
+        SELECT city_id, ct.name, ct.country, ct.latitude, ct.image, ct.longitude, COUNT(*)::int AS count
+        FROM public.event_view ev
+        JOIN public.city ct ON ct.id = city_id
+        WHERE ev.event_id = '${eventId}' AND ev.created_at <= '${end}' AND ev.created_at >= '${start}'
+        GROUP BY city_id, ct.name, ct.country, ct.latitude, ct.image, ct.longitude
+        ORDER BY count DESC
+        LIMIT 1
+    `;
+
+    console.log(query);
+
+    return this.prisma.$queryRawUnsafe(query);
   }
 }
