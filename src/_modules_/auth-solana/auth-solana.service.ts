@@ -77,10 +77,9 @@ export class AuthSolanaService {
 
     const { address, uuid } = getMessageDto;
 
-    const deadline = Math.floor(
-      (new Date().valueOf() + Number(process.env.VALID_SIGNED_TIME ?? 0)) /
-        1000,
-    );
+    const deadline =
+      Math.floor(new Date().valueOf() / 1000) +
+      Number(process.env.VALID_SIGNED_TIME ?? 0);
 
     const rawMessage = this.getRawMessage(address, uuid, deadline, telegramId);
 
