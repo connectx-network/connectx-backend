@@ -1,4 +1,4 @@
-import { NftAttributes } from '../types/nft.type';
+import { NftAttributes } from '../../types/nft.type';
 import { Readable } from 'stream';
 import fs from 'fs';
 

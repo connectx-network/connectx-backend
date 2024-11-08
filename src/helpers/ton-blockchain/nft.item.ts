@@ -1,7 +1,7 @@
 import { Address, internal, SendMode } from '@ton/core';
 import { NftCollection } from './nft.collection';
 import { TonClient } from '@ton/ton';
-import { mintParams, OpenedWallet } from './nft';
+import { mintParams, OpenedWallet } from '../nft';
 import { NftCollectionWrapper } from './nft.collection.wrapper';
 
 export class NftItem {

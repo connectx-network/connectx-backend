@@ -6,7 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SerialCron } from 'src/decorators/serial-cron.decorator';
 import { NFTCreationStatus } from '@prisma/client';
 import { NftService } from '../nft/nft.service';
-import { NftMetadata } from 'src/helpers/nft.metadata';
+import { NftMetadata } from 'src/helpers/ton-blockchain/nft.metadata';
 
 
 // Mint nft when user check-in in event

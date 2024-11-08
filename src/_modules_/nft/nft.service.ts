@@ -17,15 +17,15 @@ import {
   createNftMetadata,
   DataUrlStream,
   NftMetadata,
-} from 'src/helpers/nft.metadata';
+} from 'src/helpers/ton-blockchain/nft.metadata';
 import { PrismaService } from '../prisma/prisma.service';
-import { NftCollection } from 'src/helpers/nft.collection';
+import { NftCollection } from 'src/helpers/ton-blockchain/nft.collection';
 import axios from 'axios';
 import { Address, toNano } from '@ton/core';
-import { NftItem } from 'src/helpers/nft.item';
+import { NftItem } from 'src/helpers/ton-blockchain/nft.item';
 import { QrCodeService } from '../qr-code/qr-code.service';
 import { v4 as uuidv4 } from 'uuid';
-import { NftCollectionWrapper } from 'src/helpers/nft.collection.wrapper';
+import { NftCollectionWrapper } from 'src/helpers/ton-blockchain/nft.collection.wrapper';
 import { CollectionCreationStatus, NFTCreationStatus } from '@prisma/client';
 
 export interface DeployCollection {
