@@ -66,7 +66,7 @@ import { AuthSolanaModule } from './_modules_/auth-solana/auth-solana.module';
     HostModule,
     EventFeedbackModule,
     NftModule, 
-    ScheduleModule.forRoot(),
+    // ScheduleModule.forRoot(),
     CronJobModule, 
     AuthTonModule, 
     AuthSolanaModule
