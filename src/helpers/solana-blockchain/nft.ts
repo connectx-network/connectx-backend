@@ -34,12 +34,12 @@ const hexPrivateKey =
   'yLgNYqUE41Yb7n2k1Fev1McFkVEjdUWwAivL1vD6MNQj8JxtDGtymbJ8MwbtGtjC1cwojGt9Ng91VduFFc7SHNR'; // replace with your actual hex private key
 const privateKeyArray = Array.from(Buffer.from(hexPrivateKey, 'hex'));
 
-export class NFTSolanaCollection {
+export class NFTSolanaHelper {
   public umi: Umi;
   public candyMachine: KeypairSigner;
   public collectionMint: KeypairSigner;
 
-  private readonly logger = new Logger(NFTSolanaCollection.name);
+  private readonly logger = new Logger(NFTSolanaHelper.name);
 
   constructor() {
     const rpc = this.getRPC();

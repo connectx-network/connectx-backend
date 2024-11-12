@@ -25,17 +25,12 @@ import {
   some,
   transactionBuilder,
 } from "@metaplex-foundation/umi";
-const hexPrivateKey = "yLgNYqUE41Yb7n2k1Fev1McFkVEjdUWwAivL1vD6MNQj8JxtDGtymbJ8MwbtGtjC1cwojGt9Ng91VduFFc7SHNR"; // replace with your actual hex private key
+import { setComputeUnitLimit } from "@metaplex-foundation/mpl-toolbox";
+const hexPrivateKey = "SAwJNvonhTwN5Eo1X8LyDd9LHp6YZY1bzdMLPCiqoAyW2UK83eWx8kynBAxNVFCXm8XUHouCta648D8qx3XAHCB"; // replace with your actual hex private key
 const privateKeyArray = Array.from(Buffer.from(hexPrivateKey, "hex"));
 import pkg from 'bs58';
 const { decode } = pkg;
-console.log({privateKeyArray})
 const decoded = decode(hexPrivateKey)
-
-
-console.log(JSON.stringify(Array.from(decoded)))
-
-import { setComputeUnitLimit } from "@metaplex-foundation/mpl-toolbox";
 
 const umi = createUmi("https://api.devnet.solana.com").use(mplCandyMachine());
 
@@ -43,7 +38,7 @@ const umi = createUmi("https://api.devnet.solana.com").use(mplCandyMachine());
 
 // const secretKey = JSON.parse(fs.readFileSync(wallet, "utf8"));
 
-const keypair = umi.eddsa.createKeypairFromSecretKey(new Uint8Array((decoded)));
+const keypair = umi.eddsa.createKeypairFromSecretKey(new Uint8Array(decoded));
 const keypairSigner = createSignerFromKeypair(umi, keypair);
 
 umi.use(keypairIdentity(keypair));
@@ -101,9 +96,9 @@ async function createCandyMachine(
     }),
     hiddenSettings: none(),
     guards: {
-      // botTax: some({ lamports: sol(0.0000001), lastInstruction: true }),
+      botTax: some({ lamports: sol(0), lastInstruction: true }),
       solPayment: some({
-        lamports: sol(1), // 1 SOL / package
+        lamports: sol(0), // 1 SOL / package
         destination: publicKey("cbrRgBSrPzrDd3k7DzT94H7fRzqScPrCe6ZV9ZK9FXp"), // update to the admin's wallet address
       }),
       startDate: some({ date: dateTime("2024-01-01T00:00:00Z") }), // update to the start date
@@ -187,13 +182,14 @@ async function main() {
   //
   //
   //
-  // 1. create NFT collection
+  // // 1. create NFT collection
   const collectionMint = await createNftCollection();
-
-  // console.log({collectionMint})
-  // 2. create Candy Machine
+  console.log({collectionMint})
+  // // 2. create Candy Machine
   const candyMachine = await createCandyMachine(collectionMint);
-  // 3. add items to Candy Machine
+  console.log({candyMachine})
+
+  // // 3. add items to Candy Machine
   await addItemsToCandyMachine(candyMachine);
   // 4. mint NFT
   await mintNft(collectionMint, candyMachine);

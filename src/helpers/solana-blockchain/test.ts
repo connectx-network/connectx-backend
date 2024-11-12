@@ -33,7 +33,6 @@ const { decode } = pkg;
 console.log({privateKeyArray})
 const decoded = decode(hexPrivateKey)
 
-
 console.log(JSON.stringify(Array.from(decoded)))
 
 import { createMintWithAssociatedToken, setComputeUnitLimit } from "@metaplex-foundation/mpl-toolbox";

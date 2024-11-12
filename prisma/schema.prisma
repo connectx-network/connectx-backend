@@ -419,6 +419,8 @@ model NftCollection {
   coverImage           String?  @map("cover_image")
   socialLinks          String[] @map("social_links")
   nftCollectionAddress String?  @map("nft_collection_address")
+  // use in case in Solana blockchain
+  candyMachinePublicKey String? @map("candy_machine_public")
   ownerAddress         String?  @map("owner_address")
   royaltyPercent       Int      @map("royalty_percent")
   royaltyAddress       String?  @map("royalty_address")
@@ -426,6 +428,7 @@ model NftCollection {
   collectionContentUrl String?  @map("collection_content_url")
   commonContentUrl     String?  @map("common_content_url")
   error                Json?    @map("error")
+  blockchainType       BlockchainType? @default(SOLANA) @map("blockchain_type") 
 
   nftItems      NftItem[]
   statusOnChain CollectionCreationStatus @default(PENDING) @map("status_onchain")
@@ -547,6 +550,11 @@ enum NFTCreationStatus {
 }
 
 enum SignatureType {
+  TON
+  SOLANA
+}
+
+enum BlockchainType {
   TON
   SOLANA
 }

@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { NftService } from './nft.service';
+import { NftService } from './nft-ton.service';
 import { IpfsService } from '../ipfs/ipfs.service';
 import { QrCodeService } from '../qr-code/qr-code.service';
 

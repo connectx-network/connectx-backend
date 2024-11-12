@@ -41,7 +41,7 @@ import { MailJob, Queues } from '../../types/queue.type';
 import { UserService } from '../user/user.service';
 import * as ExcelJS from 'exceljs';
 import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
-import { NftService } from '../nft/nft.service';
+import { NftService } from '../nft/nft-ton.service';
 import DurationConstructor = moment.unitOfTime.DurationConstructor;
 
 @Injectable()
