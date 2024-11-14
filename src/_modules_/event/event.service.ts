@@ -29,7 +29,16 @@ import {
   UpdateGuestStatusDto,
   UpdateHighlightEventDto,
 } from './event.dto';
-import { EventAsset, EventAssetType, EventScope, HostPermission, JoinedEventUserStatus, Prisma } from '@prisma/client';
+import {
+  Event,
+  EventAsset,
+  EventAssetType,
+  EventScope,
+  HostPermission,
+  JoinedEventUserStatus,
+  Prisma,
+  User,
+} from '@prisma/client';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import * as moment from 'moment-timezone';
 import { NotificationMessage } from '../../types/notification.type';
@@ -43,6 +52,7 @@ import * as ExcelJS from 'exceljs';
 import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
 import { NftService } from '../nft/nft-ton.service';
 import DurationConstructor = moment.unitOfTime.DurationConstructor;
+import { NftSolanaService } from '../nft/nft-solana.service';
 
 @Injectable()
 export class EventService {
@@ -55,8 +65,8 @@ export class EventService {
     private readonly telegramBotService: TelegramBotService,
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
     private readonly nftService: NftService,
-  ) {
-  }
+    private readonly nftSolanaService: NftSolanaService,
+  ) {}
 
   async create(telegramId: number, createEventDto: CreateEventDto) {
     const {
@@ -169,10 +179,10 @@ export class EventService {
 
     const hostIds = hosts
       ? hosts.map((host) => ({
-        userId: host.userId,
-        permission: HostPermission.MANAGER,
-        accepted: true,
-      }))
+          userId: host.userId,
+          permission: HostPermission.MANAGER,
+          accepted: true,
+        }))
       : [];
 
     const addHostIds = [
@@ -201,13 +211,16 @@ export class EventService {
       }
     });
 
-    await this.nftService.createCollection(newEvent.id, {
-      name: newEvent.title,
-      description: newEvent.description,
-      image: image.length > 0 ? image : undefined,
-      cover_image: coverImage.length ? coverImage : undefined,
-      social_links: socialLinks.length > 0 ? socialLinks : undefined,
-    });
+    // Only create collection nft in private scope event
+    if (eventScope == EventScope.PRIVATE) {
+      await this.nftSolanaService.createCollectionOffChain(newEvent.id, {
+        name: newEvent.title,
+        description: newEvent.description,
+        image: image.length > 0 ? image : undefined,
+        cover_image: coverImage.length ? coverImage : undefined,
+        social_links: socialLinks.length > 0 ? socialLinks : undefined,
+      });
+    }
 
     return newEvent;
   }
@@ -976,6 +989,9 @@ export class EventService {
 
     const event = await this.prisma.event.findUnique({
       where: findEventCondition,
+      include: {
+        eventAssets: true,
+      },
     });
 
     if (!event) {
@@ -990,18 +1006,25 @@ export class EventService {
         },
       },
     });
-
+    
     if (!isAccepted) {
       if (joinedUser) {
         throw new ConflictException('You have joined this event!');
       }
 
-      await this.prisma.joinedEventUser.create({
+      let newJoinedEventUserRecord = await this.prisma.joinedEventUser.create({
         data: {
           userId: user.id,
           eventId: event.id,
         },
       });
+
+      if (!newJoinedEventUserRecord) {
+        throw new BadRequestException('You can not join event');
+      }
+
+      // create nft off chain save in database
+      await this.createNftSolanaOffchain(event, event.eventAssets, user);
     } else {
       if (!joinedUser) {
         throw new ConflictException('You have not been invited to this event!');
@@ -1018,6 +1041,11 @@ export class EventService {
           status: updateStatus,
         },
       });
+
+      if (updateStatus == JoinedEventUserStatus.REGISTERED) {
+        // create nft off chain save in database
+        await this.createNftSolanaOffchain(event, event.eventAssets, user);
+      }
     }
 
     return { success: true };
@@ -1702,34 +1730,6 @@ export class EventService {
       },
     });
 
-    // get thumnail url from event asset list
-    let thumbnailUrl = this.getThumbnaileventAsset(event.eventAssets);
-    let attributes = [
-      {
-        trait_type: 'Location',
-        value: `${event?.location ?? ''}`,
-      },
-      {
-        trait_type: 'Date',
-        value: `${Date.now()}`,
-      },
-    ];
-
-    // create nft off chain
-    const createNFTOffChain = await this.nftService.createNftItemOffChain(
-      event.id,
-      userId,
-      {
-        name: event.title,
-        description: event.description,
-        image: thumbnailUrl || undefined,
-        attributes,
-      },
-    );
-
-    if (!createNFTOffChain) {
-      throw new BadRequestException('Can not mint NFT');
-    }
 
     return { success: true };
   }
@@ -1992,34 +1992,6 @@ export class EventService {
       },
     });
 
-    // get thumnail url from event asset list
-    let thumbnailUrl = this.getThumbnaileventAsset(event.eventAssets);
-    let attributes = [
-      {
-        trait_type: 'Location',
-        value: `${event?.location ?? ''}`,
-      },
-      {
-        trait_type: 'Date',
-        value: `${Date.now()}`,
-      },
-    ];
-
-    // create nft offchain
-    const createNFTOffChain = await this.nftService.createNftItemOffChain(
-      event.id,
-      userId,
-      {
-        name: event.title,
-        description: event.description,
-        image: thumbnailUrl || undefined,
-        attributes,
-      },
-    );
-
-    if (!createNFTOffChain) {
-      throw new BadRequestException('Can not mint NFT');
-    }
 
     return { success: true };
   }
@@ -2211,10 +2183,10 @@ export class EventService {
   }
 
   async getInsignCity({
-                        eventId,
-                        start,
-                        end,
-                      }: {
+    eventId,
+    start,
+    end,
+  }: {
     eventId: string;
     start: string;
     end: string;
@@ -2232,5 +2204,41 @@ export class EventService {
     console.log(query);
 
     return this.prisma.$queryRawUnsafe(query);
+  }
+
+  // create nft solana off chain
+  private async createNftSolanaOffchain(
+    event: Event,
+    eventAsset: EventAsset[],
+    user: User,
+  ) {
+    // get thumnail url from event asset list
+    let thumbnailUrl = this.getThumbnaileventAsset(eventAsset);
+    let attributes = [
+      {
+        trait_type: 'Location',
+        value: `${event?.location ?? ''}`,
+      },
+      {
+        trait_type: 'Date',
+        value: `${Date.now()}`,
+      },
+    ];
+
+    // create nft offchain
+    const createNFTOffChain = await this.nftSolanaService.createNftItemOffChain(
+      event.id,
+      user.id,
+      {
+        name: event.title,
+        description: event.description,
+        image: thumbnailUrl || undefined,
+        attributes,
+      },
+    );
+
+    if (!createNFTOffChain) {
+      throw new BadRequestException('Can not mint NFT');
+    }
   }
 }

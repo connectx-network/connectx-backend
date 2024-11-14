@@ -1,13 +1,15 @@
 import {
   Injectable,
   Logger,
+  NotAcceptableException,
+  NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SerialCron } from 'src/decorators/serial-cron.decorator';
 import { NFTCreationStatus } from '@prisma/client';
 import { NftService } from '../nft/nft-ton.service';
 import { NftMetadata } from 'src/helpers/ton-blockchain/nft.metadata';
-
+import { NftSolanaService } from '../nft/nft-solana.service';
 
 // Mint nft when user check-in in event
 @Injectable()
@@ -15,7 +17,7 @@ export class MintNFTCronJob {
   private readonly logger = new Logger(MintNFTCronJob.name);
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly nftService: NftService,
+    private readonly nftSalanaService: NftSolanaService,
   ) {}
 
   @SerialCron(`${process.env.CRON_JOB_MINT_NFT_EXPRESSION}`)
@@ -24,6 +26,7 @@ export class MintNFTCronJob {
     let nftItemId;
 
     try {
+      // get list nft with status PENDING or FAILED
       const listNftOffChain = await this.prismaService.nftItem.findMany({
         where: {
           OR: [
@@ -57,46 +60,88 @@ export class MintNFTCronJob {
         const name = item?.nftName;
         const description = item?.nftDescription;
         const image = item?.nftImage;
-        const userRawAddress = item?.user.tonRawAddress;
+        const userSolanaAddress = item?.user.solanaAddress;
         const userId = item?.user.id;
+
+        const nftCollection = await this.prismaService.nftCollection.findFirst({
+          where: {
+            eventId: item.nftCollection.event.id,
+          },
+        });
+
+        const foundUser = await this.prismaService.user.findUnique({
+          where: { id: userId },
+        });
+
+        if (!foundUser) {
+          throw new NotFoundException('Not found user!');
+        }
+
+        if (!nftCollection) {
+          throw new NotFoundException('NFT Collection Not Found');
+        }
 
         if (!userId) {
           throw new Error('Invalid user to mint');
         }
 
-        if (!userRawAddress) {
-          // this.logger.log('Require user connect wallet');
-          continue; 
+        // ignore mint nft on if user have not address
+        if (!userSolanaAddress) {
+          continue;
         }
 
         if (!nftCollectionAddress) {
           throw new Error('Invalid nft collection address');
         }
 
+        // convert attributes into right form
         const attributes = Object.entries(item.nftAttributes).map(
           ([key, value]) => value,
         );
-        const content_url = null;
-        const content_type = null;
 
         const nftMetadata: NftMetadata = {
           name,
           description,
           image: image,
           attributes,
-          content_url,
-          content_type,
         };
-     
 
-        await this.nftService.createNftItem(
+        // deploy nft and upload metadata to ipfs
+        const {transactionMintPublicKey,uri} = await this.nftSalanaService.mintAndTransferNFT(
           item.nftCollection.event.id,
           userId,
-          nftItemId,
           nftMetadata,
+          nftCollection,
+          foundUser,
         );
+
+        if (transactionMintPublicKey) {
+          await this.prismaService.nftItem.update({
+            where: {
+              id: nftItemId,
+            },
+            data: {
+              itemOwnerAddress: userSolanaAddress,
+              itemIndex: nftCollection.nextItemIndex++,
+              uri: uri,
+              user: {
+                connect: {
+                  id: userId,
+                },
+              },
+              nftCollection: {
+                connect: {
+                  id: collectionId,
+                },
+              },
+              statusOnChain: NFTCreationStatus.SUCCESS,
+              nftAddress: transactionMintPublicKey.toString(),
+              error: null
+            },
+          });
+        }
       }
-      this.logger.log('Mint NFT');
+      this.logger.log('[Cron-Job] Mint NFT');
     } catch (error) {
       // save error if failed
       if (nftItemId) {

@@ -146,146 +146,146 @@ export class NftService {
   }
 
   // create nft onchain + save in database
-  async createNftItem(
-    eventId: string,
-    userId: string,
-    nftItemId: string,
-    {
-      name,
-      description,
-      image,
-      attributes,
-      content_url,
-      content_type,
-    }: NftMetadata,
-  ) {
-    const adminWallet = await this.getAdminWallet();
+  // async createNftItem(
+  //   eventId: string,
+  //   userId: string,
+  //   nftItemId: string,
+  //   {
+  //     name,
+  //     description,
+  //     image,
+  //     attributes,
+  //     content_url,
+  //     content_type,
+  //   }: NftMetadata,
+  // ) {
+  //   const adminWallet = await this.getAdminWallet();
 
-    const nftCollection = await this.prisma.nftCollection.findFirst({
-      where: {
-        eventId: eventId,
-      },
-      select: {
-        id: true,
-        ownerAddress: true,
-        royaltyPercent: true,
-        royaltyAddress: true,
-        nextItemIndex: true,
-        collectionContentUrl: true,
-        commonContentUrl: true,
-        nftCollectionAddress: true,
-      },
-    });
+  //   const nftCollection = await this.prisma.nftCollection.findFirst({
+  //     where: {
+  //       eventId: eventId,
+  //     },
+  //     select: {
+  //       id: true,
+  //       ownerAddress: true,
+  //       royaltyPercent: true,
+  //       royaltyAddress: true,
+  //       nextItemIndex: true,
+  //       collectionContentUrl: true,
+  //       commonContentUrl: true,
+  //       nftCollectionAddress: true,
+  //     },
+  //   });
 
-    const foundUser = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+  //   const foundUser = await this.prisma.user.findUnique({
+  //     where: { id: userId },
+  //   });
 
-    if (!foundUser) {
-      throw new NotFoundException('Not found user!');
-    }
+  //   if (!foundUser) {
+  //     throw new NotFoundException('Not found user!');
+  //   }
 
-    if (!nftCollection) {
-      throw new NotFoundException('NFT Collection Not Found');
-    }
-    // Todo
-    if (!foundUser.tonRawAddress) {
-      throw new NotAcceptableException('User does not have ton address');
-    }
+  //   if (!nftCollection) {
+  //     throw new NotFoundException('NFT Collection Not Found');
+  //   }
+  //   // Todo
+  //   if (!foundUser.tonRawAddress) {
+  //     throw new NotAcceptableException('User does not have ton address');
+  //   }
 
-    const {
-      nftCollectionAddress,
-      id: collectionId,
-      ...nftCollectionData
-    } = nftCollection;
+  //   const {
+  //     nftCollectionAddress,
+  //     id: collectionId,
+  //     ...nftCollectionData
+  //   } = nftCollection;
 
-    const collection = new NftCollectionWrapper(nftCollectionAddress);
+  //   const collection = new NftCollectionWrapper(nftCollectionAddress);
 
-    let listItems: any;
-    let rpc = Number(process.env.MAINNET)
-      ? process.env.TON_API_MAINNET_RPC
-      : process.env.TON_API_TESTNET_RPC;
+  //   let listItems: any;
+  //   let rpc = Number(process.env.MAINNET)
+  //     ? process.env.TON_API_MAINNET_RPC
+  //     : process.env.TON_API_TESTNET_RPC;
 
-    try {
-      listItems = await axios.get(
-        `${rpc}/nfts/collections/${collection.address}/items`,
-      );
-    } catch (error) {
-      throw new InternalServerErrorException("Can't get items from collection");
-    }
+  //   try {
+  //     listItems = await axios.get(
+  //       `${rpc}/nfts/collections/${collection.address}/items`,
+  //     );
+  //   } catch (error) {
+  //     throw new InternalServerErrorException("Can't get items from collection");
+  //   }
 
-    const itemIndex = listItems?.data?.nft_items?.length;
+  //   const itemIndex = listItems?.data?.nft_items?.length;
 
-    const itemMetadata = createNftMetadata({
-      name: `${name} #${itemIndex}`,
-      description,
-      image: image,
-      attributes,
-      content_url,
-      content_type,
-    });
+  //   const itemMetadata = createNftMetadata({
+  //     name: `${name} #${itemIndex}`,
+  //     description,
+  //     image: image,
+  //     attributes,
+  //     content_url,
+  //     content_type,
+  //   });
 
-    const { IpfsHash } = await this.ipfsService.uploadJsonToIpfs(itemMetadata, {
-      pinataMetadata: { name: `${name} #${itemIndex}` },
-    });
+  //   const { IpfsHash } = await this.ipfsService.uploadJsonToIpfs(itemMetadata, {
+  //     pinataMetadata: { name: `${name} #${itemIndex}` },
+  //   });
 
-    if (!IpfsHash) {
-      throw new Error('Invalid ipfs link');
-    }
+  //   if (!IpfsHash) {
+  //     throw new Error('Invalid ipfs link');
+  //   }
 
-    const amount = `${process.env.VALUE_WHEN_CREATE_NFT}`;
+  //   const amount = `${process.env.VALUE_WHEN_CREATE_NFT}`;
 
-    const mintParams = {
-      queryId: itemIndex,
-      itemOwnerAddress: Address.parseRaw(foundUser.tonRawAddress),
-      itemIndex: itemIndex,
-      amount: toNano(amount),
-      commonContentUrl: `ipfs://${IpfsHash}`,
-      uuid: uuidv4(),
-    };
+  //   const mintParams = {
+  //     queryId: itemIndex,
+  //     itemOwnerAddress: Address.parseRaw(foundUser.tonRawAddress),
+  //     itemIndex: itemIndex,
+  //     amount: toNano(amount),
+  //     commonContentUrl: `ipfs://${IpfsHash}`,
+  //     uuid: uuidv4(),
+  //   };
 
-    const nftItem = new NftItem(collection);
+  //   const nftItem = new NftItem(collection);
 
-    const seqno = await nftItem.deploy(adminWallet, mintParams);
-    const isSuccess = await waitSeqno(seqno, adminWallet);
+  //   const seqno = await nftItem.deploy(adminWallet, mintParams);
+  //   const isSuccess = await waitSeqno(seqno, adminWallet);
 
-    const nftAddress = await nftItem.getAddressByIndex(
-      Address.parse(nftCollectionAddress),
-      itemIndex,
-    );
+  //   const nftAddress = await nftItem.getAddressByIndex(
+  //     Address.parse(nftCollectionAddress),
+  //     itemIndex,
+  //   );
 
-    if (isSuccess) {
-      await this.prisma.nftItem.update({
-        where: {
-          id: nftItemId,
-        },
-        data: {
-          itemOwnerAddress: foundUser.tonRawAddress,
-          queryId: mintParams.queryId,
-          itemIndex: mintParams.itemIndex,
-          amount: mintParams.amount.toString(),
-          commonContentUrl: mintParams.commonContentUrl,
-          user: {
-            connect: {
-              id: userId,
-            },
-          },
-          nftCollection: {
-            connect: {
-              id: collectionId,
-            },
-          },
-          statusOnChain: NFTCreationStatus.SUCCESS,
-          nftAddress: nftAddress.toString(),
-        },
-      });
-    }
+  //   if (isSuccess) {
+  //     await this.prisma.nftItem.update({
+  //       where: {
+  //         id: nftItemId,
+  //       },
+  //       data: {
+  //         itemOwnerAddress: foundUser.tonRawAddress,
+  //         queryId: mintParams.queryId,
+  //         itemIndex: mintParams.itemIndex,
+  //         amount: mintParams.amount.toString(),
+  //         commonContentUrl: mintParams.commonContentUrl,
+  //         user: {
+  //           connect: {
+  //             id: userId,
+  //           },
+  //         },
+  //         nftCollection: {
+  //           connect: {
+  //             id: collectionId,
+  //           },
+  //         },
+  //         statusOnChain: NFTCreationStatus.SUCCESS,
+  //         nftAddress: nftAddress.toString(),
+  //       },
+  //     });
+  //   }
 
-    return {
-      collectionAddress: collection.address.toString(),
-      tokenId: itemIndex,
-    };
-  }
+  //   return {
+  //     collectionAddress: collection.address.toString(),
+  //     tokenId: itemIndex,
+  //   };
+  // }
 
   async deleteCollection(collectionId: string) {
     return this.prisma.nftCollection.delete({ where: { id: collectionId } });
