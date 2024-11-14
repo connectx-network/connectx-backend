@@ -3,6 +3,7 @@ import { Gender } from '@prisma/client';
 import { IsEmail, IsEnum, IsNotEmpty } from 'class-validator';
 import { OptionalProperty } from '../../decorators/validator.decorator';
 import { BasePagingDto } from '../../types/base.type';
+import { IsInteger } from '../../decorators/validator.decorator';
 
 export enum UpdateUserInterestType {
   DELETE = 'DELETE',
@@ -111,4 +112,26 @@ export class FindUserDto extends BasePagingDto{
   @ApiProperty({required: true})
   @IsNotEmpty()
   query: string;
+}
+
+
+export class GetUserNFTsDto  {
+  @ApiProperty({
+    required: false,
+    description: 'Number of page',
+  })
+  @IsInteger
+  readonly page: number = 1;
+  @ApiProperty({
+    required: false,
+    description: 'Number of records per page',
+  })
+  @IsInteger
+  readonly size: number = 9;
+}
+
+
+export class GetUserNFTDto {
+  @ApiProperty({ description: 'NFT address' })
+  nftAddress: string;
 }

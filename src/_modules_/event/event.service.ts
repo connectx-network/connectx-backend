@@ -2134,53 +2134,6 @@ export class EventService {
     return { data, statistics };
   }
 
-  async getUserNfts(telegramId: string) {
-    const user = await this.userService.findUserByTelegramId(telegramId);
-
-    if (!user) {
-      throw new NotFoundException('Not Found User');
-    }
-
-    const listNft = await this.prisma.nftItem.findMany({
-      where: {
-        userId: user.id,
-      },
-      include: {
-        user: true,
-      },
-    });
-
-    return listNft.length > 0 ? listNft : [];
-  }
-
-  async getUserNft(telegramId: string, eventId: string) {
-    const user = await this.userService.findUserByTelegramId(telegramId);
-
-    if (!user) {
-      throw new NotFoundException('Not found User');
-    }
-
-    //  find the NFT collection by eventId
-    const nftCollection = await this.prisma.nftCollection.findFirst({
-      where: {
-        eventId: eventId,
-      },
-    });
-    if (!nftCollection) {
-      throw new NotFoundException(
-        `NFT collection associated with eventId ${eventId} not found`,
-      );
-    }
-
-    const nftItem = await this.prisma.nftItem.findFirst({
-      where: {
-        userId: user.id,
-        nftCollectionId: nftCollection.id,
-      },
-    });
-
-    return nftItem ?? null;
-  }
 
   async getInsignCity({
     eventId,

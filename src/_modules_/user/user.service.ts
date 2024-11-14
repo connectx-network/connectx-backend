@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -6,16 +7,20 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import {
   FindUserDto,
+  GetUserNFTDto,
+  GetUserNFTsDto,
   UpdateSettingDto,
   UpdateUserDto,
   UpdateUserInterestType,
 } from './user.dto';
-import {FileType, Prisma} from '@prisma/client';
+import { FileType, Prisma } from '@prisma/client';
 import { FileService } from '../file/file.service';
 import { Queues } from '../../types/queue.type';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
+import { NFTSolanaHelper } from 'src/helpers/solana-blockchain/nft';
+import { publicKey } from '@metaplex-foundation/umi';
 
 @Injectable()
 export class UserService {
@@ -42,14 +47,14 @@ export class UserService {
       isPrivateFeeds,
       linkedInUrl,
       twitterUrl,
-      customLinks
+      customLinks,
     } = updateUserDto;
 
     const user = await this.prisma.user.findUnique({
       where: { telegramId: `${telegramId}` },
       include: {
-        userCategories: true
-      }
+        userCategories: true,
+      },
     });
 
     if (!user) {
@@ -68,16 +73,16 @@ export class UserService {
     if (isPrivate === true) {
       updateUserPayload.isPrivate = true;
     } else if (isPrivate === false) {
-      updateUserPayload.isPrivate = false
+      updateUserPayload.isPrivate = false;
     }
 
     if (isPrivateFeeds === true) {
       updateUserPayload.isPrivateFeeds = true;
     } else if (isPrivateFeeds === false) {
-      updateUserPayload.isPrivateFeeds = false
+      updateUserPayload.isPrivateFeeds = false;
     }
 
-      if (shortId) {
+    if (shortId) {
       const shortIdUserFind = await this.prisma.user.findUnique({
         where: { shortId },
       });
@@ -117,18 +122,22 @@ export class UserService {
     if (customLinks) {
       updateUserPayload.userSocials = {
         createMany: {
-          data: customLinks.map(item => ({url: item}))
-        }
+          data: customLinks.map((item) => ({ url: item })),
+        },
       };
     }
 
     if (categories && categories.length > 0) {
-      const {userCategories} = user
-      const connectIds = categories.filter(item => !userCategories.find(i => i.categoryId === item))
-      const deleteIds = userCategories.filter(item => !categories.find(i => i === item.categoryId))
-      console.log('userCategories', userCategories)
-      console.log('connectIds', connectIds)
-      console.log('deleteIds', deleteIds)
+      const { userCategories } = user;
+      const connectIds = categories.filter(
+        (item) => !userCategories.find((i) => i.categoryId === item),
+      );
+      const deleteIds = userCategories.filter(
+        (item) => !categories.find((i) => i === item.categoryId),
+      );
+      console.log('userCategories', userCategories);
+      console.log('connectIds', connectIds);
+      console.log('deleteIds', deleteIds);
 
       updateUserPayload.userCategories.createMany = {
         data: connectIds.map((item) => ({ categoryId: item })),
@@ -143,13 +152,13 @@ export class UserService {
         where: {
           userId_cityId: {
             userId: user.id,
-            cityId
-          }
+            cityId,
+          },
         },
         create: {
-          cityId
-        }
-      }
+          cityId,
+        },
+      };
     }
 
     await this.prisma.user.update({
@@ -251,40 +260,40 @@ export class UserService {
   async findForTelegram(telegramId: string, findUserDto: FindUserDto) {
     const currentUser = await this.prisma.user.findUnique({
       where: {
-        telegramId
-      }
-    })
+        telegramId,
+      },
+    });
 
     if (!currentUser) {
       throw new NotFoundException('Not found current user!');
     }
 
-    const {query, size, page} = findUserDto
+    const { query, size, page } = findUserDto;
 
     const skip = (page - 1) * size;
 
-    const filter : Prisma.UserWhereInput = {
-      isDeleted: false
-    }
+    const filter: Prisma.UserWhereInput = {
+      isDeleted: false,
+    };
 
     if (query) {
       filter.OR = [
         {
           fullName: {
             contains: query,
-            mode: 'insensitive'
-          }
+            mode: 'insensitive',
+          },
         },
         {
           telegramUsername: {
             contains: query,
-            mode: 'insensitive'
-          }
-        }
-      ]
+            mode: 'insensitive',
+          },
+        },
+      ];
     }
 
-    const [users, count] = await  Promise.all([
+    const [users, count] = await Promise.all([
       this.prisma.user.findMany({
         where: filter,
         take: size,
@@ -292,50 +301,54 @@ export class UserService {
         include: {
           followers: {
             where: {
-              userId: currentUser.id
-            }
+              userId: currentUser.id,
+            },
           },
           following: {
             where: {
-              targetId: currentUser.id
-            }
+              targetId: currentUser.id,
+            },
           },
           _count: {
             select: {
               followers: true,
-              following: true
-            }
-          }
-        }
+              following: true,
+            },
+          },
+        },
       }),
       this.prisma.user.count({
-        where: filter
-      })
-    ])
+        where: filter,
+      }),
+    ]);
 
-    const data = users.map(item => {
-      const newItem = {...item}
-      const isFollowing = !!item.followers.find(i => i.userId === currentUser.id);
-      const isFollower = !!item.following.find(i => i.targetId === currentUser.id);
+    const data = users.map((item) => {
+      const newItem = { ...item };
+      const isFollowing = !!item.followers.find(
+        (i) => i.userId === currentUser.id,
+      );
+      const isFollower = !!item.following.find(
+        (i) => i.targetId === currentUser.id,
+      );
 
-      delete newItem.following
-      delete newItem.followers
+      delete newItem.following;
+      delete newItem.followers;
 
-      return {...newItem, isFollowing, isFollower}
-    })
+      return { ...newItem, isFollowing, isFollower };
+    });
 
     return {
       ...getDefaultPaginationReponse(findUserDto, count),
-      data
-    }
+      data,
+    };
   }
 
-  async findOneForTelegram(telegramId: string,userId: string) {
+  async findOneForTelegram(telegramId: string, userId: string) {
     const currentUser = await this.prisma.user.findUnique({
       where: {
-        telegramId
-      }
-    })
+        telegramId,
+      },
+    });
 
     if (!currentUser) {
       throw new NotFoundException('Not found current user!');
@@ -351,15 +364,15 @@ export class UserService {
         },
         followers: {
           where: {
-            userId: currentUser.id
-          }
+            userId: currentUser.id,
+          },
         },
         following: {
           where: {
-            targetId: currentUser.id
-          }
+            targetId: currentUser.id,
+          },
         },
-        userSocials: true
+        userSocials: true,
       },
     });
     if (!user) {
@@ -369,7 +382,7 @@ export class UserService {
     const [followers, following] = await Promise.all([
       this.prisma.userConnection.count({
         where: {
-          targetId: userId
+          targetId: userId,
         },
       }),
       this.prisma.userConnection.count({
@@ -378,9 +391,13 @@ export class UserService {
         },
       }),
     ]);
-    const isFollowing = !!user.followers.find(i => i.userId === currentUser.id);
-    const isFollower = !!user.following.find(i => i.targetId === currentUser.id);
-    return { ...user, following, followers, isFollowing, isFollower};
+    const isFollowing = !!user.followers.find(
+      (i) => i.userId === currentUser.id,
+    );
+    const isFollower = !!user.following.find(
+      (i) => i.targetId === currentUser.id,
+    );
+    return { ...user, following, followers, isFollowing, isFollower };
   }
 
   async updateSetting(telegramId: number, updateSettingDto: UpdateSettingDto) {
@@ -419,9 +436,108 @@ export class UserService {
   async findUserByTelegramId(telegramId: string) {
     return this.prisma.user.findUnique({
       where: {
-        telegramId
-      }
-    })
+        telegramId,
+      },
+    });
+  }
+
+  // Get list user nft 
+  async getUserNfts(telegramId: number, getUserNFTsDto: GetUserNFTsDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId: `${telegramId}` },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    // pagination
+    const { size, page } = getUserNFTsDto;
+    const skip = (page - 1) * size;
+
+    if (!user?.solanaAddress) {
+      return [];
+    }
+
+    const solanaAddres = user.solanaAddress;
+
+    const nftServiceHelper = new NFTSolanaHelper();
+
+    // get list nft belong user by userAddress
+    let userNfts = await nftServiceHelper.getUserNfts(
+      publicKey(solanaAddres),
+    );
+
+    // pagination manually
+    userNfts = userNfts.slice(skip, skip + size); 
+    let res = [];
+    
+    for (let userNft of userNfts) {
+      const event = await this.prisma.nftCollection.findFirst({
+        where: {
+          nftCollectionAddress: userNft.nftCollectionAddress,
+        },
+        select: {
+          event: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+            },
+          },
+        },
+      });
+
+      res.push({ ...event, nft: userNft });
+    }
+    return {res, metadata: getDefaultPaginationReponse(getUserNFTsDto,res.length)};
+  }
+
+  // Get user nft
+  async getUserNft(telegramId: number, nftAddress: GetUserNFTDto) {
+    const nft = nftAddress.nftAddress;
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId: `${telegramId}` },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    if (!user?.solanaAddress) {
+      return [];
+    }
+
+    const solanaAddres = user.solanaAddress;
+
+    const nftServiceHelper = new NFTSolanaHelper();
+
+    // get user nft through ownerAddress and nft Address
+    const userNft = await nftServiceHelper.getUserNft(
+      publicKey(solanaAddres),
+      nft,
+    );
+
+    if (!userNft?.nftCollectionAddress) {
+      throw new BadRequestException('Can not found collection address');
+    }
+
+    const event = await this.prisma.nftCollection.findFirst({
+      where: {
+        nftCollectionAddress: userNft.nftCollectionAddress,
+      },
+      select: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+          },
+        },
+      },
+    });
+
+    return { ...event, nft: userNft };
   }
 
   // async createMany(emails: string[]) {
