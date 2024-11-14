@@ -9,6 +9,16 @@
         "NODE_ENV": "prod",
         "PORT": 8080
       }
+    }, 
+    {
+      "name": "connectx-cron-job",
+      "script": "dist/cron-job.js",
+      "instances": 1,
+      "exec_mode": "cluster",
+      "env": {
+        "NODE_ENV": "prod",
+        "PORT": 8080
+      }
     }
   ]
 }

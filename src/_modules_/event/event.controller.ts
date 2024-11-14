@@ -165,6 +165,7 @@ export class EventController {
   }
 
   @Post('/join')
+  @ApiOperation({summary: 'Allow user registers event, reject or accept an invitation event'})
   @UseGuards(TelegramMiniAppGuard)
   @ApiBearerAuth()
   async join(
@@ -269,9 +270,4 @@ export class EventController {
   async getInsight(@Body() getEventInsightDto: GetEventInsightDto) {
     return this.eventService.getInsights(getEventInsightDto);
   }
-
-  
-  
-
-
 }
