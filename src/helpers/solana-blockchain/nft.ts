@@ -6,6 +6,7 @@ import {
 import {
   TokenStandard,
   createNft,
+  fetchAllDigitalAssetWithTokenByOwner,
   fetchDigitalAsset,
   transferV1,
 } from '@metaplex-foundation/mpl-token-metadata';
@@ -18,10 +19,13 @@ import {
   PublicKey,
   Umi,
   Keypair,
+  publicKey,
 } from '@metaplex-foundation/umi';
 import { Logger } from '@nestjs/common';
 
 import pkg from 'bs58';
+import { clusterApiUrl } from '@solana/web3.js';
+import { GetUserNFTDto } from 'src/_modules_/user/user.dto';
 
 export class NFTSolanaHelper {
   public umi: Umi;
@@ -115,6 +119,93 @@ export class NFTSolanaHelper {
       this.logger.error(error);
     }
   }
+
+  // get list nft belong user by userAddress
+  async getUserNfts(userAddress: PublicKey) {
+    try {
+      const networkType =
+      Number(process.env.MAINNET) > 0
+        ? 'mainnet-beta'
+        : 'devnet';
+
+      // Create a UMI instance
+      const umi = createUmi(clusterApiUrl(`${networkType}`));
+   
+      // The owner's public key
+      const ownerPublicKey = userAddress; 
+      
+      // fetch nft from owner address
+      const allNFTs = await fetchAllDigitalAssetWithTokenByOwner(
+        umi,
+        ownerPublicKey,
+      );
+      
+      let res = [];
+
+      for(let nft of allNFTs) {
+        // get collection address
+          const collectionAddress = nft.metadata.collection['value'].key; 
+
+          res.push({
+            name: nft.metadata.name, 
+            symbol: nft.metadata.symbol,
+            nftAddress: nft.publicKey, 
+            uri: nft.metadata.uri, 
+            nftCollectionAddress: collectionAddress
+          }); 
+
+        }
+        
+      return res; 
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  // get nft information detail by userAddress and nftAddress
+  async getUserNft(userAddress: PublicKey, nftAddress: string) {
+    try {
+      const networkType =
+      Number(process.env.MAINNET) > 0
+        ? 'mainnet-beta'
+        : 'devnet';
+
+      // Create a UMI instance
+      const umi = createUmi(clusterApiUrl(`${networkType}`));
+   
+      // The owner's public key
+      const ownerPublicKey = userAddress; 
+      
+      // fetch nft belong user by userAddress
+      const allNFTs = await fetchAllDigitalAssetWithTokenByOwner(
+        umi,
+        ownerPublicKey,
+      );
+      
+      let userNft = null; 
+      for(let nft of allNFTs) {
+
+        if(nft.publicKey.toString() == nftAddress) {
+          const collectionAddress = nft.metadata.collection['value'].key; 
+
+          userNft =  {
+            name: nft.metadata.name, 
+            symbol: nft.metadata.symbol,
+            nftAddress: nft.publicKey, 
+            uri: nft.metadata.uri, 
+            nftCollectionAddress: collectionAddress
+          }; 
+
+          break; 
+        }
+      }
+     
+      return userNft; 
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
 
   private getRPC() {
     const rpc =

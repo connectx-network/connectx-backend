@@ -40,21 +40,6 @@ export class EventController {
     return this.eventService.create(telegramId, createEventDto);
   }
 
-  @Get('/user-nfts')
-  @UseGuards(TelegramMiniAppGuard)
-  @ApiOperation({ summary: 'Get nft belong user' })
-  @ApiBearerAuth()
-  async getUserNfts(@TmaUser('id') telegramId: number) {
-    return this.eventService.getUserNfts(`${telegramId}`);
-  }
-  
-  @Get('/user-nft/:eventId')
-  @UseGuards(TelegramMiniAppGuard)
-  @ApiOperation({ summary: 'Get nft belong user in specific event' })
-  @ApiBearerAuth()
-  async getUserNft(@TmaUser('id') telegramId: number, @Param('eventId') eventId: string) {
-    return this.eventService.getUserNft(`${telegramId}`,eventId);
-  }
   
   @Get('/created')
   @UseGuards(TelegramMiniAppGuard)

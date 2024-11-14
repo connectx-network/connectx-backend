@@ -11,13 +11,13 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../decorators/role.decorator';
 import { TmaUser } from '../../decorators/tmaUser.decorator';
 import { TelegramMiniAppGuard } from '../../guards/tma.guard';
 import { UserTransformInterceptor } from '../../interceptors/user.interceptor';
 import { Role } from '../../types/auth.type';
-import { FindUserDto, UpdateAvatarDto, UpdateSettingDto, UpdateUserDto } from './user.dto';
+import { FindUserDto, GetUserNFTDto, GetUserNFTsDto, UpdateAvatarDto, UpdateSettingDto, UpdateUserDto } from './user.dto';
 import { UserService } from './user.service';
 
 @Controller('user')
@@ -60,6 +60,22 @@ export class UserController {
   @ApiBearerAuth()
   async findForTelegram(@TmaUser('id') telegramId: number, @Query() findUserDto: FindUserDto) {
     return this.userService.findForTelegram(`${telegramId}`, findUserDto);
+  }
+
+  @Get('/list-nft')
+  @ApiOperation({summary: 'Get list nft belong user'})
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async getUserNfts(@TmaUser('id') telegramId: number, @Query() getUserNFTsDto: GetUserNFTsDto) {
+    return this.userService.getUserNfts(telegramId,getUserNFTsDto );
+  }
+
+  @Get('/nft/:nftAddress')
+  @ApiOperation({summary: 'Get nft belong user'})
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async getUserNft(@TmaUser('id') telegramId: number, @Query() nftAddress: GetUserNFTDto) {
+    return this.userService.getUserNft(telegramId, nftAddress);
   }
 
   @Get('/:id')
