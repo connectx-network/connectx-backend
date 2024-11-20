@@ -35,7 +35,7 @@ export class NFTSolanaHelper {
   private readonly logger = new Logger(NFTSolanaHelper.name);
 
   constructor() {
-    const hexPrivateKey = process.env.ADMIN_PRIVATE_KEY_SOLANA;
+    const hexPrivateKey = process.env.ADMIN_PRIVATE_KEY_SOLANA_NFT;
     const { decode } = pkg;
     const decoded = decode(hexPrivateKey);
 

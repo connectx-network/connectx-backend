@@ -50,9 +50,9 @@ import { MailJob, Queues } from '../../types/queue.type';
 import { UserService } from '../user/user.service';
 import * as ExcelJS from 'exceljs';
 import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
-import { NftService } from '../nft/nft-ton.service';
 import DurationConstructor = moment.unitOfTime.DurationConstructor;
 import { NftSolanaService } from '../nft/nft-solana.service';
+import { RoyaltySolanaTokenService } from '../royalty-token-solana/royalty-token-solana.service';
 
 @Injectable()
 export class EventService {
@@ -64,8 +64,8 @@ export class EventService {
     private readonly userService: UserService,
     private readonly telegramBotService: TelegramBotService,
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
-    private readonly nftService: NftService,
     private readonly nftSolanaService: NftSolanaService,
+    private readonly royaltySolanaTokenService: RoyaltySolanaTokenService,
   ) {}
 
   async create(telegramId: number, createEventDto: CreateEventDto) {
@@ -1024,7 +1024,18 @@ export class EventService {
       }
 
       // create nft off chain save in database
-      await this.createNftSolanaOffchain(event, event.eventAssets, user);
+      const createNftSolanaOffchainRecord = await this.createNftSolanaOffchain(event, event.eventAssets, user);
+
+      if(!createNftSolanaOffchainRecord) {
+        throw new BadRequestException('Can not create nft')
+      }
+
+      // create royalty token off chain save in database 
+      const createRoyaltyLogTokenOffChainRecord =  await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(user.id);
+
+      if(!createRoyaltyLogTokenOffChainRecord) {
+        throw new BadRequestException('Can not create nft')
+      }
     } else {
       if (!joinedUser) {
         throw new ConflictException('You have not been invited to this event!');
@@ -1042,9 +1053,21 @@ export class EventService {
         },
       });
 
+      // create nft + royalty token offchain if user register
       if (updateStatus == JoinedEventUserStatus.REGISTERED) {
-        // create nft off chain save in database
-        await this.createNftSolanaOffchain(event, event.eventAssets, user);
+          // create nft off chain save in database
+      const createNftSolanaOffchainRecord = await this.createNftSolanaOffchain(event, event.eventAssets, user);
+
+      if(!createNftSolanaOffchainRecord) {
+        throw new BadRequestException('Can not create nft')
+      }
+
+      // create royalty token off chain save in database 
+      const createRoyaltyLogTokenOffChainRecord =  await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(user.id);
+
+      if(!createRoyaltyLogTokenOffChainRecord) {
+        throw new BadRequestException('Can not create nft')
+      }
       }
     }
 
@@ -2193,5 +2216,7 @@ export class EventService {
     if (!createNFTOffChain) {
       throw new BadRequestException('Can not mint NFT');
     }
+
+    return createNFTOffChain; 
   }
 }

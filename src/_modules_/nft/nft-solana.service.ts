@@ -218,7 +218,7 @@ export class NftSolanaService {
 
   // Private functions
   public async getAdminAddress(): Promise<string> {
-    const adminSolanaPublicKey = process.env.ADMIN_PUBLIC_KEY_SOLANA;
+    const adminSolanaPublicKey = process.env.ADMIN_PUBLIC_KEY_SOLANA_NFT;
     if (!adminSolanaPublicKey.length) {
       throw new Error('Invalid public key admin in Solana');
     }

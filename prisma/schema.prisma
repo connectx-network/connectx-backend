@@ -11,51 +11,52 @@ datasource db {
 }
 
 model User {
-  id                    String                 @id @unique @default(uuid())
-  email                 String?                @unique
-  password              String?
-  telegramId            String                 @unique @map("telegram_id")
-  telegramUsername      String?                @map("telegram_username")
-  fullName              String                 @map("full_name")
-  shortId               String?                @unique @map("short_id")
-  nickname              String?
+  id                     String                  @id @unique @default(uuid())
+  email                  String?                 @unique
+  password               String?
+  telegramId             String                  @unique @map("telegram_id")
+  telegramUsername       String?                 @map("telegram_username")
+  fullName               String                  @map("full_name")
+  shortId                String?                 @unique @map("short_id")
+  nickname               String?
   // Raw ton address
-  tonRawAddress         String?                @map("ton_raw_address")
+  tonRawAddress          String?                 @map("ton_raw_address")
   // Solana adress
-  solanaAddress         String?                 @map("solana_address")
-  description           String?
-  phoneNumber           String?                @map("phone_number")
-  company               String?
-  jobTitle              String?                @map("job_title")
-  gender                Gender?
-  address               String?
-  avatarUrl             String?                @map("avatar_url")
-  linkedInUrl           String?                @map("link_in_url")
-  twitterUrl            String?                @map("twitter_url")
-  companyUrl            String?                @map("company_url")
-  isPrivate             Boolean                @default(false) @map("is_private")
-  isPrivateFeeds        Boolean                @default(false) @map("is_private_feeds")
-  isDeleted             Boolean                @default(false) @map("is_deleted")
-  activated             Boolean                @default(false)
-  userRole              UserRole               @default(USER)
-  userCategories        UserCategory[]
-  userImages            UserImage[]
-  following             UserConnection[]       @relation("user-to-target")
-  followers             UserConnection[]       @relation("target-to-user")
-  joinedEventUsers      JoinedEventUser[]
-  userVerification      UserVerification?
-  userTokens            UserToken[]
-  sentNotifications     Notification[]         @relation("SenderToReceiver")
-  receivedNotifications Notification[]         @relation("ReceiverToSender")
-  joinedEventPhaseUsers JoinedEventPhaseUser[]
-  events                Event[]
-  eventHosts            EventHost[]
-  userCities            UserCity[]
-  userEventFavorites    UserEventFavorite[]
-  userSocials           UserSocial[]
-  eventFeedbacks        EventFeedback[]
-  eventViews            EventView[]
-  nftItems              NftItem[]
+  solanaAddress          String?                 @map("solana_address")
+  description            String?
+  phoneNumber            String?                 @map("phone_number")
+  company                String?
+  jobTitle               String?                 @map("job_title")
+  gender                 Gender?
+  address                String?
+  avatarUrl              String?                 @map("avatar_url")
+  linkedInUrl            String?                 @map("link_in_url")
+  twitterUrl             String?                 @map("twitter_url")
+  companyUrl             String?                 @map("company_url")
+  isPrivate              Boolean                 @default(false) @map("is_private")
+  isPrivateFeeds         Boolean                 @default(false) @map("is_private_feeds")
+  isDeleted              Boolean                 @default(false) @map("is_deleted")
+  activated              Boolean                 @default(false)
+  userRole               UserRole                @default(USER)
+  userCategories         UserCategory[]
+  userImages             UserImage[]
+  following              UserConnection[]        @relation("user-to-target")
+  followers              UserConnection[]        @relation("target-to-user")
+  joinedEventUsers       JoinedEventUser[]
+  userVerification       UserVerification?
+  userTokens             UserToken[]
+  sentNotifications      Notification[]          @relation("SenderToReceiver")
+  receivedNotifications  Notification[]          @relation("ReceiverToSender")
+  joinedEventPhaseUsers  JoinedEventPhaseUser[]
+  events                 Event[]
+  eventHosts             EventHost[]
+  userCities             UserCity[]
+  userEventFavorites     UserEventFavorite[]
+  userSocials            UserSocial[]
+  eventFeedbacks         EventFeedback[]
+  eventViews             EventView[]
+  nftItems               NftItem[]
+  royaltySolanaTokenLogs RoyaltySolanaTokenLog[]
 
   @@map("user")
 }
@@ -412,25 +413,28 @@ model ImageBucket {
 }
 
 model NftCollection {
-  id                   String   @id @unique @default(uuid())
+  id                   String                   @id @unique @default(uuid())
   name                 String
   description          String
   image                String?
-  coverImage           String?  @map("cover_image")
-  socialLinks          String[] @map("social_links")
-  nftCollectionAddress String?  @map("nft_collection_address")
+  coverImage           String?                  @map("cover_image")
+  socialLinks          String[]                 @map("social_links")
+  nftCollectionAddress String?                  @map("nft_collection_address")
   // use in case in Solana blockchain
-  ownerAddress         String?  @map("owner_address")
-  royaltyPercent       Int      @map("royalty_percent")
-  royaltyAddress       String?  @map("royalty_address")
-  nextItemIndex        Int?     @map("next_item_index")
-  collectionContentUrl String?  @map("collection_content_url")
-  commonContentUrl     String?  @map("common_content_url")
-  error                Json?    @map("error")
-  blockchainType       BlockchainType? @default(SOLANA) @map("blockchain_type") 
-  currentNFTIndex      Int? @default(0) @map("curent_nft_index")
-  nftItems      NftItem[]
-  statusOnChain CollectionCreationStatus @default(PENDING) @map("status_onchain")
+  ownerAddress         String?                  @map("owner_address")
+  royaltyPercent       Int                      @map("royalty_percent")
+  royaltyAddress       String?                  @map("royalty_address")
+  nextItemIndex        Int?                     @map("next_item_index")
+  collectionContentUrl String?                  @map("collection_content_url")
+  commonContentUrl     String?                  @map("common_content_url")
+  error                Json?                    @map("error")
+  blockchainType       BlockchainType?          @default(SOLANA) @map("blockchain_type")
+  currentNFTIndex      Int?                     @default(0) @map("curent_nft_index")
+  nftItems             NftItem[]
+  statusOnChain        CollectionCreationStatus @default(PENDING) @map("status_onchain")
+
+    createdAt DateTime? @default(now()) @map("created_at") 
+  updatedAt  DateTime? @map("updated_at")
 
   eventId String? @unique @map("event_id")
   event   Event?  @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -442,7 +446,7 @@ model NftItem {
   id               String            @id @unique @default(uuid())
   itemOwnerAddress String?           @map("item_owner_address")
   itemIndex        Int?              @map("item_index")
-  uri String?           @map("uri")
+  uri              String?           @map("uri")
   statusOnChain    NFTCreationStatus @default(PENDING) @map("status_onchain")
   nftName          String?           @map("nft_name")
   nftDescription   String?           @map("nft_description")
@@ -451,6 +455,9 @@ model NftItem {
   nftAddress       String?           @map("nft_address")
   error            Json?             @map("error")
 
+    createdAt DateTime? @default(now()) @map("created_at") 
+  updatedAt  DateTime? @map("updated_at")
+
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -458,6 +465,23 @@ model NftItem {
   nftCollection   NftCollection @relation(fields: [nftCollectionId], references: [id], onDelete: Cascade)
 
   @@map("nft_item")
+}
+
+model RoyaltySolanaTokenLog {
+  id                  String             @id @unique @default(uuid())
+  ownerAddress        String?            @map("item_owner_address")
+  tokenAccountAddress String?            @map("token_account_address")
+  statusOnChain       RoyaltyTokenStatus @default(PENDING) @map("status_onchain")
+  amount              Decimal?            @map("amount")
+  error               Json?              @map("error")
+
+  createdAt DateTime? @default(now()) @map("created_at") 
+  updatedAt  DateTime? @map("updated_at")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("royalty_solana_token_log")
 }
 
 enum Gender {
@@ -541,6 +565,13 @@ enum CollectionCreationStatus {
 
 // Represent for status mint nft in blockchain
 enum NFTCreationStatus {
+  SUCCESS
+  PENDING
+  FAILED
+}
+
+// Represent for status mint nft in blockchain
+enum RoyaltyTokenStatus {
   SUCCESS
   PENDING
   FAILED
