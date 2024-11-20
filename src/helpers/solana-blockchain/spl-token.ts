@@ -1,16 +1,10 @@
-import * as fs from 'fs';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { mplCandyMachine } from '@metaplex-foundation/mpl-candy-machine';
 import {
-  Collection,
   TokenStandard,
   createAndMint,
-  createNft,
-  fetchDigitalAsset,
-  transferV1,
 } from '@metaplex-foundation/mpl-token-metadata';
 import {
-  createSignerFromKeypair,
   generateSigner,
   keypairIdentity,
   KeypairSigner,
@@ -18,9 +12,7 @@ import {
   // PublicKey,
   Umi,
   Keypair,
-  publicKey,
 } from '@metaplex-foundation/umi';
-import { Metadata } from '@metaplex-foundation/mpl-token-metadata';
 import { Logger } from '@nestjs/common';
 import { getAssociatedTokenAddress, getAccount } from '@solana/spl-token';
 import pkg from 'bs58';
@@ -111,8 +103,6 @@ export class SPLTokenMetaplex {
   }
 
   private getRPC() {
-    // MAINNET_SOLANA_RPC=https://api.mainnet-beta.solana.com
-    // TESTNET_SOLANA_RPC=https://api.devnet.solana.com
     const rpc =
       Number(process.env.MAINNET) > 0
         ? process.env.MAINNET_SOLANA_RPC
@@ -122,13 +112,19 @@ export class SPLTokenMetaplex {
 
   async getSplTokenBalance(
     walletAddress: string, // Wallet address of the user
-    tokenMintAddress: string, // Mint address of the SPL Token
   ): Promise<number> {
     try {
+      const tokenMintAddress = process.env.CONNECTX_ROYALTY_TOKEN_ADDRESS;
+  
+      if (!tokenMintAddress) {
+        throw new Error('Invalid token address');
+      }
+
       // Convert addresses to PublicKey format
       const walletPubKey = new PublicKey(walletAddress);
       const tokenMintPubKey = new PublicKey(tokenMintAddress);
 
+      
       // Find the associated token address
       const tokenAccountAddress = await getAssociatedTokenAddress(
         tokenMintPubKey,
@@ -150,7 +146,6 @@ export class SPLTokenMetaplex {
 
   // send royalty token 
   async sendTokens(receiverAddress: string, amount: number) {
-    try {
       if (!receiverAddress) {
         throw new Error('Invalid receiver address');
       }
@@ -160,13 +155,11 @@ export class SPLTokenMetaplex {
       }
   
       const DESTINATION_WALLET = receiverAddress;
-      // const MINT_ADDRESS = 'DQuv8MW5mgQn5TXfrSj2ikUy9oqq2pXMPoaL7nHjy1Re';
       const MINT_ADDRESS = process.env.CONNECTX_ROYALTY_TOKEN_ADDRESS;
   
       if (!MINT_ADDRESS) {
         throw new Error('Invalid token address');
       }
-  
       const TRANSFER_AMOUNT = amount;
   
       let sourceAccount = await getOrCreateAssociatedTokenAccount(
@@ -205,16 +198,7 @@ export class SPLTokenMetaplex {
         this.keypairWeb3Solana,
       ]);
   
-      console.log(
-        '\x1b[32m', //Green Text
-        `   Transaction Success!🎉`,
-        `\n    https://explorer.solana.com/tx/${signature}?cluster=devnet`,
-      );
-  
       return signature;
-    } catch(error) {
-        this.logger.error(error)
-    }
   }
 
   async getNumberDecimals(mintAddress: string): Promise<number> {
@@ -226,31 +210,4 @@ export class SPLTokenMetaplex {
     return result;
   }
 
-  async testENV() {
-    const MINT_ADDRESS = process.env.CONNECTX_ROYALTY_TOKEN_ADDRESS;
-    console.log('MINT_ADDRESS: ', MINT_ADDRESS);
-  }
-  // async getSPLTokenInfor(tokenAddress: string) {
-  //   try {
-  //     const mintPubKey = new PublicKey(tokenAddress);
-
-  //     // Fetch the metadata account address
-  //     const metadataAddress = await Metadata.getPDA(mintPubKey);
-
-  //     // Fetch metadata account information
-  //     const metadataAccount = await Metadata.load(connection, metadataAddress);
-
-  //     // Extract details from metadata
-  //     const { data } = metadataAccount;
-  //     const name = data.data.name; // Token name
-  //     const symbol = data.data.symbol; // Token symbol
-  //     const logoUri = data.data.uri; // Link to metadata JSON
-  //     const decimals = (await connection.getTokenSupply(mintPubKey)).value.decimals;
-
-  //     return { name, symbol, logoUri, decimals };
-  //   } catch (error) {
-  //     console.error('Error fetching token details:', error);
-  //     throw error;
-  //   }
-  // }
 }

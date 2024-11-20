@@ -1,7 +1,6 @@
 import {
   Injectable,
   Logger,
-  NotAcceptableException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -145,17 +144,16 @@ export class MintNFTCronJob {
     } catch (error) {
       // save error if failed
       if (nftItemId) {
-        await this.prismaService.nftItem.update({
+         await this.prismaService.nftItem.update({
           where: {
             id: nftItemId,
           },
           data: {
             statusOnChain: NFTCreationStatus.FAILED,
-            error: JSON.stringify(error),
+            error: error.message,
           },
         });
       }
-
       this.logger.error(error);
     }
   }

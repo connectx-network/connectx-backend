@@ -13,11 +13,10 @@ export class RoyaltySolanaTokenService {
   ) {
   }
 
-
   // send royalty token onchain by owner
   async sendRoyaltyOnchain(ownerAddress: string, amount: number) {
-    const sPLTokenMetaplex = new SPLTokenMetaplex(); 
-    return await sPLTokenMetaplex.sendTokens(ownerAddress, Number(amount))
+      const sPLTokenMetaplex = new SPLTokenMetaplex(); 
+      return await sPLTokenMetaplex.sendTokens(ownerAddress, Number(amount))
   }
 
   async createRoyaltyLogTokenOffChain(userId: string) {
