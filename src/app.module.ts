@@ -24,6 +24,7 @@ import { EventFeedbackModule } from './_modules_/event-feedback/event-feedback.m
 import { NftModule } from './_modules_/nft/nft.module';
 import { AuthTonModule } from './_modules_/auth-ton/auth-ton.module';
 import { AuthSolanaModule } from './_modules_/auth-solana/auth-solana.module';
+import { RoyaltySolanaTokenModule } from 'src/_modules_/royalty-token-solana/royalty-token-solana.module';
 
 @Module({
   imports: [
@@ -65,7 +66,8 @@ import { AuthSolanaModule } from './_modules_/auth-solana/auth-solana.module';
     EventFeedbackModule,
     NftModule, 
     AuthTonModule, 
-    AuthSolanaModule
+    AuthSolanaModule, 
+    RoyaltySolanaTokenModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -7,6 +7,7 @@ import { UserModule } from '../user/user.module';
 import { MailModule } from '../mail/mail.module';
 import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
 import { NftModule } from '../nft/nft.module';
+import { RoyaltySolanaTokenModule } from '../royalty-token-solana/royalty-token-solana.module';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { NftModule } from '../nft/nft.module';
       name: Queues.mail,
     }),
     MailModule,
-    NftModule
+    NftModule, 
+    RoyaltySolanaTokenModule
   ],
   controllers: [EventController],
   providers: [EventService, TelegramBotService],

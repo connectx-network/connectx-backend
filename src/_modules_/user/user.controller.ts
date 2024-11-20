@@ -78,6 +78,15 @@ export class UserController {
     return this.userService.getUserNft(telegramId, nftAddress);
   }
 
+
+  @Get('/solana/royalty-token-balance')
+  @ApiOperation({summary: 'Get user royalty token balance solana'})
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async getRoyalTokenBalanceSolana(@TmaUser('id') telegramId: number) {
+    return this.userService.getRoyalTokenBalanceSolana(telegramId);
+  }
+
   @Get('/:id')
   @UseInterceptors(UserTransformInterceptor)
   async findOne(@Param('id') userId: string) {

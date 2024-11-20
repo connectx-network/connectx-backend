@@ -540,6 +540,18 @@ export class UserService {
     return { ...event, nft: userNft };
   }
 
+  async getRoyalTokenBalanceSolana(telegramId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId: `${telegramId}` },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    return {royaltyTokenBalance: 100}
+  }
+
   // async createMany(emails: string[]) {
   //   return Promise.all(
   //     emails.map(async (email) => {
