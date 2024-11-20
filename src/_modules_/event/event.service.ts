@@ -1025,7 +1025,7 @@ export class EventService {
 
       // create nft off chain save in database
       const createNftSolanaOffchainRecord = await this.createNftSolanaOffchain(event, event.eventAssets, user);
-
+      
       if(!createNftSolanaOffchainRecord) {
         throw new BadRequestException('Can not create nft')
       }
@@ -1034,7 +1034,7 @@ export class EventService {
       const createRoyaltyLogTokenOffChainRecord =  await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(user.id);
 
       if(!createRoyaltyLogTokenOffChainRecord) {
-        throw new BadRequestException('Can not create nft')
+        throw new BadRequestException('Can not send royalty token')
       }
     } else {
       if (!joinedUser) {
@@ -1066,7 +1066,7 @@ export class EventService {
       const createRoyaltyLogTokenOffChainRecord =  await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(user.id);
 
       if(!createRoyaltyLogTokenOffChainRecord) {
-        throw new BadRequestException('Can not create nft')
+        throw new BadRequestException('Can not send royalty token')
       }
       }
     }

@@ -21,6 +21,7 @@ import { Queue } from 'bull';
 import { getDefaultPaginationReponse } from '../../utils/pagination.util';
 import { NFTSolanaHelper } from 'src/helpers/solana-blockchain/nft';
 import { publicKey } from '@metaplex-foundation/umi';
+import { SPLTokenMetaplex } from 'src/helpers/solana-blockchain/spl-token';
 
 @Injectable()
 export class UserService {
@@ -548,8 +549,12 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('Not found user!');
     }
+    
+    const splTokenInstance = new SPLTokenMetaplex(); 
 
-    return {royaltyTokenBalance: 100}
+    const balance = await splTokenInstance.getSplTokenBalance(user.solanaAddress); 
+
+    return {royaltyTokenBalance: balance/(Math.pow(10,9))}
   }
 
   // async createMany(emails: string[]) {

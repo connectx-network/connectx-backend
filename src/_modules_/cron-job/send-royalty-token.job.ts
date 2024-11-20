@@ -6,8 +6,8 @@ import { RoyaltySolanaTokenService } from 'src/_modules_/royalty-token-solana/ro
 
 // Send royalty token to user who join event
 @Injectable()
-export class SendNFTCronJob {
-  private readonly logger = new Logger(SendNFTCronJob.name);
+export class SendRoyaltyTokenCronJob {
+  private readonly logger = new Logger(SendRoyaltyTokenCronJob.name);
   constructor(
     private readonly prismaService: PrismaService,
     private readonly royaltySolanaTokenService: RoyaltySolanaTokenService,
@@ -19,7 +19,6 @@ export class SendNFTCronJob {
     let royalTokenSolanaItemId;
     
     try {
-      console.log('send royalty token job: ', process.env.ROYALTY_TOKEN_AMOUNT)
       // get list royalty token log  with status PENDING or FAILED
       const listRoyaltyToken =
         await this.prismaService.royaltySolanaTokenLog.findMany({
@@ -65,7 +64,7 @@ export class SendNFTCronJob {
         const tokenAccountAddress =
           await this.royaltySolanaTokenService.sendRoyaltyOnchain(
             userSolanaAddress,
-            Number(amount),
+            Number(amount)
           );
         
         // update royalty token solana log success
@@ -79,6 +78,7 @@ export class SendNFTCronJob {
         }
       }
       this.logger.log('[Cron-Job] Send royalty token');
+
     } catch (error) {
       // save error if failed
       if (royalTokenSolanaItemId) {
