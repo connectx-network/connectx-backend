@@ -139,8 +139,7 @@ export class SPLTokenMetaplex {
       // Return the balance (divide by 10^decimals to get the human-readable balance)
       return Number(tokenAccount.amount);
     } catch (error) {
-      this.logger.error('Error fetching token balance:', error);
-      throw error;
+      return 0; 
     }
   }
 
