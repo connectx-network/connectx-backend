@@ -552,7 +552,12 @@ export class UserService {
     
     const splTokenInstance = new SPLTokenMetaplex(); 
 
-    const balance = await splTokenInstance.getSplTokenBalance(user.solanaAddress); 
+    if(!user?.solanaAddress) {
+      return {royaltyTokenBalance: 0}
+    }
+    
+    const balance = await splTokenInstance.getSplTokenBalance(user?.solanaAddress); 
+
 
     return {royaltyTokenBalance: balance/(Math.pow(10,9))}
   }
