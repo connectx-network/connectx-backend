@@ -139,12 +139,12 @@ export class NFTSolanaHelper {
         umi,
         ownerPublicKey,
       );
-      
       let res = [];
 
       for(let nft of allNFTs) {
         // get collection address
-          const collectionAddress = nft.metadata.collection['value'].key; 
+        
+          const collectionAddress = nft.metadata.collection['value']?.key; 
 
           res.push({
             name: nft.metadata.name, 
@@ -155,7 +155,6 @@ export class NFTSolanaHelper {
           }); 
 
         }
-        
       return res; 
     } catch (error) {
       this.logger.error(error);
@@ -186,7 +185,7 @@ export class NFTSolanaHelper {
       for(let nft of allNFTs) {
 
         if(nft.publicKey.toString() == nftAddress) {
-          const collectionAddress = nft.metadata.collection['value'].key; 
+          const collectionAddress = nft.metadata.collection['value']?.key; 
 
           userNft =  {
             name: nft.metadata.name, 
