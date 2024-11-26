@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateRoyaltyTokenDto } from './dto/create-royalty-token.dto';
 import { UpdateRoyaltyTokenDto } from './dto/update-royalty-token.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { RoyaltyTokenStatus } from '@prisma/client';
+import { Event, RoyaltyTokenStatus } from '@prisma/client';
 import { SPLTokenMetaplex } from 'src/helpers/solana-blockchain/spl-token';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -19,11 +19,12 @@ export class RoyaltySolanaTokenService {
       return await sPLTokenMetaplex.sendTokens(ownerAddress, Number(amount))
   }
 
-  async createRoyaltyLogTokenOffChain(userId: string) {
+  async createRoyaltyLogTokenOffChain(event: Event,userId: string) {
     return await this.prisma.royaltySolanaTokenLog.create({
       data: {
         userId, 
-        statusOnChain: RoyaltyTokenStatus.PENDING
+        statusOnChain: RoyaltyTokenStatus.PENDING, 
+        eventName: event?.title
       }
     })
   }

@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SerialCron } from 'src/decorators/serial-cron.decorator';
 import { NFTCreationStatus, RoyaltyTokenStatus } from '@prisma/client';
 import { RoyaltySolanaTokenService } from 'src/_modules_/royalty-token-solana/royalty-token-solana.service';
+import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
 
 // Send royalty token to user who join event
 @Injectable()
@@ -11,6 +12,7 @@ export class SendRoyaltyTokenCronJob {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly royaltySolanaTokenService: RoyaltySolanaTokenService,
+    private readonly telegramBotService: TelegramBotService,
   ) {}
 
   @SerialCron(`${process.env.CRON_JOB_MINT_NFT_EXPRESSION}`)
@@ -40,6 +42,7 @@ export class SendRoyaltyTokenCronJob {
       for (let item of listRoyaltyToken) {
         royalTokenSolanaItemId = item.id;
         const userId = item?.user.id;
+        const telegramId = item?.user.telegramId;
         const userSolanaAddress = item?.user.solanaAddress;
         const amount = process.env.ROYALTY_TOKEN_AMOUNT;
 
@@ -59,6 +62,10 @@ export class SendRoyaltyTokenCronJob {
         if(!userId) {
           throw new Error('Invalid user id'); 
         }
+        
+        if(!telegramId) {
+          throw new Error('Invalid telegram id'); 
+        }
 
         // send royalty token to user who join event
         const tokenAccountAddress =
@@ -75,6 +82,16 @@ export class SendRoyaltyTokenCronJob {
             tokenAccountAddress,
             Number(amount),
           );
+
+          try {
+            // Send notification user receive nft via Telegram bot
+            await this.telegramBotService.sendMessage(
+              +telegramId,
+              `You have received ${process.env.ROYALTY_TOKEN_AMOUNT} tokens  for joining ${item.eventName} event! Please log in the ConnectX application to check the tokens!`
+            );
+          } catch (error) {
+            this.logger.error(error);
+          }
         }
       }
       this.logger.log('[Cron-Job] Send royalty token');

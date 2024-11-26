@@ -469,6 +469,7 @@ model NftItem {
 
 model RoyaltySolanaTokenLog {
   id                  String             @id @unique @default(uuid())
+  eventName           String?             @map("event_name")
   ownerAddress        String?            @map("item_owner_address")
   tokenAccountAddress String?            @map("token_account_address")
   statusOnChain       RoyaltyTokenStatus @default(PENDING) @map("status_onchain")

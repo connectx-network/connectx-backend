@@ -6,9 +6,10 @@ import { PrismaModule } from 'src/_modules_/prisma/prisma.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SendRoyaltyTokenCronJob } from './send-royalty-token.job';
 import { RoyaltySolanaTokenModule } from '../royalty-token-solana/royalty-token-solana.module';
+import { TelegramBotModule } from '../telegram-bot/telegram-bot.module';
 
 @Module({
-  imports: [NftModule, PrismaModule, ScheduleModule.forRoot(),RoyaltySolanaTokenModule],
+  imports: [NftModule, PrismaModule, ScheduleModule.forRoot(),RoyaltySolanaTokenModule, TelegramBotModule],
   providers: [MintNFTCronJob, CreateCollectionNFT, SendRoyaltyTokenCronJob ],
 })
 export class CronJobModule {}
