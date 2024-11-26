@@ -1031,7 +1031,7 @@ export class EventService {
       }
 
       // create royalty token off chain save in database 
-      const createRoyaltyLogTokenOffChainRecord =  await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(user.id);
+      const createRoyaltyLogTokenOffChainRecord =  await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(event, user.id);
 
       if(!createRoyaltyLogTokenOffChainRecord) {
         throw new BadRequestException('Can not send royalty token')
@@ -1063,7 +1063,7 @@ export class EventService {
       }
 
       // create royalty token off chain save in database 
-      const createRoyaltyLogTokenOffChainRecord =  await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(user.id);
+      const createRoyaltyLogTokenOffChainRecord =  await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(event, user.id);
 
       if(!createRoyaltyLogTokenOffChainRecord) {
         throw new BadRequestException('Can not send royalty token')

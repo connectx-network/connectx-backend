@@ -9,6 +9,7 @@ import { NFTCreationStatus } from '@prisma/client';
 import { NftService } from '../nft/nft-ton.service';
 import { NftMetadata } from 'src/helpers/ton-blockchain/nft.metadata';
 import { NftSolanaService } from '../nft/nft-solana.service';
+import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
 
 // Mint nft when user check-in in event
 @Injectable()
@@ -17,6 +18,7 @@ export class MintNFTCronJob {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly nftSalanaService: NftSolanaService,
+    private readonly telegramBotService: TelegramBotService,
   ) {}
 
   @SerialCron(`${process.env.CRON_JOB_MINT_NFT_EXPRESSION}`)
@@ -61,6 +63,7 @@ export class MintNFTCronJob {
         const image = item?.nftImage;
         const userSolanaAddress = item?.user.solanaAddress;
         const userId = item?.user.id;
+        const telegramId = item?.user.telegramId;
 
         const nftCollection = await this.prismaService.nftCollection.findFirst({
           where: {
@@ -82,6 +85,10 @@ export class MintNFTCronJob {
 
         if (!userId) {
           throw new Error('Invalid user to mint');
+        }
+
+        if(!telegramId) {
+          throw new Error('Invalid telegram id'); 
         }
 
         // ignore mint nft on if user have not address
@@ -138,6 +145,17 @@ export class MintNFTCronJob {
               error: null
             },
           });
+
+          try {
+            // Send notification user receive nft via Telegram bot
+            await this.telegramBotService.sendMessage(
+              +telegramId,
+              `You have received a unique NFT attendance badge for joining ${name} event! Please log in the ConnectX application to check the tokens and NFT!`
+            );
+          } catch (error) {
+            this.logger.error(error);
+          }
+      
         }
       }
       this.logger.log('[Cron-Job] Mint NFT');
