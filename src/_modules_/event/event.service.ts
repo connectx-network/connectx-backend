@@ -1638,7 +1638,7 @@ export class EventService {
         try {
           return this.telegramBotService.sendMessage(
             +target.telegramId,
-            `Hello ${target.fullName}!\nYou have invited to be guest of the event: ${event.title}!\n ${message} \nEvent detail: https://t.me/connectx_network_bot/app?startapp=inviteUser_${event.shortId}`,
+            `Hello ${target.fullName}!\nYou have been invited to be guest of the event: ${event.title}!\n ${message} \nEvent detail: https://t.me/connectx_network_bot/app?startapp=inviteUser_${event.shortId}`,
           );
         } catch (error) {
           console.log(error);
