@@ -488,9 +488,27 @@ export class UserService {
           },
         },
       });
+      
+      const nftCreatedTime = await this.prisma.nftItem.findFirst({
+        where: {
+          nftAddress: userNft.nftAddress
+        }, 
+        select: {
+          createdAt: true
+        }
+      })
 
-      res.push({ ...event, nft: userNft });
+      res.push({ ...event, nft: {...userNft, nftCreatedAt: nftCreatedTime?.createdAt} });
     }
+
+    // sort by createdAt field in desc
+   res.sort((a,b) =>  {
+      let aCreatedAt = isNaN(new Date(`${a.nft.nftCreatedAt}`).valueOf()) ? 0 : new Date(`${a.nft.nftCreatedAt}`).valueOf(); 
+      let bCreatedAt = isNaN(new Date(`${b.nft.nftCreatedAt}`).valueOf()) ? 0 : new Date(`${b.nft.nftCreatedAt}`).valueOf(); 
+      return bCreatedAt - aCreatedAt;
+   }
+  ); 
+
     return {res, metadata: getDefaultPaginationReponse(getUserNFTsDto,res.length)};
   }
 
