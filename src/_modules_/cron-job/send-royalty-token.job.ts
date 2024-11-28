@@ -87,7 +87,7 @@ export class SendRoyaltyTokenCronJob {
             // Send notification user receive nft via Telegram bot
             await this.telegramBotService.sendMessage(
               +telegramId,
-              `You have received ${process.env.ROYALTY_TOKEN_AMOUNT} tokens  for joining ${item.eventName} event! Please log in the ConnectX application to check the tokens!`
+              `You have received ${process.env.ROYALTY_TOKEN_AMOUNT} points for joining ${item.eventName} event! Please log in the ConnectX application to check the tokens!`
             );
           } catch (error) {
             this.logger.error(error);

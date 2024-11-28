@@ -150,7 +150,7 @@ export class MintNFTCronJob {
             // Send notification user receive nft via Telegram bot
             await this.telegramBotService.sendMessage(
               +telegramId,
-              `You have received a unique NFT attendance badge for joining ${name} event! Please log in the ConnectX application to check the tokens and NFT!`
+              `You have received a unique NFT attendance badge for joining ${name} event! Please log in the ConnectX application to check the points and NFT!`
             );
           } catch (error) {
             this.logger.error(error);
