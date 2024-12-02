@@ -184,9 +184,9 @@ export class NftSolanaService {
       throw new NotFoundException('Not found user!');
     }
 
-    if (!nftCollection) {
-      throw new NotFoundException('NFT Collection Not Found');
-    }
+    // if (!nftCollection) {
+    //   throw new NotFoundException('NFT Collection Not Found');
+    // }
 
     const { id: collectionId } = nftCollection;
 
