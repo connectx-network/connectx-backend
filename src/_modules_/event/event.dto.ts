@@ -8,7 +8,7 @@ import { Transform } from 'class-transformer';
 export enum EventStatus {
   ON_GOING = 'ON_GOING',
   FINISHED = 'FINISHED',
-  UPCOMMING = 'UPCOMMING'
+  UPCOMING = 'UPCOMING'
 }
 
 export enum JoinedEventStatusParam {

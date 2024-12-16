@@ -525,11 +525,14 @@ export class EventService {
         findEventCondition.eventEndDate = {
           gte: new Date(),
         };
+        findEventCondition.eventDate = {
+          lte: new Date(),
+        };
       } else if (status === 'FINISHED') {
         findEventCondition.eventEndDate = {
           lte: new Date(),
         };
-      }  else if (status === 'UPCOMMING') {
+      }  else if (status === 'UPCOMING') {
         findEventCondition.eventDate = {
           gte: moment().add(1, 'day').startOf("day").toDate(),
           lte: moment().add(1, 'day').endOf("day").toDate()
