@@ -227,7 +227,7 @@ export class EventService {
   }
 
   async find(findEventDto: FindEventDto): Promise<FindEventResponse> {
-    const { size, page, userId, categoryIds, isHighlighted, cityIds, status } =
+    const { size, page, userId, categoryIds, cityIds, status } =
       findEventDto;
     const skip = (page - 1) * size;
 
@@ -241,10 +241,6 @@ export class EventService {
           userId,
         },
       };
-    }
-
-    if (isHighlighted) {
-      findEventCondition.isHighlighted = isHighlighted;
     }
 
     if (categoryIds) {
