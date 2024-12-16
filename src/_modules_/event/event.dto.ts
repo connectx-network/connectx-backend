@@ -8,6 +8,7 @@ import { Transform } from 'class-transformer';
 export enum EventStatus {
   ON_GOING = 'ON_GOING',
   FINISHED = 'FINISHED',
+  UPCOMMING = 'UPCOMMING'
 }
 
 export enum JoinedEventStatusParam {
@@ -132,9 +133,6 @@ export class CreateEventDto {
 export class FindEventDto extends BasePagingDto {
   @OptionalProperty()
   userId: string;
-  @OptionalProperty()
-  @IsBool
-  isUpcomming: boolean;
   @OptionalProperty({
     required: false,
     type: 'string',

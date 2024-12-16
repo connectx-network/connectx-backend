@@ -476,7 +476,6 @@ export class EventService {
       page,
       userId,
       categoryIds,
-      isUpcomming,
       cityIds,
       status,
       query,
@@ -530,14 +529,12 @@ export class EventService {
         findEventCondition.eventEndDate = {
           lte: new Date(),
         };
+      }  else if (status === 'UPCOMMING') {
+        findEventCondition.eventDate = {
+          gte: moment().add(1, 'day').startOf("day").toDate(),
+          lte: moment().add(1, 'day').endOf("day").toDate()
+        };
       }
-    }
-
-    if (isUpcomming) {
-      findEventCondition.eventDate = {
-        gte: moment().add(1, 'day').startOf("day").toDate(),
-        lte: moment().add(1, 'day').endOf("day").toDate()
-      };
     }
 
     const [events, count] = await Promise.all([
