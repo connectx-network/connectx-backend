@@ -66,7 +66,8 @@ export class EventService {
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
     private readonly nftSolanaService: NftSolanaService,
     private readonly royaltySolanaTokenService: RoyaltySolanaTokenService,
-  ) {}
+  ) {
+  }
 
   async create(telegramId: number, createEventDto: CreateEventDto) {
     const {
@@ -179,10 +180,10 @@ export class EventService {
 
     const hostIds = hosts
       ? hosts.map((host) => ({
-          userId: host.userId,
-          permission: HostPermission.MANAGER,
-          accepted: true,
-        }))
+        userId: host.userId,
+        permission: HostPermission.MANAGER,
+        accepted: true,
+      }))
       : [];
 
     const addHostIds = [
@@ -479,7 +480,7 @@ export class EventService {
       page,
       userId,
       categoryIds,
-      isHighlighted,
+      isUpcomming,
       cityIds,
       status,
       query,
@@ -503,10 +504,6 @@ export class EventService {
           userId,
         },
       };
-    }
-
-    if (isHighlighted) {
-      findEventCondition.isHighlighted = isHighlighted;
     }
 
     if (query) {
@@ -538,6 +535,13 @@ export class EventService {
           lte: new Date(),
         };
       }
+    }
+
+    if (isUpcomming) {
+      findEventCondition.eventDate = {
+        gte: moment().add(1, 'day').startOf("day").toDate(),
+        lte: moment().add(1, 'day').endOf("day").toDate()
+      };
     }
 
     const [events, count] = await Promise.all([
@@ -1006,7 +1010,7 @@ export class EventService {
         },
       },
     });
-    
+
     if (!isAccepted) {
       if (joinedUser) {
         throw new ConflictException('You have joined this event!');
@@ -1025,16 +1029,16 @@ export class EventService {
 
       // create nft off chain save in database
       const createNftSolanaOffchainRecord = await this.createNftSolanaOffchain(event, event.eventAssets, user);
-      
-      if(!createNftSolanaOffchainRecord) {
-        throw new BadRequestException('Can not create nft')
+
+      if (!createNftSolanaOffchainRecord) {
+        throw new BadRequestException('Can not create nft');
       }
 
       // create royalty token off chain save in database 
-      const createRoyaltyLogTokenOffChainRecord =  await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(event, user.id);
+      const createRoyaltyLogTokenOffChainRecord = await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(event, user.id);
 
-      if(!createRoyaltyLogTokenOffChainRecord) {
-        throw new BadRequestException('Can not send royalty token')
+      if (!createRoyaltyLogTokenOffChainRecord) {
+        throw new BadRequestException('Can not send royalty token');
       }
     } else {
       if (!joinedUser) {
@@ -1055,19 +1059,19 @@ export class EventService {
 
       // create nft + royalty token offchain if user register
       if (updateStatus == JoinedEventUserStatus.REGISTERED) {
-          // create nft off chain save in database
-      const createNftSolanaOffchainRecord = await this.createNftSolanaOffchain(event, event.eventAssets, user);
+        // create nft off chain save in database
+        const createNftSolanaOffchainRecord = await this.createNftSolanaOffchain(event, event.eventAssets, user);
 
-      if(!createNftSolanaOffchainRecord) {
-        throw new BadRequestException('Can not create nft')
-      }
+        if (!createNftSolanaOffchainRecord) {
+          throw new BadRequestException('Can not create nft');
+        }
 
-      // create royalty token off chain save in database 
-      const createRoyaltyLogTokenOffChainRecord =  await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(event, user.id);
+        // create royalty token off chain save in database
+        const createRoyaltyLogTokenOffChainRecord = await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(event, user.id);
 
-      if(!createRoyaltyLogTokenOffChainRecord) {
-        throw new BadRequestException('Can not send royalty token')
-      }
+        if (!createRoyaltyLogTokenOffChainRecord) {
+          throw new BadRequestException('Can not send royalty token');
+        }
       }
     }
 
@@ -2159,10 +2163,10 @@ export class EventService {
 
 
   async getInsignCity({
-    eventId,
-    start,
-    end,
-  }: {
+                        eventId,
+                        start,
+                        end,
+                      }: {
     eventId: string;
     start: string;
     end: string;
@@ -2217,6 +2221,6 @@ export class EventService {
       throw new BadRequestException('Can not mint NFT');
     }
 
-    return createNFTOffChain; 
+    return createNFTOffChain;
   }
 }

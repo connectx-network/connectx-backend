@@ -129,8 +129,6 @@ export class EventController {
     res.send(buffer);
   }
 
-
-
   @Get()
   async find(@Query() findEventDto: FindEventDto) {
     return this.eventService.find(findEventDto);

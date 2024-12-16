@@ -134,7 +134,7 @@ export class FindEventDto extends BasePagingDto {
   userId: string;
   @OptionalProperty()
   @IsBool
-  isHighlighted: boolean;
+  isUpcomming: boolean;
   @OptionalProperty({
     required: false,
     type: 'string',
