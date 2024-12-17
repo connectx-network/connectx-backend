@@ -433,8 +433,8 @@ model NftCollection {
   nftItems             NftItem[]
   statusOnChain        CollectionCreationStatus @default(PENDING) @map("status_onchain")
 
-    createdAt DateTime? @default(now()) @map("created_at") 
-  updatedAt  DateTime? @map("updated_at")
+  createdAt DateTime? @default(now()) @map("created_at")
+  updatedAt DateTime? @map("updated_at")
 
   eventId String? @unique @map("event_id")
   event   Event?  @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -455,8 +455,8 @@ model NftItem {
   nftAddress       String?           @map("nft_address")
   error            Json?             @map("error")
 
-    createdAt DateTime? @default(now()) @map("created_at") 
-  updatedAt  DateTime? @map("updated_at")
+  createdAt DateTime? @default(now()) @map("created_at")
+  updatedAt DateTime? @map("updated_at")
 
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -469,15 +469,15 @@ model NftItem {
 
 model RoyaltySolanaTokenLog {
   id                  String             @id @unique @default(uuid())
-  eventName           String?             @map("event_name")
+  eventName           String?            @map("event_name")
   ownerAddress        String?            @map("item_owner_address")
   tokenAccountAddress String?            @map("token_account_address")
   statusOnChain       RoyaltyTokenStatus @default(PENDING) @map("status_onchain")
-  amount              Decimal?            @map("amount")
+  amount              Decimal?           @map("amount")
   error               Json?              @map("error")
 
-  createdAt DateTime? @default(now()) @map("created_at") 
-  updatedAt  DateTime? @map("updated_at")
+  createdAt DateTime? @default(now()) @map("created_at")
+  updatedAt DateTime? @map("updated_at")
 
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -528,6 +528,7 @@ enum EventType {
 enum EventScope {
   PUBLIC
   PRIVATE
+  DEFAULT
 }
 
 enum TicketType {
