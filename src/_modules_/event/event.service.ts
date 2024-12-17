@@ -532,10 +532,9 @@ export class EventService {
         findEventCondition.eventEndDate = {
           lte: new Date(),
         };
-      }  else if (status === 'UPCOMING') {
+      } else if (status === 'UPCOMING') {
         findEventCondition.eventDate = {
-          gte: moment().add(1, 'day').startOf("day").toDate(),
-          lte: moment().add(1, 'day').endOf("day").toDate()
+          gte: new Date()
         };
       }
     }
