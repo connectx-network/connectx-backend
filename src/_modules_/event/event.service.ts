@@ -523,18 +523,18 @@ export class EventService {
     if (status) {
       if (status === 'ON_GOING') {
         findEventCondition.eventEndDate = {
-          gte: new Date(),
+          gte: moment().tz('Asia/Bangkok').toDate(),
         };
         findEventCondition.eventDate = {
-          lte: new Date(),
+          lte: moment().tz('Asia/Bangkok').toDate(),
         };
       } else if (status === 'FINISHED') {
         findEventCondition.eventEndDate = {
-          lte: new Date(),
+          lte: moment().tz('Asia/Bangkok').toDate(),
         };
       } else if (status === 'UPCOMING') {
         findEventCondition.eventDate = {
-          gte: new Date()
+          gte: moment().tz('Asia/Bangkok').toDate()
         };
       }
     }
