@@ -1549,32 +1549,20 @@ export class EventService {
 
     return { success: true };
   }
-
   async updateEventSponsors(
     telegramId: string,
     updateSponsorsDto: UpdateEventSponsorsDto,
   ) {
     const { eventId, sponsors } = updateSponsorsDto;
 
-    await this.prisma.eventSponsor.createMany({
-      data: [
-        ...sponsors.map((sponsor) => ({
-          eventId,
-          name: sponsor.name,
-          description: sponsor.description,
-          imageUrl: sponsor.imageUrl,
-        })),
-      ],
-    });
-
-    const event = await this.prisma.event.findUnique({
+    const existedEvent = await this.prisma.event.findUnique({
       where: {
-        id: eventId,
+        shortId: eventId,
       },
     });
 
-    if (!event) {
-      throw new NotFoundException('Not found event!');
+    if (!existedEvent) {
+      throw new NotFoundException('Event not found!');
     }
 
     const user = await this.prisma.user.findUnique({
@@ -1584,31 +1572,24 @@ export class EventService {
     });
 
     if (!user) {
-      throw new NotFoundException('Not found user!');
+      throw new NotFoundException('User not found!');
     }
 
-    if (event.userId !== user.id) {
-      throw new NotAcceptableException(`Only event's owner can update event`);
+    if (existedEvent.userId !== user.id) {
+      throw new NotAcceptableException(
+        'Only the event owner can update the event',
+      );
     }
 
-    await this.prisma.$transaction([
-      this.prisma.event.update({
-        where: {
-          id: eventId,
-        },
-        data: {
-          eventSponsors: {
-            createMany: {
-              data: sponsors.map((sponsor) => ({
-                name: sponsor.name,
-                description: sponsor.description,
-                imageUrl: sponsor.imageUrl,
-              })),
-            },
-          },
-        },
-      }),
-    ]);
+    // Separate EventSponsor creation
+    await this.prisma.eventSponsor.createMany({
+      data: sponsors.map((sponsor) => ({
+        eventId: existedEvent.id,
+        name: sponsor.name,
+        description: sponsor.description,
+        imageUrl: sponsor.imageUrl,
+      })),
+    });
 
     return { success: true };
   }
