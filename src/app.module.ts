@@ -8,7 +8,6 @@ import { FileModule } from './_modules_/file/file.module';
 import { AuthModule } from './_modules_/auth/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { MailModule } from './_modules_/mail/mail.module';
-import { EventModule } from './_modules_/event/event.module';
 import { UserModule } from './_modules_/user/user.module';
 import { UserConnectionModule } from './_modules_/user-connection/user-connection.module';
 import { NotificationModule } from './_modules_/notification/notification.module';
@@ -25,6 +24,7 @@ import { NftModule } from './_modules_/nft/nft.module';
 import { AuthTonModule } from './_modules_/auth-ton/auth-ton.module';
 import { AuthSolanaModule } from './_modules_/auth-solana/auth-solana.module';
 import { RoyaltySolanaTokenModule } from 'src/_modules_/royalty-token-solana/royalty-token-solana.module';
+import { EventModule } from './_modules_/event/event.module';
 
 @Module({
   imports: [

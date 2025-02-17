@@ -35,6 +35,7 @@ import {
   EventAssetType,
   EventScope,
   HostPermission,
+  JoinedEventSponsorStatus,
   JoinedEventUserStatus,
   Prisma,
   User,
@@ -66,8 +67,7 @@ export class EventService {
     @InjectQueue(Queues.mail) private readonly mailTaskQueue: Queue,
     private readonly nftSolanaService: NftSolanaService,
     private readonly royaltySolanaTokenService: RoyaltySolanaTokenService,
-  ) {
-  }
+  ) {}
 
   async create(telegramId: number, createEventDto: CreateEventDto) {
     const {
@@ -180,10 +180,10 @@ export class EventService {
 
     const hostIds = hosts
       ? hosts.map((host) => ({
-        userId: host.userId,
-        permission: HostPermission.MANAGER,
-        accepted: true,
-      }))
+          userId: host.userId,
+          permission: HostPermission.MANAGER,
+          accepted: true,
+        }))
       : [];
 
     const addHostIds = [
@@ -227,8 +227,7 @@ export class EventService {
   }
 
   async find(findEventDto: FindEventDto): Promise<FindEventResponse> {
-    const { size, page, userId, categoryIds, cityIds, status } =
-      findEventDto;
+    const { size, page, userId, categoryIds, cityIds, status } = findEventDto;
     const skip = (page - 1) * size;
 
     const findEventCondition: Prisma.EventWhereInput = {
@@ -471,15 +470,8 @@ export class EventService {
     telegramId: string,
     findEventDto: FindEventDto,
   ): Promise<FindEventResponse> {
-    const {
-      size,
-      page,
-      userId,
-      categoryIds,
-      cityIds,
-      status,
-      query,
-    } = findEventDto;
+    const { size, page, userId, categoryIds, cityIds, status, query } =
+      findEventDto;
     const skip = (page - 1) * size;
 
     const user = await this.prisma.user.findUnique({
@@ -534,7 +526,7 @@ export class EventService {
         };
       } else if (status === 'UPCOMING') {
         findEventCondition.eventDate = {
-          gte: moment().tz('Asia/Bangkok').toDate()
+          gte: moment().tz('Asia/Bangkok').toDate(),
         };
       }
     }
@@ -1023,16 +1015,20 @@ export class EventService {
       }
 
       if (event.eventScope == EventScope.PRIVATE) {
-
         // create nft off chain save in database
-        const createNftSolanaOffchainRecord = await this.createNftSolanaOffchain(event, event.eventAssets, user);
+        const createNftSolanaOffchainRecord =
+          await this.createNftSolanaOffchain(event, event.eventAssets, user);
 
         if (!createNftSolanaOffchainRecord) {
           throw new BadRequestException('Can not create nft');
         }
 
-        // create royalty token off chain save in database 
-        const createRoyaltyLogTokenOffChainRecord = await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(event, user.id);
+        // create royalty token off chain save in database
+        const createRoyaltyLogTokenOffChainRecord =
+          await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(
+            event,
+            user.id,
+          );
 
         if (!createRoyaltyLogTokenOffChainRecord) {
           throw new BadRequestException('Can not send royalty token');
@@ -1056,18 +1052,22 @@ export class EventService {
       });
 
       if (event.eventScope == EventScope.PRIVATE) {
-
         // create nft + royalty token offchain if user register
         if (updateStatus == JoinedEventUserStatus.REGISTERED) {
           // create nft off chain save in database
-          const createNftSolanaOffchainRecord = await this.createNftSolanaOffchain(event, event.eventAssets, user);
+          const createNftSolanaOffchainRecord =
+            await this.createNftSolanaOffchain(event, event.eventAssets, user);
 
           if (!createNftSolanaOffchainRecord) {
             throw new BadRequestException('Can not create nft');
           }
 
           // create royalty token off chain save in database
-          const createRoyaltyLogTokenOffChainRecord = await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(event, user.id);
+          const createRoyaltyLogTokenOffChainRecord =
+            await this.royaltySolanaTokenService.createRoyaltyLogTokenOffChain(
+              event,
+              user.id,
+            );
 
           if (!createRoyaltyLogTokenOffChainRecord) {
             throw new BadRequestException('Can not send royalty token');
@@ -1654,6 +1654,67 @@ export class EventService {
     return { success: true };
   }
 
+  async createInvitationSponsor(
+    telegramId: string,
+    createInvitationDto: CreateInvitationDto,
+  ) {
+    const user = await this.userService.findUserByTelegramId(telegramId);
+    if (!user) {
+      throw new NotFoundException('Not Found User');
+    }
+
+    const { eventId, userIds, message } = createInvitationDto;
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id: eventId,
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
+    await Promise.all(
+      userIds.map(async (userId) => {
+        const joinedEventSponsor =
+          await this.prisma.joinedEventSponsor.findUnique({
+            where: {
+              userId_eventId: {
+                userId,
+                eventId: event.id,
+              },
+            },
+          });
+
+        if (joinedEventSponsor) {
+          return;
+        }
+
+        await this.prisma.joinedEventSponsor.createMany({
+          data: {
+            eventId,
+            userId,
+            status: JoinedEventSponsorStatus.INVITED,
+          },
+        });
+
+        const target = await this.userService.findOne(userId);
+
+        try {
+          return this.telegramBotService.sendMessage(
+            +target.telegramId,
+            `Hello ${target.fullName}!\nYou have been invited to be sponsor of the event: ${event.title}!\n ${message} \nEvent detail: https://t.me/connectx_network_bot/app?startapp=inviteUser_${event.shortId}`,
+          );
+        } catch (error) {
+          console.log(error);
+        }
+      }),
+    );
+
+    return { success: true };
+  }
+
   async updateGuestStatus(
     telegramId: string,
     updateGuestStatus: UpdateGuestStatusDto,
@@ -1757,7 +1818,6 @@ export class EventService {
         checkInDate: new Date(),
       },
     });
-
 
     return { success: true };
   }
@@ -2020,7 +2080,6 @@ export class EventService {
       },
     });
 
-
     return { success: true };
   }
 
@@ -2161,7 +2220,6 @@ export class EventService {
 
     return { data, statistics };
   }
-
 
   async getInsignCity({
     eventId,
