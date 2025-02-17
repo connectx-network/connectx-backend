@@ -27,8 +27,7 @@ import { Response } from 'express';
 @Controller('event')
 @ApiTags('event')
 export class EventController {
-  constructor(private readonly eventService: EventService) {
-  }
+  constructor(private readonly eventService: EventService) {}
 
   @Post()
   @UseGuards(TelegramMiniAppGuard)
@@ -40,7 +39,6 @@ export class EventController {
     return this.eventService.create(telegramId, createEventDto);
   }
 
-  
   @Get('/created')
   @UseGuards(TelegramMiniAppGuard)
   @ApiBearerAuth()
@@ -112,7 +110,11 @@ export class EventController {
     @Param('eventId') id: string,
     @Query() findEventFriendDto: FindEventFriendDto,
   ) {
-    return this.eventService.findEventFriend(`${telegramId}`, id, findEventFriendDto);
+    return this.eventService.findEventFriend(
+      `${telegramId}`,
+      id,
+      findEventFriendDto,
+    );
   }
 
   @Get('/guest/export/:eventId')
@@ -123,9 +125,14 @@ export class EventController {
     @Param('eventId') id: string,
     @Res() res: Response,
   ) {
-    const { buffer, fileName } = await this.eventService.exportGuest(`${telegramId}`, id);
+    const { buffer, fileName } = await this.eventService.exportGuest(
+      `${telegramId}`,
+      id,
+    );
     res.header(`Content-Disposition`, `attachment; filename=${fileName}.xlsx`);
-    res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.type(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
     res.send(buffer);
   }
 
@@ -148,7 +155,9 @@ export class EventController {
   }
 
   @Post('/join')
-  @ApiOperation({summary: 'Allow user registers event, reject or accept an invitation event'})
+  @ApiOperation({
+    summary: 'Allow user registers event, reject or accept an invitation event',
+  })
   @UseGuards(TelegramMiniAppGuard)
   @ApiBearerAuth()
   async join(
@@ -186,6 +195,19 @@ export class EventController {
     @Body() createInvitationDto: CreateInvitationDto,
   ) {
     return this.eventService.createInvitation(
+      `${telegramId}`,
+      createInvitationDto,
+    );
+  }
+
+  @Post('/invitation-sponsor')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async inviteSponsor(
+    @TmaUser('id') telegramId: number,
+    @Body() createInvitationDto: CreateInvitationDto,
+  ) {
+    return this.eventService.createInvitationSponsor(
       `${telegramId}`,
       createInvitationDto,
     );

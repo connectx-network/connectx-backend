@@ -43,6 +43,7 @@ model User {
   following              UserConnection[]        @relation("user-to-target")
   followers              UserConnection[]        @relation("target-to-user")
   joinedEventUsers       JoinedEventUser[]
+  joinedEventSponsors    JoinedEventSponsor[]
   userVerification       UserVerification?
   userTokens             UserToken[]
   sentNotifications      Notification[]          @relation("SenderToReceiver")
@@ -198,6 +199,7 @@ model Event {
   eventCategoryId       String                 @map("category_id")
   eventCategory         Category               @relation(fields: [eventCategoryId], references: [id], onDelete: Cascade)
   joinedEventUsers      JoinedEventUser[]
+  joinedEventSponsors   JoinedEventSponsor[]
   eventHosts            EventHost[]
   eventAssets           EventAsset[]
   eventLocationDetail   EventLocationDetail?
@@ -354,6 +356,24 @@ model JoinedEventUser {
 
   @@unique([userId, eventId])
   @@map("joined_event_user")
+}
+
+model JoinedEventSponsor {
+  id          String                @id @unique @default(uuid())
+  eventId     String                @map("event_id")
+  userId      String                @map("user_id")
+  joinDate    DateTime              @default(now()) @map("join_date")
+  checkInDate DateTime?             @map("check_in_date")
+  status      JoinedEventSponsorStatus @default(REGISTERED)
+  checkedIn   Boolean               @default(false) @map("checked_in")
+  // sponsorName String                @map("sponsor_name")
+  // sponsorDescription String         @map("sponsor_description")
+  // sponsorImageUrl String            @map("sponsor_image_url")
+  event       Event                 @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@map("joined_event_sponsor")
 }
 
 model JoinedEventPhaseUser {
@@ -546,6 +566,12 @@ enum FileType {
 }
 
 enum JoinedEventUserStatus {
+  REGISTERED
+  INVITED
+  REJECTED
+}
+
+enum JoinedEventSponsorStatus {
   REGISTERED
   INVITED
   REJECTED
