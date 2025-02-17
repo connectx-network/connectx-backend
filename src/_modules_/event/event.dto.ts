@@ -249,6 +249,7 @@ export class EventLocation {
   longitude: string;
 }
 
+
 export class UpdateSponsorDto {
   @IsNotEmpty()
   name: string;
@@ -261,7 +262,10 @@ export class UpdateSponsorDto {
 }
 
 export class UpdateEventSponsorsDto {
+  @ApiProperty()
   sponsors: UpdateSponsorDto[];
+
+  @ApiProperty()
   eventId: string;
 }
 
