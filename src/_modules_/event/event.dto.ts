@@ -2,13 +2,19 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsDateString, IsEnum, IsNotEmpty } from 'class-validator';
 import { IsBool, OptionalProperty } from '../../decorators/validator.decorator';
 import { BasePagingDto, BasePagingResponse } from '../../types/base.type';
-import { Event, EventAssetType, EventScope, JoinedEventUserStatus, TicketType } from '@prisma/client';
+import {
+  Event,
+  EventAssetType,
+  EventScope,
+  JoinedEventUserStatus,
+  TicketType,
+} from '@prisma/client';
 import { Transform } from 'class-transformer';
 
 export enum EventStatus {
   ON_GOING = 'ON_GOING',
   FINISHED = 'FINISHED',
-  UPCOMING = 'UPCOMING'
+  UPCOMING = 'UPCOMING',
 }
 
 export enum JoinedEventStatusParam {
@@ -159,16 +165,14 @@ export class FindEventDto extends BasePagingDto {
   query: string;
 }
 
-export class FindFeedDto extends BasePagingDto {
-}
+export class FindFeedDto extends BasePagingDto {}
 
 export class FindOneEventDto {
   @OptionalProperty()
   userId: string;
 }
 
-export class FindEventResponse extends BasePagingResponse<Event> {
-}
+export class FindEventResponse extends BasePagingResponse<Event> {}
 
 export class CreateEventInvitationDto {
   @ApiProperty({ required: true })
@@ -226,14 +230,11 @@ export class JoinEventDto {
   isAccepted: string;
 }
 
-export class AddFavoriteDto extends BaseInteractEventDto {
-}
+export class AddFavoriteDto extends BaseInteractEventDto {}
 
-export class FindCreatedEventDto extends BasePagingDto {
-}
+export class FindCreatedEventDto extends BasePagingDto {}
 
-export class FindFavoriteEventDto extends BasePagingDto {
-}
+export class FindFavoriteEventDto extends BasePagingDto {}
 
 export class EventLocation {
   @ApiProperty({
@@ -246,6 +247,22 @@ export class EventLocation {
   })
   @IsNotEmpty()
   longitude: string;
+}
+
+export class UpdateSponsorDto {
+  @IsNotEmpty()
+  name: string;
+
+  @IsNotEmpty()
+  description: string;
+
+  @IsNotEmpty()
+  imageUrl: string;
+}
+
+export class UpdateEventSponsorsDto {
+  sponsors: UpdateSponsorDto[];
+  eventId: string;
 }
 
 export class UpdateEventDto {
@@ -337,8 +354,7 @@ export class CheckInByAdminDto extends BaseInteractEventDto {
   userId: string;
 }
 
-export class DeleteEventDto extends BaseInteractEventDto {
-}
+export class DeleteEventDto extends BaseInteractEventDto {}
 
 export class CheckInByQrDto extends BaseInteractEventDto {
   @ApiProperty({

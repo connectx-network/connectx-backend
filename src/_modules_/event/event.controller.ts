@@ -16,6 +16,7 @@ import {
   GetEventInsightDto,
   JoinEventDto,
   UpdateEventDto,
+  UpdateEventSponsorsDto,
   UpdateGuestStatusDto,
   UpdateHighlightEventDto,
 } from './event.dto';
@@ -185,6 +186,19 @@ export class EventController {
     @Body() updateEventDto: UpdateEventDto,
   ) {
     return this.eventService.update(`${telegramId}`, updateEventDto);
+  }
+
+  @Put('/tma/update-event-sponsors')
+  @UseGuards(TelegramMiniAppGuard)
+  @ApiBearerAuth()
+  async updateEventSponsors(
+    @TmaUser('id') telegramId: number,
+    @Body() updateEventSponsorsDto: UpdateEventSponsorsDto,
+  ) {
+    return this.eventService.updateEventSponsors(
+      `${telegramId}`,
+      updateEventSponsorsDto,
+    );
   }
 
   @Post('/invitation')
