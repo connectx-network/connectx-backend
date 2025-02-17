@@ -26,8 +26,10 @@ import {
   InsightFilterType,
   JoinEventDto,
   UpdateEventDto,
+  UpdateEventSponsorsDto,
   UpdateGuestStatusDto,
   UpdateHighlightEventDto,
+  UpdateSponsorDto,
 } from './event.dto';
 import {
   Event,
@@ -1542,6 +1544,69 @@ export class EventService {
       this.prisma.eventAsset.update({
         where: updateAssetCondition,
         data: updateAssetPayload,
+      }),
+    ]);
+
+    return { success: true };
+  }
+
+  async updateEventSponsors(
+    telegramId: string,
+    updateSponsorsDto: UpdateEventSponsorsDto,
+  ) {
+    const { eventId, sponsors } = updateSponsorsDto;
+
+    await this.prisma.eventSponsor.createMany({
+      data: [
+        ...sponsors.map((sponsor) => ({
+          eventId,
+          name: sponsor.name,
+          description: sponsor.description,
+          imageUrl: sponsor.imageUrl,
+        })),
+      ],
+    });
+
+    const event = await this.prisma.event.findUnique({
+      where: {
+        id: eventId,
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Not found event!');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        telegramId,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Not found user!');
+    }
+
+    if (event.userId !== user.id) {
+      throw new NotAcceptableException(`Only event's owner can update event`);
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.event.update({
+        where: {
+          id: eventId,
+        },
+        data: {
+          eventSponsors: {
+            createMany: {
+              data: sponsors.map((sponsor) => ({
+                name: sponsor.name,
+                description: sponsor.description,
+                imageUrl: sponsor.imageUrl,
+              })),
+            },
+          },
+        },
       }),
     ]);
 
