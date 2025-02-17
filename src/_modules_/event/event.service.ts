@@ -1704,7 +1704,7 @@ export class EventService {
         try {
           return this.telegramBotService.sendMessage(
             +target.telegramId,
-            `Hello ${target.fullName}!\nYou have been invited to be sponsor of the event: ${event.title}!\n ${message} \nEvent detail: https://t.me/connectx_network_bot/app?startapp=inviteUser_${event.shortId}`,
+            `Hello ${target.fullName}!\nYou have been invited to be sponsor of the event: ${event.title}!\n ${message} \nEvent detail: https://t.me/connectx_network_bot/app?startapp=inviteSponsor_${event.shortId}`,
           );
         } catch (error) {
           console.log(error);
